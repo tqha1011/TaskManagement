@@ -1,0 +1,60 @@
+name: Flutter Sonarcloud Analysis
+
+on: 
+  push:
+    branches:
+      - "main"
+      - "develop"
+  pull_request:
+    branches:
+      - "main"
+      - "develop"
+
+jobs:
+  build-and-analyze:
+    name: Flutter Build and Analyze
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Quan trọng để SonarCloud so sánh code
+            
+      - name: debug
+        working-directory: .
+        run: ls -la
+        
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17 # Gradle và SonarCloud cho Android chạy trên Java 17
+          distribution: 'zulu' 
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: 'any' 
+          cache: true 
+          
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Bắt buộc để SonarCloud tự động comment báo cáo vào Pull Request
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Token cấp quyền từ SonarCloud
+        with:
+          args: >
+            -Dsonar.organization=tqha1011
+            -Dsonar.projectKey=tqha1011_taskmanagementapp
+            -Dsonar.sources=lib
+            -Dsonar.exclusions=**/*.g.dart,**/*.freezed.dart,**/*.part.dart}}
+        
+
+  
