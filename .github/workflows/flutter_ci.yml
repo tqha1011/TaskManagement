@@ -50,11 +50,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Bắt buộc để SonarCloud tự động comment báo cáo vào Pull Request
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Token cấp quyền từ SonarCloud
         with:
+          projectBaseDir: src
           args: >
             -Dsonar.organization=tqha1011
             -Dsonar.projectKey=tqha1011_taskmanagementapp
             -Dsonar.sources=lib
-            -Dsonar.exclusions=**/*.g.dart,**/*.freezed.dart,**/*.part.dart}}
+            -Dsonar.exclusions=**/*.g.dart,**/*.freezed.dart,**/*.part.dart
         
 
   
