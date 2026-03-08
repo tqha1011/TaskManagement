@@ -1,1 +1,13 @@
-
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "pub"
+    # Look for `package.json` and `lock` files in the `root` directory
+    directory: "/src"
+    # Check the npm registry for updates every day (weekdays)
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "build(deps)"
+      prefix-development: "build(deps-dev)"
+      include: "scope"
