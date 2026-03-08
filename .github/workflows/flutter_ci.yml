@@ -22,12 +22,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Quan trọng để SonarCloud so sánh code
+          fetch-depth: 0 
             
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: 17 # Gradle và SonarCloud cho Android chạy trên Java 17
+          java-version: 17 
           distribution: 'zulu' 
 
       - name: Setup Flutter
@@ -36,20 +36,37 @@ jobs:
           channel: 'stable'
           flutter-version: 'any' 
           cache: true 
+
+      # Cache cho dữ liệu phân tích của SonarCloud (Sensor Cache)
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      # Cache cho bộ cài đặt Sonar Scanner CLI để không phải tải lại mỗi lần
+      - name: Cache Sonar Scanner CLI
+        id: cache-sonar-scanner
+        uses: actions/cache@v4
+        with:
+          path: src/sonar-scanner-5.0.1.3006-linux
+          key: ${{ runner.os }}-sonar-scanner-5.0.1.3006
           
       - name: Install dependencies
         run: flutter pub get
 
       - name: Run Sonar Scanner Native OS
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Bắt buộc để SonarCloud tự động comment báo cáo
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Token cấp quyền từ SonarCloud
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          # 1. Tải Sonar Scanner CLI (bản gốc cho Linux) trực tiếp từ máy chủ
-          wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-          unzip -q sonar-scanner-cli-5.0.1.3006-linux.zip
+          # Chỉ tải và giải nén nếu chưa có trong cache
+          if [ ! -d "sonar-scanner-5.0.1.3006-linux" ]; then
+            wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+            unzip -q sonar-scanner-cli-5.0.1.3006-linux.zip
+          fi
           
-          # 2. Chạy lệnh quét trực tiếp trên Ubuntu 
           ./sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
             -Dsonar.organization=tqha1011 \
             -Dsonar.projectKey=tqha1011_taskmanagementapp \
