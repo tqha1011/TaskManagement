@@ -24,10 +24,6 @@ jobs:
         with:
           fetch-depth: 0 # Quan trọng để SonarCloud so sánh code
             
-      - name: debug
-        working-directory: .
-        run: ls -la
-        
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -44,18 +40,19 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
+      - name: Run Sonar Scanner Native OS
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Bắt buộc để SonarCloud tự động comment báo cáo vào Pull Request
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Bắt buộc để SonarCloud tự động comment báo cáo
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Token cấp quyền từ SonarCloud
-        with:
-          projectBaseDir: src
-          args: >
-            -Dsonar.organization=tqha1011
-            -Dsonar.projectKey=tqha1011_taskmanagementapp
-            -Dsonar.sources=lib
-            -Dsonar.exclusions=**/*.g.dart,**/*.freezed.dart,**/*.part.dart
-        
-
-  
+        run: |
+          # 1. Tải Sonar Scanner CLI (bản gốc cho Linux) trực tiếp từ máy chủ
+          wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+          unzip -q sonar-scanner-cli-5.0.1.3006-linux.zip
+          
+          # 2. Chạy lệnh quét trực tiếp trên Ubuntu 
+          ./sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
+            -Dsonar.organization=tqha1011 \
+            -Dsonar.projectKey=tqha1011_taskmanagementapp \
+            -Dsonar.sources=lib \
+            -Dsonar.exclusions="**/*.g.dart,**/*.freezed.dart,**/*.part.dart" \
+            -Dsonar.host.url=https://sonarcloud.io
