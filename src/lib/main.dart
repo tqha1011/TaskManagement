@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/theme/app_colors.dart';
+import 'features/main/view/screens/main_screen.dart';
 import 'features/tasks/view/screens/home_screen.dart';
 
 void main() {
@@ -28,7 +29,7 @@ class TaskApp extends StatelessWidget {
           labelLarge: TextStyle(fontSize: 16, color: AppColors.primaryBlue),
         ),
       ),
-      home: const HomeScreen(),
+      home: const MainScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
