@@ -50,3 +50,5 @@ app.*.map.json
 **/supabase/.env
 **/supabase/pooler/
 
+# DevTools config
+devtools_options.yaml
