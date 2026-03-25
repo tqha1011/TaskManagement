@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/auth_layout_template.dart';
-import '../../core/theme/custom_text_field.dart';
-import '../auth/presentation/viewmodels/auth_viewmodels.dart';
+import 'package:task_management_app/features/auth/presentation/view/login_view.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/auth_layout_template.dart';
+import '../../../../core/theme/custom_text_field.dart';
+import '../viewmodels/auth_viewmodels.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
-
   @override
   State<RegisterView> createState() => _RegisterViewState();
 }
@@ -26,78 +26,46 @@ class _RegisterViewState extends State<RegisterView> {
         showSocial: true,
         onSubmit: () async {
           FocusScope.of(context).unfocus();
-          final success = await _vm.register();
+          final errorMessage = await _vm.register();
           if (!context.mounted) return;
 
-          if (success) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Đăng ký thành công!'),
-                backgroundColor: AppColors.success,
-              ),
+          if (errorMessage == null) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đăng ký thành công!'), backgroundColor: AppColors.success));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginView()),
             );
-            Navigator.pop(context); // Go back to login
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Mật khẩu không khớp hoặc thiếu thông tin!'),
-                backgroundColor: AppColors.error,
-              ),
-            );
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage), backgroundColor: AppColors.error));
           }
         },
         formContent: Column(
           children: [
+            CustomTextField(label: 'Họ tên', hint: 'Nhập họ và tên', icon: Icons.person, controller: _vm.usernameCtrl),
+            CustomTextField(label: 'Email', hint: 'example@gmail.com', icon: Icons.mail, controller: _vm.emailCtrl),
             CustomTextField(
-              label: 'Họ tên',
-              hint: 'Nhập họ và tên',
-              icon: Icons.person,
-              controller: _vm.nameCtrl,
+              label: 'Mật khẩu', hint: '••••••••', icon: Icons.lock, controller: _vm.passCtrl,
+              isPassword: true, obscureText: _vm.obscurePass, onToggleVisibility: _vm.togglePass,
             ),
             CustomTextField(
-              label: 'Email',
-              hint: 'example@gmail.com',
-              icon: Icons.mail,
-              controller: _vm.emailCtrl,
-            ),
-            CustomTextField(
-              label: 'Mật khẩu',
-              hint: '••••••••',
-              icon: Icons.lock,
-              controller: _vm.passCtrl,
-              isPassword: true,
-              obscureText: _vm.obscurePass,
-              onToggleVisibility: _vm.togglePass,
-            ),
-            CustomTextField(
-              label: 'Xác nhận mật khẩu',
-              hint: '••••••••',
-              icon: Icons.shield,
-              controller: _vm.confirmPassCtrl,
-              isPassword: true,
-              obscureText: _vm.obscurePass,
-              onToggleVisibility: _vm.togglePass,
+              label: 'Xác nhận mật khẩu', hint: '••••••••', icon: Icons.shield, controller: _vm.confirmPassCtrl,
+              isPassword: true, obscureText: _vm.obscurePass, onToggleVisibility: _vm.togglePass,
             ),
           ],
         ),
-        footerContent: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Đã có tài khoản? ',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: const Text(
-                'Đăng nhập',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
+        footerContent: Padding(
+          padding: const EdgeInsets.only(bottom: 24.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Đã có tài khoản? ', style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(minimumSize: const Size(50, 48)),
+                child: const Text('Đăng nhập', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16)),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
