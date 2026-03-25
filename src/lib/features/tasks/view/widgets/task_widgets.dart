@@ -4,7 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../model/task_model.dart';
 import '../screens/task_detail_screen.dart';
 
-// --- Clipper cho dải uốn lượn màu xanh ---
+// --- Clipper for the blue wavy strip ---
 class TopWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -29,7 +29,7 @@ class TopWaveClipper extends CustomClipper<Path> {
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
-// --- Widget cho ô ngày trong Timeline ---
+// --- Widget for date box in Timeline ---
 class DateBox extends StatelessWidget {
   final DateTime date;
   final bool isSelected;
