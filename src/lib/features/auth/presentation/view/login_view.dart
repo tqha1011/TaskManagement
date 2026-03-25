@@ -20,7 +20,7 @@ class _LoginViewState extends State<LoginView> {
     return AnimatedBuilder(
       animation: _vm,
       builder: (context, _) => AuthLayoutTemplate(
-        title: 'To-Do List',
+        title: 'Task Management',
         subtitle: 'Chào mừng trở lại!',
         submitText: 'Đăng nhập',
         isLoading: _vm.isLoading,
