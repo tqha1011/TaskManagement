@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../model/task_model.dart';
-import '../widgets/task_widgets.dart'; // Nơi chứa TimePickerWidget
+import '../widgets/task_widgets.dart'; // Contains TimePickerWidget
 
 class TaskDetailScreen extends StatefulWidget {
   final TaskModel task;
@@ -24,7 +24,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // Khởi tạo data ban đầu từ task được truyền vào
+    // Initialize initial data from the passed task
     _titleController = TextEditingController(text: widget.task.title);
     _descController = TextEditingController(text: widget.task.description);
     _startTime = widget.task.startTime;

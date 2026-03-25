@@ -11,16 +11,16 @@ class StatisticsScreen extends StatefulWidget {
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
-  // Biến lưu trữ ngày đang được chọn trên biểu đồ (0 = T2, 1 = T3, 2 = T4...)
-  int _selectedDayIndex = 2; // Mặc định chọn T4 (Index 2) giống trong thiết kế
+  // Variable to store the currently selected day on the chart (0 = Mon, 1 = Tue, 2 = Wed...)
+  int _selectedDayIndex = 2; // Default select Wed (Index 2) like in the design
 
-  // Dữ liệu giả lập phân loại theo ngày (0 đến 6)
+  // Mock data categorized by day (0 to 6)
   late Map<int, List<TaskModel>> _tasksByDay;
 
   @override
   void initState() {
     super.initState();
-    // Tạo mock data cho một vài ngày để test
+    // Create mock data for a few days for testing
     _tasksByDay = {
       0: [ // Thứ 2
         TaskModel(id: 'stat_t2_1', title: 'Họp team đầu tuần', description: 'Lên kế hoạch Sprint mới.', category: 'Development', startTime: const TimeOfDay(hour: 9, minute: 0), endTime: const TimeOfDay(hour: 10, minute: 0), date: DateTime.now()),
