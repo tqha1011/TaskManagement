@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/auth_layout_template.dart';
 import '../../core/theme/custom_text_field.dart';
-import '../../viewmodels/auth_viewmodels.dart';
+import '../auth/presentation/viewmodels/auth_viewmodels.dart';
 import 'register_view.dart';
-import 'forgot_password_view.dart';
+import 'presentation/view /forgot_password_view.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});

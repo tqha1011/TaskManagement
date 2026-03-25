@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
-import '../../viewmodels/auth_viewmodels.dart';
+import '../auth/presentation/viewmodels/auth_viewmodels.dart';
 import 'new_password_view.dart';
 
 class OtpVerificationView extends StatefulWidget {

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/auth_layout_template.dart';
-import '../../core/theme/custom_text_field.dart';
-import '../../viewmodels/auth_viewmodels.dart';
-import 'otp_verification_view.dart';
+import '../../../../../../core/theme/app_colors.dart';
+import '../../../../../../core/theme/auth_layout_template.dart';
+import '../../../../../../core/theme/custom_text_field.dart';
+import '../auth/presentation/viewmodels/auth_viewmodels.dart'
+import '../../otp_verification_view.dart';
 
 class ForgotPasswordView extends StatefulWidget {
   const ForgotPasswordView({super.key});
