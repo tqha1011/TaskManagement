@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../tasks/model/task_model.dart';
+import '../../viewmodel/statistics_viewmodel.dart';
 import '../widgets/statistics_widgets.dart';
+import 'package:provider/provider.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -11,33 +14,25 @@ class StatisticsScreen extends StatefulWidget {
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
-  // Biến lưu trữ ngày đang được chọn trên biểu đồ (0 = T2, 1 = T3, 2 = T4...)
-  int _selectedDayIndex = 2; // Mặc định chọn T4 (Index 2) giống trong thiết kế
 
-  // Dữ liệu giả lập phân loại theo ngày (0 đến 6)
+  int _selectedDayIndex = 2;
+
+
   late Map<int, List<TaskModel>> _tasksByDay;
 
   @override
   void initState() {
     super.initState();
-    // Tạo mock data cho một vài ngày để test
-    _tasksByDay = {
-      0: [ // Thứ 2
-        TaskModel(id: 'stat_t2_1', title: 'Họp team đầu tuần', description: 'Lên kế hoạch Sprint mới.', category: 'Development', startTime: const TimeOfDay(hour: 9, minute: 0), endTime: const TimeOfDay(hour: 10, minute: 0), date: DateTime.now()),
-      ],
-      1: [ // Thứ 3
-        TaskModel(id: 'stat_t3_1', title: 'Fix bug UI', description: 'Sửa lỗi hiển thị trên iOS.', category: 'Development', startTime: const TimeOfDay(hour: 14, minute: 0), endTime: const TimeOfDay(hour: 16, minute: 0), date: DateTime.now()),
-        TaskModel(id: 'stat_t3_2', title: 'Đọc tài liệu Flutter', description: 'Nghiên cứu State Management.', category: 'Research', startTime: const TimeOfDay(hour: 20, minute: 0), endTime: const TimeOfDay(hour: 21, minute: 0), date: DateTime.now()),
-      ],
-      2: [ // Thứ 4 (Mặc định)
-        TaskModel(id: 'stat_t4_1', title: 'Thiết kế UI màn hình Dashboard', description: 'Hoàn thành bản thiết kế Figma.', category: 'Design', startTime: const TimeOfDay(hour: 10, minute: 30), endTime: const TimeOfDay(hour: 11, minute: 30), date: DateTime.now()),
-        TaskModel(id: 'stat_t4_2', title: 'Học tiếng Anh - 30 phút', description: 'Ôn tập 50 từ vựng chuyên ngành IT qua Anki.', category: 'Research', startTime: const TimeOfDay(hour: 8, minute: 15), endTime: const TimeOfDay(hour: 8, minute: 45), date: DateTime.now()),
-        TaskModel(id: 'stat_t4_3', title: 'Gửi báo cáo tuần cho sếp', description: 'Tổng hợp tiến độ dự án.', category: 'Development', startTime: const TimeOfDay(hour: 7, minute: 45), endTime: const TimeOfDay(hour: 8, minute: 0), date: DateTime.now()),
-      ],
-    };
+    // automatically call api when app started
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        context.read<StatisticsViewmodel>().getStatisticsData(userId);
+      }
+    });
   }
 
-  // Hàm hỗ trợ chọn Icon dựa theo Category để UI sinh động hơn
+
   Icon _getIconForCategory(String category) {
     switch (category) {
       case 'Design': return const Icon(Icons.checklist_rtl_rounded, color: AppColors.primaryBlue);
@@ -49,86 +44,104 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Lấy danh sách task của ngày đang chọn (nếu không có thì trả về list rỗng)
+
     List<TaskModel> currentTasks = _tasksByDay[_selectedDayIndex] ?? [];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6F9),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Consumer<StatisticsViewmodel>(
+        builder: (context,viewModel,child){
+          if(viewModel.isLoading){
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if(viewModel.errorMessage != null){
+            return Center(child: Text("Lỗi: ${viewModel.errorMessage}"));
+          }
+
+          final data = viewModel.statisticsData;
+          if(data == null) return const Center(child: Text("Không có dữ liệu"));
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  // Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      CircleAvatar(radius: 22, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a042581f4e29026704d')),
-                      SizedBox(width: 15),
-                      Text('Thống kê', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+                      const Row(
+                        children: [
+                          CircleAvatar(radius: 22, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a042581f4e29026704d')),
+                          SizedBox(width: 15),
+                          Text('Thống kê', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: const Icon(Icons.notifications_none_rounded, color: AppColors.primaryBlue),
+                      )
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    child: const Icon(Icons.notifications_none_rounded, color: AppColors.primaryBlue),
-                  )
+                  const SizedBox(height: 30),
+
+                  DailyProgressCard(
+                    total: data.today.total,
+                    completed: data.today.completed,
+                    percentage: data.todayCompletedPercentage,
+                  ),
+                  const SizedBox(height: 25),
+
+                  // Truyền State vào WeeklyChartCard
+                  WeeklyChartCard(
+                    selectedIndex: _selectedDayIndex,
+                    onDaySelected: (index) {
+                      setState(() {
+                        _selectedDayIndex = index; // Cập nhật lại UI khi chọn ngày khác
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 30),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Hoàn thành gần đây', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+                      Text('Xem tất cả', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primaryBlue)),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+
+                  // Render Task with animation
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: currentTasks.isEmpty
+                        ? Container(
+                      key: ValueKey('empty_$_selectedDayIndex'),
+                      padding: const EdgeInsets.all(30),
+                      alignment: Alignment.center,
+                      child: Text('Không có công việc nào hoàn thành vào ngày này.',
+                          style: TextStyle(color: Colors.grey.shade500), textAlign: TextAlign.center),
+                    )
+                        : Column(
+                      key: ValueKey('list_$_selectedDayIndex'),
+                      children: currentTasks.map((task) {
+                        return CompletedTaskCard(
+                          task: task,
+                          icon: _getIconForCategory(task.category),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 80),
                 ],
               ),
-              const SizedBox(height: 30),
-
-              const DailyProgressCard(),
-              const SizedBox(height: 25),
-
-              // Truyền State vào WeeklyChartCard
-              WeeklyChartCard(
-                selectedIndex: _selectedDayIndex,
-                onDaySelected: (index) {
-                  setState(() {
-                    _selectedDayIndex = index; // Cập nhật lại UI khi chọn ngày khác
-                  });
-                },
-              ),
-              const SizedBox(height: 30),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Hoàn thành gần đây', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
-                  Text('Xem tất cả', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primaryBlue)),
-                ],
-              ),
-              const SizedBox(height: 15),
-
-              // Render danh sách Task kèm hiệu ứng đổi mới
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: currentTasks.isEmpty
-                    ? Container(
-                  key: ValueKey('empty_$_selectedDayIndex'),
-                  padding: const EdgeInsets.all(30),
-                  alignment: Alignment.center,
-                  child: Text('Không có công việc nào hoàn thành vào ngày này.',
-                      style: TextStyle(color: Colors.grey.shade500), textAlign: TextAlign.center),
-                )
-                    : Column(
-                  key: ValueKey('list_$_selectedDayIndex'),
-                  children: currentTasks.map((task) {
-                    return CompletedTaskCard(
-                      task: task,
-                      icon: _getIconForCategory(task.category),
-                    );
-                  }).toList(),
-                ),
-              ),
-
-              const SizedBox(height: 80),
-            ],
-          ),
-        ),
+            ),
+          );
+        }
       ),
     );
   }

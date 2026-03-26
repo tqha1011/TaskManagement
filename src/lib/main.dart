@@ -27,7 +27,9 @@ Future<void> main() async {
   SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
 
-  runApp(const TaskApp());
+  runApp(
+      const TaskApp()
+  );
 }
 
 class TaskApp extends StatelessWidget {
