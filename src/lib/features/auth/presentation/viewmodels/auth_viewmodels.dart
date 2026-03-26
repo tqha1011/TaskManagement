@@ -95,7 +95,36 @@ class LoginViewModel extends BaseViewModel {
       setLoading(false);
     }
   }
+  // 1.1 LOGIN WITH GOOGLE
+  Future<String?> loginWithGoogle() async {
+    setLoading(true);
+    try {
+      final success = await _authHelper.loginWithGoogle();
+      if (success) return null; // Thành công (thường Supabase sẽ tự văng ra web browser)
+      return 'Lỗi khi mở cổng đăng nhập Google!';
+    } catch (e) {
+      return handleError(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+// 1.2 LOGIN WITH FACEBOOK
+
+  Future<String?> loginWithFacebook() async {
+    setLoading(true);
+    try {
+      final success = await _authHelper.loginWithFacebook();
+      if (success) return null;
+      return 'Lỗi khi mở cổng đăng nhập Facebook!';
+    } catch (e) {
+      return handleError(e);
+    } finally {
+      setLoading(false);
+    }
+  }
 }
+
 
 // ==========================================
 // 2. REGISTER VIEWMODEL
