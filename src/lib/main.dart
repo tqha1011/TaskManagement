@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/theme/app_colors.dart';
 import 'features/auth/presentation/view/login_view.dart';
+import 'features/auth/presentation/view/auth_gate.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,7 +44,7 @@ class TaskApp extends StatelessWidget {
           labelLarge: TextStyle(fontSize: 16, color: AppColors.primaryBlue),
         ),
       ),
-      home: const LoginView(),
+      home: const AuthGate(),
       debugShowCheckedModeBanner: false,
     );
   }
