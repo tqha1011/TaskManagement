@@ -25,6 +25,18 @@ class _LoginViewState extends State<LoginView> {
         submitText: 'Đăng nhập',
         isLoading: _vm.isLoading,
         showSocial: true,
+        onGoogleTap: () async {
+          final error = await _vm.loginWithGoogle();
+          if (error != null && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error), backgroundColor: AppColors.error));
+          }
+        },
+        onFacebookTap: () async {
+          final error = await _vm.loginWithFacebook();
+          if (error != null && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error), backgroundColor: AppColors.error));
+          }
+        },
         onSubmit: () async {
           FocusScope.of(context).unfocus();
           final errorMessage = await _vm.login();
