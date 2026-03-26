@@ -40,6 +40,30 @@ class AuthHelper {
     }
   }
 
+  Future<bool> loginWithGoogle() async {
+    try {
+      return await supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'taskapp://login-callback', // back to app
+      );
+    } on AuthException catch (e) {
+      print('Lỗi đăng nhập Google: ${e.message}');
+      return false;
+    }
+  }
+
+  Future<bool> loginWithFacebook() async {
+    try {
+      return await supabase.auth.signInWithOAuth(
+        OAuthProvider.facebook,
+        redirectTo: 'taskapp://login-callback', // back to app
+      );
+    } on AuthException catch (e) {
+      print('Lỗi đăng nhập Facebook: ${e.message}');
+      return false;
+    }
+  }
+
   Future<UserModel?> register(String email, String password, String username) async {
     try {
       final timezoneObj = await FlutterTimezone.getLocalTimezone();
@@ -105,5 +129,15 @@ class AuthHelper {
       print('Lỗi Đổi Pass: ${e.message}');
       rethrow;
     }
+  }
+}
+
+// SignOut session
+Future<void> signOut() async {
+  try {
+    await supabase.auth.signOut();
+  } catch (e) {
+    print('Lỗi đăng xuất: $e');
+    rethrow;
   }
 }
