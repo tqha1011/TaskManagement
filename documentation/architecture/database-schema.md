@@ -2,6 +2,9 @@
 
 The database is built on **PostgreSQL** (hosted via Supabase) and is strictly secured using **Row Level Security (RLS)**.
 
+### Database ERD
+
+<img width="1247" height="620" alt="image" src="https://github.com/user-attachments/assets/30b4850d-744e-4c80-bcc8-d225be763d16" />
 
 
 ### Core Database Dictionary
