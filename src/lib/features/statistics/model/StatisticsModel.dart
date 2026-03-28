@@ -42,6 +42,7 @@ class UserStatisticsModel {
   final int thisWeekTotal;
   final double growthPercentage;
   final List<RecentTaskModel> recentTasks;
+  final List<int> dailyCounts; // <--- THÊM DÒNG NÀY (Hứng mảng 7 ngày)
 
   UserStatisticsModel({
     required this.today,
@@ -49,20 +50,19 @@ class UserStatisticsModel {
     required this.thisWeekTotal,
     required this.growthPercentage,
     required this.recentTasks,
+    required this.dailyCounts, // <--- Cập nhật constructor
   });
 
-  // parse Json to UserStatisticsModel
   factory UserStatisticsModel.fromJson(Map<String, dynamic> json) {
     return UserStatisticsModel(
       today: TodayStatsModel.fromJson(json['today'] ?? {}),
       todayCompletedPercentage: (json['today_completed_percentage'] ?? 0).toDouble(),
       thisWeekTotal: json['this_week_total'] ?? 0,
       growthPercentage: (json['growth_percentage'] ?? 0).toDouble(),
-
       recentTasks: (json['recent_tasks'] as List<dynamic>?)
           ?.map((item) => RecentTaskModel.fromJson(item as Map<String, dynamic>))
-          .toList() ??
-          [],
+          .toList() ?? [],
+      dailyCounts: List<int>.from(json['daily_counts'] ?? [0, 0, 0, 0, 0, 0, 0]),
     );
   }
 }
