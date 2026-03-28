@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:task_management_app/features/statistics/model/StatisticsModel.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../tasks/model/task_model.dart';
 import '../../../tasks/view/screens/task_detail_screen.dart';
 
-// --- 1. Widget Tiến độ hôm nay ---
 class DailyProgressCard extends StatelessWidget {
-  const DailyProgressCard({super.key});
+  final int total;
+  final int completed;
+  final double percentage;
+  const DailyProgressCard({super.key, required this.total, required this.completed, required this.percentage});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +30,7 @@ class DailyProgressCard extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 CircularProgressIndicator(
-                  value: 0.8,
+                  value: (total > 0) ? percentage / 100 : 0,
                   strokeWidth: 12,
                   backgroundColor: AppColors.backgroundBlue,
                   valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
@@ -35,7 +38,7 @@ class DailyProgressCard extends StatelessWidget {
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('8/10', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+                    Text('$completed/$total', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
                     Text('Công việc', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
                   ],
                 ),
@@ -45,12 +48,12 @@ class DailyProgressCard extends StatelessWidget {
           const SizedBox(height: 25),
           RichText(
             textAlign: TextAlign.center,
-            text: const TextSpan(
-              style: TextStyle(fontSize: 16, color: Colors.black87),
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16, color: Colors.black87),
               children: [
-                TextSpan(text: 'Tuyệt vời! Bạn đã hoàn thành '),
-                TextSpan(text: '80%', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
-                TextSpan(text: '\nmục tiêu.'),
+                const TextSpan(text: 'Tuyệt vời! Bạn đã hoàn thành '),
+                TextSpan(text: '${percentage.toInt()}%', style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                const TextSpan(text: '\nmục tiêu.'),
               ],
             ),
           ),
@@ -60,19 +63,31 @@ class DailyProgressCard extends StatelessWidget {
   }
 }
 
-// --- 2. Widget Biểu đồ tuần ---
+
 class WeeklyChartCard extends StatelessWidget {
   final int selectedIndex;
+  final int thisWeekTotal;
+  final double growthPercentage;
+  final List<double> weeklyHeights;
   final ValueChanged<int> onDaySelected;
 
   const WeeklyChartCard({
     super.key,
     required this.selectedIndex,
     required this.onDaySelected,
+    required this.thisWeekTotal,
+    required this.growthPercentage,
+    required this.weeklyHeights,
   });
 
   @override
   Widget build(BuildContext context) {
+
+    final bool isPositive = growthPercentage >= 0;
+    final Color trendColor = isPositive ? const Color(0xFF2ECC71) : Colors.redAccent;
+    final Color trendBgColor = isPositive ? const Color(0xFFE9F7EF) : const Color(0xFFFFEBEE);
+    final String trendText = "${isPositive ? '+' : ''}$growthPercentage% vs tuần trước";
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(25),
@@ -92,13 +107,13 @@ class WeeklyChartCard extends StatelessWidget {
                 children: [
                   const Text('Tuần này', style: TextStyle(color: AppColors.grayText, fontSize: 14, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 5),
-                  const Text('42 Tasks', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+                  Text('$thisWeekTotal Tasks', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
                 ],
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: const Color(0xFFE9F7EF), borderRadius: BorderRadius.circular(15)),
-                child: const Text('+12% vs tuần trước', style: TextStyle(color: Color(0xFF2ECC71), fontSize: 12, fontWeight: FontWeight.bold)),
+                decoration: BoxDecoration(color: trendBgColor, borderRadius: BorderRadius.circular(15)),
+                child: Text(trendText, style: TextStyle(color: trendColor, fontSize: 12, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -107,13 +122,14 @@ class WeeklyChartCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _buildBar('T2', 0.4, 0),
-              _buildBar('T3', 0.6, 1),
-              _buildBar('T4', 1.0, 2),
-              _buildBar('T5', 0.5, 3),
-              _buildBar('T6', 0.4, 4),
-              _buildBar('T7', 0.3, 5),
-              _buildBar('CN', 0.2, 6),
+
+              _buildBar('T2', weeklyHeights.length > 0 ? weeklyHeights[0] : 0.1, 0),
+              _buildBar('T3', weeklyHeights.length > 1 ? weeklyHeights[1] : 0.1, 1),
+              _buildBar('T4', weeklyHeights.length > 2 ? weeklyHeights[2] : 0.1, 2),
+              _buildBar('T5', weeklyHeights.length > 3 ? weeklyHeights[3] : 0.1, 3),
+              _buildBar('T6', weeklyHeights.length > 4 ? weeklyHeights[4] : 0.1, 4),
+              _buildBar('T7', weeklyHeights.length > 5 ? weeklyHeights[5] : 0.1, 5),
+              _buildBar('CN', weeklyHeights.length > 6 ? weeklyHeights[6] : 0.1, 6),
             ],
           ),
         ],
@@ -121,19 +137,17 @@ class WeeklyChartCard extends StatelessWidget {
     );
   }
 
-  // Hàm build từng cột, truyền thêm tham số index để nhận diện
   Widget _buildBar(String label, double heightRatio, int index) {
     bool isActive = index == selectedIndex;
-
     return GestureDetector(
-      onTap: () => onDaySelected(index), // Bắn sự kiện ra ngoài khi bị bấm
-      behavior: HitTestBehavior.opaque, // Giúp vùng chạm rộng hơn, dễ bấm hơn
+      onTap: () => onDaySelected(index),
+      behavior: HitTestBehavior.opaque,
       child: Column(
         children: [
-          AnimatedContainer( // Thêm hiệu ứng mượt mà khi cột thay đổi độ cao/màu sắc
+          AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             width: 35,
-            height: 100 * heightRatio,
+            height: 100 * (heightRatio > 0 ? heightRatio : 0.1), // Tối thiểu 10% để cột không bị "biến mất"
             decoration: BoxDecoration(
               color: isActive ? AppColors.primaryBlue : const Color(0xFFF5F7FA),
               borderRadius: BorderRadius.circular(8),
@@ -147,19 +161,20 @@ class WeeklyChartCard extends StatelessWidget {
   }
 }
 
-// --- 3. Widget Thẻ Task Đã Hoàn Thành (Có Hero Animation) ---
+//
 class CompletedTaskCard extends StatelessWidget {
-  final TaskModel task;
+  final RecentTaskModel task;
   final Widget icon;
 
   const CompletedTaskCard({super.key, required this.task, required this.icon});
 
   @override
   Widget build(BuildContext context) {
-    // Format thời gian hoàn thành (Lấy từ startTime của task)
-    final period = task.startTime.period == DayPeriod.am ? 'AM' : 'PM';
-    final hour = task.startTime.hourOfPeriod == 0 ? 12 : task.startTime.hourOfPeriod;
-    final minute = task.startTime.minute.toString().padLeft(2, '0');
+
+    final time = task.updatedAt;
+    final hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.hour >= 12 ? 'PM' : 'AM';
     final timeString = 'Hoàn thành lúc $hour:$minute $period';
 
     return Hero(
@@ -169,10 +184,19 @@ class CompletedTaskCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(25),
           onTap: () {
-            // Chuyển hướng sang màn hình chi tiết đã làm trước đó
+            final mappedTask = TaskModel(
+              id: task.id.toString(), // Convert int to String if your TaskModel uses String IDs
+              title: task.title,
+              description: 'Completed task details from Statistics.', // Default filler
+              category: 'Development', // Default filler
+              startTime: TimeOfDay(hour: task.updatedAt.hour, minute: task.updatedAt.minute),
+              endTime: TimeOfDay(hour: task.updatedAt.hour + 1, minute: task.updatedAt.minute), // Add 1 hour just for display
+              date: task.updatedAt,
+            );
+
             Navigator.push(context, PageRouteBuilder(
               transitionDuration: const Duration(milliseconds: 500),
-              pageBuilder: (_, __, ___) => TaskDetailScreen(task: task),
+              pageBuilder: (_, __, ___) => TaskDetailScreen(task: mappedTask),
               transitionsBuilder: (_, animation, __, child) {
                 return FadeTransition(opacity: animation, child: child);
               },

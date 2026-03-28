@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:task_management_app/features/main/view/screens/main_screen.dart';
 import 'core/theme/app_colors.dart';
 import 'features/auth/presentation/view/login_view.dart';
 import 'features/auth/presentation/view/auth_gate.dart';
@@ -9,12 +10,22 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await dotenv.load(fileName: ".env");
 
+  String supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
+  String supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+
+  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+    debugPrint('Error: SUPABASE_URL or SUPABASE_ANON_KEY is missing');
+  }
+
+  // 3. Khởi tạo kết nối Supabase
   await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
   );
+
   SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
   runApp(const TaskApp());

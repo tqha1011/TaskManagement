@@ -7,6 +7,7 @@ import '../viewmodels/auth_viewmodels.dart';
 
 class NewPasswordView extends StatefulWidget {
   const NewPasswordView({super.key});
+
   @override
   State<NewPasswordView> createState() => _NewPasswordViewState();
 }
