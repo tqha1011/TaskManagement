@@ -14,6 +14,8 @@ class AuthLayoutTemplate extends StatelessWidget {
   final bool useCard;
   final Widget? customHeaderIcon;
   final Widget? footerContent;
+  final VoidCallback? onGoogleTap; // Login with Google
+  final VoidCallback? onFacebookTap; // Login with Facebook
 
   const AuthLayoutTemplate({
     super.key,
@@ -27,6 +29,8 @@ class AuthLayoutTemplate extends StatelessWidget {
     this.useCard = true,
     this.customHeaderIcon,
     this.footerContent,
+    this.onGoogleTap,
+    this.onFacebookTap,
   });
 
   @override
@@ -200,7 +204,7 @@ class AuthLayoutTemplate extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: onGoogleTap,
                   icon: const Icon(
                     Icons.g_mobiledata,
                     color: Colors.red,
@@ -212,7 +216,7 @@ class AuthLayoutTemplate extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: onFacebookTap,
                   icon: const Icon(Icons.facebook, color: Color(0xFF1877F2)),
                   label: const Text('Facebook'),
                 ),

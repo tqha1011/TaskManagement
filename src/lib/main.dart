@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:task_management_app/features/main/view/screens/main_screen.dart';
 import 'core/theme/app_colors.dart';
+import 'features/auth/presentation/view/login_view.dart';
+import 'features/auth/presentation/view/auth_gate.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'features/auth/login_view.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,11 +28,13 @@ Future<void> main() async {
 
   SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
-
-  runApp(
-      const TaskApp()
-  );
+  runApp(const TaskApp());
 }
+
+// 4. Create a global variable for ViewModel to call API quickly
+final supabase = Supabase.instance.client;
+
+
 
 class TaskApp extends StatelessWidget {
   const TaskApp({super.key});
@@ -51,7 +55,7 @@ class TaskApp extends StatelessWidget {
           labelLarge: TextStyle(fontSize: 16, color: AppColors.primaryBlue),
         ),
       ),
-      home: const MainScreen(),
+      home: const AuthGate(),
       debugShowCheckedModeBanner: false,
     );
   }
