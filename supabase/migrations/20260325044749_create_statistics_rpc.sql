@@ -10,56 +10,78 @@ DECLARE
     v_last_week_total INT;
     v_growth FLOAT := 0;
     v_recent_tasks JSON;
+    v_daily_counts INT[]; -- Khai báo mảng 7 ngày
     v_result JSON;
 
 BEGIN
-    -- Calculate the tasks completed today / the total task tody
-    SELECT COUNT(*), COALESCE(SUM(CASE when status = 1 then 1 else 0 end),0)
-    into v_today_total,v_today_completed
-    from task
-    where profile_id = p_profile_id and date(created_at) = CURRENT_DATE;
+    -- 1. Tính toán tiến độ hôm nay (Tất cả task và Task đã xong status = 1)
+    SELECT COUNT(*), COALESCE(SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END), 0)
+    INTO v_today_total, v_today_completed
+    FROM task
+    WHERE profile_id = p_profile_id AND date(created_at) = CURRENT_DATE;
 
-    if v_today_total > 0 then
-        v_today_completed_percent := ((v_today_completed)::FLOAT/(v_today_total)) * 100;
-    else
+    IF v_today_total > 0 THEN
+        v_today_completed_percent := ((v_today_completed)::FLOAT / (v_today_total)) * 100;
+    ELSE
         v_today_completed_percent := 0;
-    end if;
+    END IF;
 
-    -- Calculate sum of tasks done from monday to present
-    SELECT COUNT(*) into v_this_week_total
-    from task
-    where profile_id = p_profile_id
-    and created_at >= date_trunc('week',CURRENT_DATE)
-    and created_at < date_trunc('week',CURRENT_DATE) + INTERVAL '1 week';
+    -- 2. Tính tổng task HOÀN THÀNH (status = 1) tuần này (từ Thứ 2 đến nay)
+    SELECT COUNT(*) INTO v_this_week_total
+    FROM task
+    WHERE profile_id = p_profile_id
+    AND status = 1
+    AND updated_at >= date_trunc('week', CURRENT_DATE)
+    AND updated_at < date_trunc('week', CURRENT_DATE) + INTERVAL '1 week';
 
-    -- Calculate tasks done last week
+    -- 3. Tính tổng task HOÀN THÀNH tuần trước để tính tăng trưởng
     SELECT COUNT(*) INTO v_last_week_total
     FROM task
     WHERE profile_id = p_profile_id
-    AND created_at >= date_trunc('week', CURRENT_DATE) - INTERVAL '1 week'
-    AND created_at < date_trunc('week', CURRENT_DATE);
+    AND status = 1
+    AND updated_at >= date_trunc('week', CURRENT_DATE) - INTERVAL '1 week'
+    AND updated_at < date_trunc('week', CURRENT_DATE);
 
-    if v_last_week_total > 0 then
+    IF v_last_week_total > 0 THEN
         v_growth := ((v_this_week_total - v_last_week_total)::FLOAT / v_last_week_total) * 100;
-    elseif v_this_week_total > 0 then
-        v_growth := 100;
-    end if;
+    ELSIF v_this_week_total > 0 THEN
+        v_growth := 100; -- Nếu tuần trước 0 mà tuần này có làm là tăng 100%
+    END IF;
 
-    SELECT json_agg(row_to_json(t)) INTO v_recent_tasks
+    -- 4. LOGIC MỚI: Lấy mảng 7 số cho biểu đồ (Thứ 2 -> Chủ Nhật)
+    SELECT ARRAY_AGG(cnt) INTO v_daily_counts
     FROM (
-        SELECT tk.id,tk.title,tk.updated_at, ct.avatar
-        from task tk
-        left join category ct on tk.category_id = ct.id
-        where tk.profile_id = p_profile_id and tk.status = 1
-        order by tk.updated_at desc
-        limit 4
+        SELECT COUNT(tk.id) as cnt
+        FROM generate_series(
+            date_trunc('week', CURRENT_DATE),
+            date_trunc('week', CURRENT_DATE) + INTERVAL '6 days',
+            INTERVAL '1 day'
+        ) AS days(day)
+        LEFT JOIN task tk ON date(tk.updated_at) = date(days.day)
+            AND tk.profile_id = p_profile_id
+            AND tk.status = 1
+        GROUP BY days.day
+        ORDER BY days.day
     ) t;
 
+    -- 5. Lấy 4 task hoàn thành gần nhất
+    SELECT json_agg(row_to_json(t)) INTO v_recent_tasks
+    FROM (
+        SELECT tk.id, tk.title, tk.updated_at, ct.avatar
+        FROM task tk
+        LEFT JOIN category ct ON tk.category_id = ct.id
+        WHERE tk.profile_id = p_profile_id AND tk.status = 1
+        ORDER BY tk.updated_at DESC
+        LIMIT 4
+    ) t;
+
+    -- 6. Đóng gói kết quả trả về
     v_result := json_build_object(
         'today', json_build_object('total', v_today_total, 'completed', v_today_completed),
-        'today_completed_percentage', v_today_completed_percent,
+        'today_completed_percentage', ROUND(v_today_completed_percent::NUMERIC, 2),
         'this_week_total', v_this_week_total,
-        'growth_percentage', ROUND(v_growth::NUMERIC,2),
+        'growth_percentage', ROUND(v_growth::NUMERIC, 2),
+        'daily_counts', v_daily_counts, -- Đã có dữ liệu real 7 ngày!
         'recent_tasks', COALESCE(v_recent_tasks, '[]'::json)
     );
 
