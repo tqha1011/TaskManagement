@@ -21,8 +21,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      //final userId = Supabase.instance.client.auth.currentUser?.id;
-      final userId = 'cba03997-e792-4f24-8755-b0d44a289b98';
+      final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId != null) {
         context.read<StatisticsViewmodel>().getStatisticsData(userId);
       }
