@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
 import 'package:task_management_app/features/tasks/view/screens/home_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../statistics/view/screens/statistics_screen.dart';
-// import '../../../tasks/view/screens/home_screen.dart'; // Màn hình Home bạn đã làm
+// import '../../../tasks/view/screens/home_screen.dart'; 
+import 'package:provider/provider.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -12,24 +14,26 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0; // Mặc định mở tab công việc
+  int _currentIndex = 0;
 
-  // Danh sách các màn hình tương ứng với các tab
   final List<Widget> _screens = [
-    const Center(child: const HomeScreen()),
+    const Center(child: HomeScreen()),
     const Center(child: Text('Màn hình Lịch')),
     const Center(child: Text('Màn hình Tập trung')),
-    const StatisticsScreen(), // Màn hình Thống kê vừa tạo
+    ChangeNotifierProvider(
+        create: (_) => StatisticsViewmodel(),
+        child: const StatisticsScreen(),
+    ),
     const Center(child: Text('Màn hình Cài đặt')),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true, // Cho phép body chui xuống dưới bottom bar (để làm bar nổi/trong suốt nếu muốn)
+      extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens, // IndexedStack giúp giữ state của các tab không bị reset khi chuyển qua lại
+        children: _screens,
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
@@ -54,7 +58,6 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  // Hàm tạo từng item trên bottom bar với hiệu ứng AnimatedContainer
   Widget _buildNavItem(IconData icon, String label, int index) {
     bool isSelected = _currentIndex == index;
 
@@ -65,7 +68,7 @@ class _MainScreenState extends State<MainScreen> {
         curve: Curves.easeInOut,
         padding: EdgeInsets.symmetric(horizontal: isSelected ? 15 : 10, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE8F0FE) : Colors.transparent, // Nền xanh nhạt khi được chọn
+          color: isSelected ? const Color(0xFFE8F0FE) : Colors.transparent,
           borderRadius: BorderRadius.circular(15),
         ),
         child: Column(

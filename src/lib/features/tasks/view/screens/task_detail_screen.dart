@@ -24,7 +24,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize initial data from the passed task
+    // Initialize state variables with data from the passed task object
     _titleController = TextEditingController(text: widget.task.title);
     _descController = TextEditingController(text: widget.task.description);
     _startTime = widget.task.startTime;
@@ -34,28 +34,36 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   @override
   void dispose() {
+    // Dispose controllers to prevent memory leaks
     _titleController.dispose();
     _descController.dispose();
     super.dispose();
   }
 
   void _saveChanges() {
-    // Cập nhật lại model cục bộ (Sau này chỗ này sẽ gọi TaskViewModel -> TaskService -> gọi API ASP.NET Core của bạn)
+    // Update the local model
+    // (Note: Later, this will call TaskViewModel -> TaskService -> your ASP.NET Core API to update the database)
     widget.task.title = _titleController.text;
     widget.task.description = _descController.text;
     widget.task.startTime = _startTime;
     widget.task.endTime = _endTime;
     widget.task.category = _currentCategory;
 
+    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Task updated successfully!'), backgroundColor: Colors.green),
     );
-    Navigator.pop(context); // Trở về màn hình trước
+
+    // Return to the previous screen
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Format date for display
     String formattedDate = DateFormat('EEEE, d MMMM').format(widget.task.date);
+
+    // Mock categories (Fetch from database later)
     List<String> categories = ['Development', 'Research', 'Design', 'Backend'];
 
     return Scaffold(
@@ -72,8 +80,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       ),
       body: SafeArea(
         child: Hero(
-          tag: 'task_card_${widget.task.id}', // Tag phải khớp với tag ở màn hình Home
-          child: Material( // Cần Material bọc trong Hero để render text không bị lỗi gạch chân vàng
+          tag: 'task_card_${widget.task.id}', // Must match the Hero tag in the Home/Statistics screen
+          child: Material( // Required inside Hero to prevent yellow underline text rendering issues
             type: MaterialType.transparency,
             child: Container(
               margin: const EdgeInsets.all(20),
@@ -89,13 +97,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Tái sử dụng CustomInputField
+                    // Input for Task Name
                     CustomInputField(label: 'Task Name', hint: '', controller: _titleController),
                     const SizedBox(height: 20),
 
                     Text('Category Tag', style: Theme.of(context).textTheme.labelLarge),
                     const SizedBox(height: 10),
-                    // Tái sử dụng cấu trúc Category
+
+                    // Horizontal list of Category chips
                     SizedBox(
                       height: 40,
                       child: ListView.builder(
@@ -125,11 +134,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                     const SizedBox(height: 25),
 
+                    // Display Task Date
                     Text('Date', style: Theme.of(context).textTheme.labelLarge),
                     const SizedBox(height: 5),
                     Text(formattedDate, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
                     const SizedBox(height: 25),
 
+                    // Time Pickers for Start and End time
                     Row(
                       children: [
                         Expanded(
@@ -157,10 +168,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                     const SizedBox(height: 25),
 
+                    // Input for Description
                     CustomInputField(label: 'Description', hint: '', controller: _descController, maxLines: 3),
                     const SizedBox(height: 40),
 
-                    // Nút Save
+                    // Save Button
                     Center(
                       child: ElevatedButton(
                         onPressed: _saveChanges,
