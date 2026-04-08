@@ -39,7 +39,16 @@ class FocusViewModel extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     List<String>? noteStrings = prefs.getStringList('saved_notes');
     if (noteStrings != null) {
-      notes = noteStrings.map((s) => NoteModel.fromJson(s)).toList();
+      List<NoteModel> loadedNotes = [];
+      for (String noteString in noteStrings) {
+        try {
+          loadedNotes.add(NoteModel.fromJson(noteString));
+        } catch (e) {
+          debugPrint("Error parsing note JSON: $e");
+          // Skip the malformed entry and continue
+        }
+      }
+      notes = loadedNotes;
       notifyListeners();
     }
   }
@@ -66,7 +75,7 @@ class FocusViewModel extends ChangeNotifier {
   }
 
   // Add note (optionally with an image) instantly to the UI and save to disk
-  void addNote() {
+  Future<void> addNote() async {
     final text = noteController.text.trim();
     if (text.isEmpty && selectedImagePath == null) return; // Skip if both text and image are empty
 
@@ -78,21 +87,21 @@ class FocusViewModel extends ChangeNotifier {
     ));
 
     _sortNotes();
-    saveNotesToDisk(); // Persist data
+    await saveNotesToDisk(); // Persist data
     noteController.clear();
     selectedImagePath = null; // Clear temporary image after saving
     notifyListeners();
   }
 
   // Remove note instantly and update storage
-  void removeNote(String id) {
+  Future<void> removeNote(String id) async {
     notes.removeWhere((note) => note.id == id);
-    saveNotesToDisk(); // Persist data
+    await saveNotesToDisk(); // Persist data
     notifyListeners();
   }
 
   // Pin/unpin note and update storage
-  void togglePin(String id) {
+  Future<void> togglePin(String id) async {
     final index = notes.indexWhere((n) => n.id == id);
     if (index != -1) {
       notes[index] = NoteModel(
@@ -102,7 +111,7 @@ class FocusViewModel extends ChangeNotifier {
           imagePath: notes[index].imagePath // Keep image when pinning
       );
       _sortNotes();
-      saveNotesToDisk(); // Persist data
+      await saveNotesToDisk(); // Persist data
       notifyListeners();
     }
   }
@@ -142,7 +151,7 @@ class FocusViewModel extends ChangeNotifier {
   }
 
   // Calculate progress for the circular indicator
-  double get progress => totalTime <= 0 ? 0.0 : (timeRemaining / totalTime).clamp(0.0, 1.0);
+  double get progress => timeRemaining / totalTime;
 
   // --- TIMER OPERATIONS ---
 
@@ -212,11 +221,6 @@ class FocusViewModel extends ChangeNotifier {
 
   // Update preferences from the settings dialog
   void updateSettings({required int newPomodoroMinutes, required int newBreakMinutes, required bool vibrate, required int ringtone}) {
-    if (newPomodoroMinutes <= 0 || newBreakMinutes <= 0) {
-      debugPrint('Lỗi: Thời gian cài đặt phải lớn hơn 0 phút. Đã tự động set về 1.');
-      newPomodoroMinutes = newPomodoroMinutes <= 0 ? 1 : newPomodoroMinutes;
-      newBreakMinutes = newBreakMinutes <= 0 ? 1 : newBreakMinutes;
-    }
     stopAlarm(); // Stop alarm if opening settings
     pomodoroTime = newPomodoroMinutes * 60;
     shortBreakTime = newBreakMinutes * 60;
