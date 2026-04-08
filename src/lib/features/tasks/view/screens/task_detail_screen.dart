@@ -24,7 +24,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize state variables with data from the passed task object
+    // Initialize state variables with services from the passed task object
     _titleController = TextEditingController(text: widget.task.title);
     _descController = TextEditingController(text: widget.task.description);
     _startTime = widget.task.startTime;

@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../data/auth_helper.dart';
+import '../../services/auth_helper.dart';
 
 // ==========================================
 // BASE VIEWMODEL (Handles Loading, Validation & Errors)

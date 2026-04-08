@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
 import 'package:task_management_app/features/tasks/view/screens/home_screen.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../note/view/focus_screen.dart';
+import '../../../note/viewmodel/focus_viewmodel.dart';
 import '../../../statistics/view/screens/statistics_screen.dart';
 // import '../../../tasks/view/screens/home_screen.dart'; 
 import 'package:provider/provider.dart';
@@ -19,7 +21,10 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const Center(child: HomeScreen()),
     const Center(child: Text('Màn hình Lịch')),
-    const Center(child: Text('Màn hình Tập trung')),
+    ChangeNotifierProvider(
+      create: (_) => FocusViewModel(),
+      child: const FocusScreen(),
+    ),
     ChangeNotifierProvider(
         create: (_) => StatisticsViewmodel(),
         child: const StatisticsScreen(),
