@@ -24,7 +24,7 @@ class FocusScreen extends StatelessWidget {
             return AlertDialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+              title: const Text('Cài đặt', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -34,7 +34,7 @@ class FocusScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Pomodoro', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text('${currentPomodoro.toInt()} min', style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                        Text('${currentPomodoro.toInt()} phút', style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     Slider(value: currentPomodoro, min: 5, max: 60, divisions: 55, activeColor: AppColors.primaryBlue, onChanged: (val) => setStateDialog(() => currentPomodoro = val)),
@@ -42,19 +42,19 @@ class FocusScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Short Break', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text('${currentBreak.toInt()} min', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                        const Text('Nghỉ ngắn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text('${currentBreak.toInt()} phút', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     Slider(value: currentBreak, min: 1, max: 30, divisions: 29, activeColor: Colors.orange, onChanged: (val) => setStateDialog(() => currentBreak = val)),
                     const Divider(height: 30),
                     SwitchListTile(
-                      title: const Text('Vibrate', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      title: const Text('Rung', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       value: currentVibrate, activeColor: AppColors.primaryBlue, contentPadding: EdgeInsets.zero,
                       onChanged: (val) => setStateDialog(() => currentVibrate = val),
                     ),
                     const SizedBox(height: 10),
-                    const Text('Sound', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    const Text('Âm thanh', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                     const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -64,9 +64,9 @@ class FocusScreen extends StatelessWidget {
                           isExpanded: true,
                           value: currentRingtone,
                           items: const [
-                            DropdownMenuItem(value: 1, child: Text('Alarm (Loud)')),
-                            DropdownMenuItem(value: 2, child: Text('Notification (Soft)')),
-                            DropdownMenuItem(value: 3, child: Text('Ringtone')),
+                            DropdownMenuItem(value: 1, child: Text('Chuông (Lớn)')),
+                            DropdownMenuItem(value: 2, child: Text('Thông báo (Nhỏ)')),
+                            DropdownMenuItem(value: 3, child: Text('Nhạc chuông')),
                           ],
                           onChanged: (val) {
                             if (val != null) setStateDialog(() => currentRingtone = val);
@@ -78,14 +78,14 @@ class FocusScreen extends StatelessWidget {
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(color: Colors.grey))),
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
                 ElevatedButton(
                   onPressed: () {
                     vm.updateSettings(newPomodoroMinutes: currentPomodoro.toInt(), newBreakMinutes: currentBreak.toInt(), vibrate: currentVibrate, ringtone: currentRingtone);
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  child: const Text('Save', style: TextStyle(color: Colors.white)),
+                  child: const Text('Lưu', style: TextStyle(color: Colors.white)),
                 ),
               ],
             );
@@ -112,7 +112,7 @@ class FocusScreen extends StatelessWidget {
                     children: [
                       CircleAvatar(radius: 22, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a042581f4e29026704d')),
                       SizedBox(width: 15),
-                      Text('Focus', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+                      Text('Tập trung', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
                     ],
                   ),
                   GestureDetector(
