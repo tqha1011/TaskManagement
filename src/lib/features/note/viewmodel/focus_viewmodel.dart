@@ -142,7 +142,7 @@ class FocusViewModel extends ChangeNotifier {
   }
 
   // Calculate progress for the circular indicator
-  double get progress => timeRemaining / totalTime;
+  double get progress => totalTime <= 0 ? 0.0 : (timeRemaining / totalTime).clamp(0.0, 1.0);
 
   // --- TIMER OPERATIONS ---
 
@@ -212,6 +212,11 @@ class FocusViewModel extends ChangeNotifier {
 
   // Update preferences from the settings dialog
   void updateSettings({required int newPomodoroMinutes, required int newBreakMinutes, required bool vibrate, required int ringtone}) {
+    if (newPomodoroMinutes <= 0 || newBreakMinutes <= 0) {
+      debugPrint('Lỗi: Thời gian cài đặt phải lớn hơn 0 phút. Đã tự động set về 1.');
+      newPomodoroMinutes = newPomodoroMinutes <= 0 ? 1 : newPomodoroMinutes;
+      newBreakMinutes = newBreakMinutes <= 0 ? 1 : newBreakMinutes;
+    }
     stopAlarm(); // Stop alarm if opening settings
     pomodoroTime = newPomodoroMinutes * 60;
     shortBreakTime = newBreakMinutes * 60;
