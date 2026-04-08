@@ -124,14 +124,19 @@ class TimerControlsWidget extends StatelessWidget {
           onTap: vm.resetTimer,
         ),
         const SizedBox(width: 30),
+
+        // MAIN BUTTON: CHANGES TO RED WHEN RINGING TO STOP ALARM
         _buildControlBtn(
-          icon: vm.isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
-          bgColor: AppColors.primaryBlue,
+          icon: vm.isRinging
+              ? Icons.notifications_off_rounded // Muted bell icon
+              : (vm.isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded),
+          bgColor: vm.isRinging ? Colors.redAccent : AppColors.primaryBlue,
           iconColor: Colors.white,
           size: 85,
           hasShadow: true,
-          onTap: vm.toggleTimer,
+          onTap: vm.toggleTimer, // Stops alarm if ringing, otherwise toggles timer
         ),
+
         const SizedBox(width: 30),
         _buildControlBtn(
           icon: Icons.skip_next_rounded,
@@ -159,7 +164,7 @@ class TimerControlsWidget extends StatelessWidget {
         color: bgColor,
         shape: BoxShape.circle,
         boxShadow: [
-          if (hasShadow) BoxShadow(color: AppColors.primaryBlue.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 10)),
+          if (hasShadow) BoxShadow(color: bgColor.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 10)),
           if (!hasShadow) BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5)),
         ],
       ),
@@ -222,7 +227,7 @@ class QuickNoteCard extends StatelessWidget {
                   style: const TextStyle(fontSize: 14, color: Color(0xFF2C3E50)),
                 ),
 
-                // SHOW IMAGE PREVIEW IF ANY
+                // SHOW IMAGE PREVIEW IF SELECTED
                 if (vm.selectedImagePath != null) ...[
                   const SizedBox(height: 10),
                   Stack(
@@ -263,7 +268,7 @@ class QuickNoteCard extends StatelessWidget {
               ),
               ElevatedButton(
                 onPressed: () {
-                  FocusScope.of(context).unfocus();
+                  FocusScope.of(context).unfocus(); // Dismiss keyboard
                   context.read<FocusViewModel>().addNote();
                 },
                 style: ElevatedButton.styleFrom(
@@ -297,7 +302,7 @@ class QuickNoteCard extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // CLICK TO REMOVE
+                      // CLICK TO REMOVE BUTTON
                       GestureDetector(
                         onTap: () => vm.removeNote(note.id),
                         child: Container(
@@ -315,7 +320,7 @@ class QuickNoteCard extends StatelessWidget {
                             if (note.content.isNotEmpty)
                               Text(note.content, style: const TextStyle(fontSize: 14, color: Color(0xFF2C3E50), height: 1.4)),
 
-                            // DISPLAY IMAGE IN NOTE
+                            // DISPLAY ATTACHED IMAGE IN NOTE
                             if (note.imagePath != null) ...[
                               const SizedBox(height: 8),
                               ClipRRect(

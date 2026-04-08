@@ -30,6 +30,7 @@ class FocusScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // --- Time Settings ---
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -48,6 +49,8 @@ class FocusScreen extends StatelessWidget {
                     ),
                     Slider(value: currentBreak, min: 1, max: 30, divisions: 29, activeColor: Colors.orange, onChanged: (val) => setStateDialog(() => currentBreak = val)),
                     const Divider(height: 30),
+
+                    // --- Hardware Settings ---
                     SwitchListTile(
                       title: const Text('Rung', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       value: currentVibrate, activeColor: AppColors.primaryBlue, contentPadding: EdgeInsets.zero,
@@ -81,6 +84,7 @@ class FocusScreen extends StatelessWidget {
                 TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
                 ElevatedButton(
                   onPressed: () {
+                    // Update settings in ViewModel
                     vm.updateSettings(newPomodoroMinutes: currentPomodoro.toInt(), newBreakMinutes: currentBreak.toInt(), vibrate: currentVibrate, ringtone: currentRingtone);
                     Navigator.pop(context);
                   },
@@ -105,6 +109,7 @@ class FocusScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // --- Header ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -115,6 +120,7 @@ class FocusScreen extends StatelessWidget {
                       Text('Tập trung', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
                     ],
                   ),
+                  // Settings Icon
                   GestureDetector(
                     onTap: () => _showSettingsDialog(context),
                     child: Container(padding: const EdgeInsets.all(10), decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle), child: const Icon(Icons.settings_outlined, color: AppColors.primaryBlue)),
@@ -122,6 +128,8 @@ class FocusScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 30),
+
+              // --- Main Content Widgets ---
               const FocusTabSelector(),
               const SizedBox(height: 30),
               const TimerDisplayWidget(),
@@ -129,7 +137,7 @@ class FocusScreen extends StatelessWidget {
               const TimerControlsWidget(),
               const SizedBox(height: 40),
               const QuickNoteCard(),
-              const SizedBox(height: 80),
+              const SizedBox(height: 80), // Padding for bottom nav bar
             ],
           ),
         ),
