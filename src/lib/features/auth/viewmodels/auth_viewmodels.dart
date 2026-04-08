@@ -18,13 +18,13 @@ class LoginViewModel extends BaseViewModel {
 
   void togglePass() { obscurePass = !obscurePass; notifyListeners(); }
 
-  Future<bool> login() async {
-    if (emailCtrl.text.isEmpty || passCtrl.text.isEmpty) return false;
+  Future<String?> login() async {
+    if (emailCtrl.text.isEmpty || passCtrl.text.isEmpty) return "Please enter all fields";
     setLoading(true);
     // Mock API call
-    await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+    await Future.delayed(const Duration(seconds: 1));
     setLoading(false);
-    return true; // Assume success
+    return null; // Success
   }
 }
 
@@ -37,38 +37,53 @@ class RegisterViewModel extends BaseViewModel {
 
   void togglePass() { obscurePass = !obscurePass; notifyListeners(); }
 
-  Future<bool> register() async {
-    if (passCtrl.text != confirmPassCtrl.text) return false;
+  Future<String?> register() async {
+    if (passCtrl.text != confirmPassCtrl.text) return "Passwords do not match";
     setLoading(true);
-    await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+    await Future.delayed(const Duration(seconds: 1));
     setLoading(false);
-    return true;
+    return null;
   }
 }
 
 class ForgotPassViewModel extends BaseViewModel {
   final emailCtrl = TextEditingController();
 
-  Future<bool> sendCode() async {
-    if (emailCtrl.text.isEmpty) return false;
+  Future<String?> sendCode() async {
+    if (emailCtrl.text.isEmpty) return "Please enter email";
     setLoading(true);
-    await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+    await Future.delayed(const Duration(seconds: 1));
     setLoading(false);
-    return true;
+    return null;
   }
 }
 
 class OtpViewModel extends BaseViewModel {
-  List<String> digits = List.filled(6, "");
+  // Updated to 8 digits to match UI
+  List<String> digits = List.filled(8, "");
 
-  void updateDigit(int idx, String val) { digits[idx] = val; notifyListeners(); }
+  void updateDigit(int idx, String val) { 
+    if (idx < digits.length) {
+      digits[idx] = val; 
+      notifyListeners(); 
+    }
+  }
 
-  Future<bool> verify() async {
-    if (digits.join().length < 6) return false;
+  Future<String?> verify() async {
+    String code = digits.join();
+    if (code.length < 8) return "Please enter 8-digit OTP";
     setLoading(true);
-    await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+    await Future.delayed(const Duration(seconds: 1));
     setLoading(false);
-    return true;
+    return null; // Success
+  }
+
+  // Added resend method to fix error in UI
+  Future<String?> resend() async {
+    setLoading(true);
+    await Future.delayed(const Duration(seconds: 1));
+    setLoading(false);
+    return null; // Success
   }
 }
 
@@ -79,11 +94,11 @@ class NewPassViewModel extends BaseViewModel {
 
   void togglePass() { obscurePass = !obscurePass; notifyListeners(); }
 
-  Future<bool> updatePassword() async {
-    if (passCtrl.text != confirmPassCtrl.text) return false;
+  Future<String?> updatePassword() async {
+    if (passCtrl.text != confirmPassCtrl.text) return "Passwords do not match";
     setLoading(true);
-    await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+    await Future.delayed(const Duration(seconds: 1));
     setLoading(false);
-    return true;
+    return null;
   }
 }

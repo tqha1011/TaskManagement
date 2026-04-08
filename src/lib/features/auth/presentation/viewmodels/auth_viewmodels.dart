@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../data/auth_helper.dart';
+import '../../services/auth_helper.dart';
 
 // ==========================================
 // BASE VIEWMODEL (Handles Loading, Validation & Errors)
@@ -123,6 +123,12 @@ class LoginViewModel extends BaseViewModel {
       setLoading(false);
     }
   }
+  @override
+  void dispose() {
+    emailCtrl.dispose();
+    passCtrl.dispose();
+    super.dispose();
+  }
 }
 
 
@@ -172,6 +178,14 @@ class RegisterViewModel extends BaseViewModel {
       setLoading(false);
     }
   }
+  @override
+  void dispose() {
+    usernameCtrl.dispose();
+    emailCtrl.dispose();
+    passCtrl.dispose();
+    confirmPassCtrl.dispose();
+    super.dispose();
+  }
 }
 
 // ==========================================
@@ -200,6 +214,11 @@ class ForgotPassViewModel extends BaseViewModel {
     } finally {
       setLoading(false);
     }
+  }
+  @override
+  void dispose() {
+    emailCtrl.dispose();
+    super.dispose();
   }
 }
 
@@ -286,5 +305,11 @@ class NewPassViewModel extends BaseViewModel {
     } finally {
       setLoading(false);
     }
+  }
+  @override
+  void dispose() {
+    passCtrl.dispose();
+    confirmPassCtrl.dispose();
+    super.dispose();
   }
 }

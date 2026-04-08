@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
-import '../viewmodels/auth_viewmodels.dart';
-import 'new_password_view.dart';
+import '../auth/viewmodels/auth_viewmodels.dart';
+import '../auth/presentation/view/new_password_view.dart';
 
 class OtpVerificationView extends StatefulWidget {
   const OtpVerificationView({super.key});
@@ -12,7 +12,7 @@ class OtpVerificationView extends StatefulWidget {
 }
 
 class _OtpVerificationViewState extends State<OtpVerificationView> {
-  // Bật chế độ 'chờ' cho ViewModel xử lý logic 8 số
+  // Set ViewModel to 'waiting' mode for 8-digit logic processing
   final _vm = OtpViewModel();
 
   @override
@@ -27,7 +27,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Xác thực OTP',
+          'OTP Verification',
           style: TextStyle(
             color: AppColors.primary,
             fontWeight: FontWeight.bold,
@@ -40,7 +40,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
         animation: _vm,
         builder: (context, child) {
           return SafeArea(
-            child: SingleChildScrollView( // Bọc lại đề phòng keyboard hiện lên làm tràn màn hình
+            child: SingleChildScrollView( // Wrap to prevent keyboard overflow
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40),
                 child: Column(
@@ -53,7 +53,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                     ),
                     const SizedBox(height: 32),
                     const Text(
-                      'Nhập mã 8 số', // Hiển thị đúng 8 số
+                      'Enter 8-digit code', // Show correct 8-digit count
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -62,28 +62,28 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Mã đã được gửi đến email của bạn.',
+                      'The code has been sent to your email.',
                       style: TextStyle(color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 40),
 
-                    // --- KHU VỰC 8 Ô OTP (ĐÃ SỬA LỖI) ---
-                    // Dùng LayoutBuilder để tự tính toán kích thước ô cho vừa mọi màn hình
+                    // --- 8 OTP BOXES AREA (FIXED) ---
+                    // Use LayoutBuilder to calculate box size to fit any screen
                     LayoutBuilder(
                         builder: (context, constraints) {
-                          // Tính toán độ rộng của ô dựa trên màn hình thật, trừ đi khoảng cách giữa các ô
+                          // Calculate box width based on actual screen, subtracting space between boxes
                           double availableWidth = constraints.maxWidth;
-                          double spaceBetweenBoxes = 6.0; // Khoảng cách giữa các ô
-                          double totalSpace = spaceBetweenBoxes * 7; // Có 7 khoảng trống giữa 8 ô
-                          double boxWidth = (availableWidth - totalSpace) / 8; // Độ rộng tối đa mỗi ô
+                          double spaceBetweenBoxes = 6.0; // Space between boxes
+                          double totalSpace = spaceBetweenBoxes * 7; // 7 gaps between 8 boxes
+                          double boxWidth = (availableWidth - totalSpace) / 8; // Max width per box
 
-                          // Khống chế độ rộng ô không quá to để nhìn cho art (max 35-40)
+                          // Constrain box width to look artistic (max 35-40)
                           double finalBoxWidth = boxWidth > 38 ? 38 : boxWidth;
 
                           return Row(
-                            mainAxisAlignment: MainAxisAlignment.center, // Căn giữa hàng 8 ô
+                            mainAxisAlignment: MainAxisAlignment.center, // Center the row of 8 boxes
                             children: List.generate(
-                              8, // SỬA: Đã tạo đúng 8 ô ở đây
+                              8, // FIX: Created 8 boxes here
                                   (index) => Padding(
                                 padding: EdgeInsets.symmetric(horizontal: spaceBetweenBoxes / 2),
                                 child: _buildOtpBox(index, context, finalBoxWidth),
@@ -94,18 +94,18 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                     ),
                     const SizedBox(height: 40),
 
-                    // Nút xác nhận xịn sò (Nhận lỗi cụ thể từ Server)
+                    // Confirmation button (Handles specific Server errors)
                     ElevatedButton(
                       onPressed: _vm.isLoading
                           ? null
                           : () async {
                         FocusScope.of(context).unfocus();
-                        // Gọi hàm verify(), nó trả về String? errorMessage
+                        // Call verify(), it returns String? errorMessage
                         final errorMessage = await _vm.verify();
                         if (!context.mounted) return;
 
                         if (errorMessage == null) {
-                          // Thành công: Nhảy sang bước 3 (Đổi mật khẩu mới)
+                          // Success: Navigate to step 3 (Reset new password)
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
@@ -113,7 +113,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                             ),
                           );
                         } else {
-                          // Thất bại: Hiện thông báo lỗi cụ thể (ví dụ: "Mã OTP hết hạn")
+                          // Failure: Show specific error message (e.g., "OTP code expired")
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(errorMessage),
@@ -134,7 +134,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                         color: AppColors.white,
                       )
                           : const Text(
-                        'XÁC NHẬN',
+                        'CONFIRM',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -144,7 +144,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                     ),
                     const SizedBox(height: 16),
 
-                    // --- NÚT GỬI LẠI MÃ (CHỈ CÓ Ở BẢN XỊN) ---
+                    // --- RESEND CODE BUTTON ---
                     TextButton.icon(
                       onPressed: _vm.isLoading
                           ? null
@@ -155,7 +155,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                         if (errorMessage == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Đã gửi lại mã OTP!'),
+                              content: Text('OTP code resent!'),
                               backgroundColor: AppColors.success,
                             ),
                           );
@@ -170,7 +170,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                       },
                       icon: const Icon(Icons.refresh, size: 18, color: AppColors.primary),
                       label: const Text(
-                        'Gửi lại mã',
+                        'Resend code',
                         style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                       ),
                     )
@@ -184,10 +184,10 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
     );
   }
 
-  // SỬA: Nhận thêm 'boxWidth' để tự động co dãn cho vừa 8 ô
+  // FIX: Added 'boxWidth' to automatically scale for 8 boxes
   Widget _buildOtpBox(int index, BuildContext context, double boxWidth) {
     return Container(
-      width: boxWidth, // Sử dụng độ rộng đã tính toán
+      width: boxWidth, // Use calculated width
       height: 48,
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -197,7 +197,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
       child: TextField(
         onChanged: (value) {
           _vm.updateDigit(index, value);
-          // SỬA: Logic nhảy focus chuẩn cho 8 ô (index chạy từ 0 đến 7)
+          // FIX: Correct focus jump logic for 8 boxes (index from 0 to 7)
           if (value.isNotEmpty && index < 7) {
             FocusScope.of(context).nextFocus();
           }

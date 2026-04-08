@@ -1,4 +1,4 @@
-// data/helpers/auth_helper.dart
+// services/helpers/auth_helper.dart
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
