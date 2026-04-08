@@ -234,7 +234,27 @@ class QuickNoteCard extends StatelessWidget {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.file(File(vm.selectedImagePath!), height: 80, width: 80, fit: BoxFit.cover),
+                        child: Image.file(
+                          File(vm.selectedImagePath!),
+                          height: 80,
+                          width: 80,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 80,
+                              width: 80,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.broken_image_outlined,
+                                color: Colors.grey.shade600,
+                                size: 40,
+                              ),
+                            );
+                          },
+                        ),
                       ),
                       Positioned(
                         top: -10,
@@ -321,7 +341,7 @@ class QuickNoteCard extends StatelessWidget {
                               Text(note.content, style: const TextStyle(fontSize: 14, color: Color(0xFF2C3E50), height: 1.4)),
 
                             // DISPLAY ATTACHED IMAGE IN NOTE
-                            if (note.imagePath != null) ...[
+                            if (note.imagePath != null && note.imagePath!.isNotEmpty) ...[
                               const SizedBox(height: 8),
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
@@ -330,6 +350,34 @@ class QuickNoteCard extends StatelessWidget {
                                   width: double.infinity,
                                   height: 150,
                                   fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: double.infinity,
+                                      height: 150,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade300,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.broken_image_outlined,
+                                            color: Colors.grey.shade600,
+                                            size: 50,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Image not available',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                             ],
