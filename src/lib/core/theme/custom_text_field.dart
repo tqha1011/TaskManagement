@@ -23,6 +23,8 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -35,7 +37,10 @@ class CustomTextField extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withValues(alpha: isDark ? 0.9 : 0.8),
                 letterSpacing: 1,
               ),
             ),
@@ -51,18 +56,21 @@ class CustomTextField extends StatelessWidget {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withValues(alpha: 0.65),
                 fontWeight: FontWeight.w400,
                 fontSize: 16,
               ),
               filled: true,
-              fillColor: Theme.of(context).colorScheme.surface,
+              fillColor: isDark ? const Color(0xFF344765) : Theme.of(context).colorScheme.surface,
               prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary),
               suffixIcon: isPassword
                   ? IconButton(
                       icon: Icon(
                         obscureText ? Icons.visibility_off : Icons.visibility,
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       onPressed: onToggleVisibility,
                     )
@@ -72,18 +80,22 @@ class CustomTextField extends StatelessWidget {
                 horizontal: 16,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(24),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                borderRadius: BorderRadius.circular(24),
+                borderSide: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF4A5F80)
+                      : Theme.of(context).colorScheme.outline,
+                ),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(24),
                 borderSide: BorderSide(
                   color: Theme.of(context).colorScheme.primary,
-                  width: 2,
+                  width: 1.5,
                 ),
               ),
             ),

@@ -26,7 +26,6 @@ class UserProfileModel {
     }
 
     return UserProfileModel(
-      // Dùng as String? để ép kiểu an toàn, kèm ?? để gán giá trị mặc định nếu bị null
       id: json['id'] as String? ?? '',
       name:
           (json['name'] ?? json['full_name'] ?? json['username']) as String? ??

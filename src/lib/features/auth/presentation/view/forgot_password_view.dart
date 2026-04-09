@@ -15,6 +15,8 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AnimatedBuilder(
       animation: _vm,
       builder: (context, _) => AuthLayoutTemplate(
@@ -26,9 +28,16 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
         customHeaderIcon: Container(
           width: 120, height: 120,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: isDark ? const Color(0xFF1B2A46) : Theme.of(context).colorScheme.surface,
             shape: BoxShape.circle,
-            boxShadow: const [BoxShadow(color: Color(0xFFD1D9E6), blurRadius: 16)],
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.22)
+                    : const Color(0xFFD1D9E6),
+                blurRadius: 24,
+              )
+            ],
           ),
           child: Icon(
             Icons.lock_reset,
@@ -63,25 +72,33 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
           controller: _vm.emailCtrl,
         ),
         footerContent: Padding(
-          padding: EdgeInsets.only(bottom: 24.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.help,
-                size: 16,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Cần hỗ trợ? Liên hệ CSKH',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+          padding: const EdgeInsets.only(bottom: 24.0),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF111E37) : Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.help,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Text(
+                  'Cần hỗ trợ? Liên hệ CSKH',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

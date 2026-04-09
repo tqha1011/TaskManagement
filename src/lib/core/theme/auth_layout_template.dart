@@ -34,6 +34,8 @@ class AuthLayoutTemplate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -41,29 +43,50 @@ class AuthLayoutTemplate extends StatelessWidget {
         elevation: 0,
         leading: Navigator.canPop(context)
             ? IconButton(
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Theme.of(context).colorScheme.primary,
+                icon: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isDark
+                        ? const Color(0xFF172744)
+                        : Theme.of(context).colorScheme.surface,
+                  ),
+                  child: Icon(
+                    Icons.arrow_back,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
       ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 48.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildHeader(context),
-                const SizedBox(height: 32),
-                useCard
-                    ? _buildCardContainer(context)
-                    : _buildTransparentContainer(context),
-                const SizedBox(height: 32),
-                if (footerContent != null) footerContent!,
-              ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF08142D), Color(0xFF0B1A38), Color(0xFF0A1834)],
+                )
+              : null,
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 48.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildHeader(context),
+                  const SizedBox(height: 32),
+                  useCard
+                      ? _buildCardContainer(context)
+                      : _buildTransparentContainer(context),
+                  const SizedBox(height: 32),
+                  if (footerContent != null) footerContent!,
+                ],
+              ),
             ),
           ),
         ),
@@ -72,6 +95,8 @@ class AuthLayoutTemplate extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       children: [
         customHeaderIcon ??
@@ -79,11 +104,11 @@ class AuthLayoutTemplate extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
+                color: isDark ? const Color(0xFF1E2B47) : Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -122,14 +147,17 @@ class AuthLayoutTemplate extends StatelessWidget {
   }
 
   Widget _buildCardContainer(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(32),
+        border: isDark ? Border.all(color: const Color(0xFF2A3E62), width: 1) : null,
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
@@ -143,6 +171,8 @@ class AuthLayoutTemplate extends StatelessWidget {
       _buildFormElements(context);
 
   Widget _buildFormElements(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -154,12 +184,15 @@ class AuthLayoutTemplate extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.primary,
             disabledBackgroundColor:
-                Theme.of(context).colorScheme.primary.withOpacity(0.6),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
             padding: const EdgeInsets.symmetric(vertical: 20),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            elevation: isLoading ? 0 : 4,
+            elevation: isLoading ? 0 : (isDark ? 8 : 4),
+            shadowColor: isDark
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.35)
+                : null,
           ),
           child: isLoading
               ? SizedBox(
@@ -197,11 +230,15 @@ class AuthLayoutTemplate extends StatelessWidget {
               Expanded(
                 child: Divider(color: Theme.of(context).colorScheme.outline),
               ),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   'OR',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
               Expanded(
@@ -214,6 +251,16 @@ class AuthLayoutTemplate extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.onSurface,
+                    side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    backgroundColor:
+                        isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
                   onPressed: onGoogleTap,
                   icon: const Icon(
                     Icons.g_mobiledata,
@@ -226,6 +273,16 @@ class AuthLayoutTemplate extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.onSurface,
+                    side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    backgroundColor:
+                        isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
                   onPressed: onFacebookTap,
                   icon: const Icon(Icons.facebook, color: Color(0xFF1877F2)),
                   label: const Text('Facebook'),

@@ -15,6 +15,8 @@ class _NewPasswordViewState extends State<NewPasswordView> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AnimatedBuilder(
       animation: _vm,
       builder: (context, _) => AuthLayoutTemplate(
@@ -24,7 +26,7 @@ class _NewPasswordViewState extends State<NewPasswordView> {
         isLoading: _vm.isLoading,
         customHeaderIcon: CircleAvatar(
           radius: 40,
-          backgroundColor: Color(0xFFEBF2FF),
+          backgroundColor: isDark ? const Color(0xFF213A63) : const Color(0xFFEBF2FF),
           child: Icon(
             Icons.lock_reset,
             size: 40,
@@ -72,8 +74,13 @@ class _NewPasswordViewState extends State<NewPasswordView> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFEBF2FF),
+                color: isDark
+                    ? const Color(0xFF223A63)
+                    : const Color(0xFFEBF2FF),
                 borderRadius: BorderRadius.circular(12),
+                border: isDark
+                    ? Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25))
+                    : null,
               ),
               child: Row(
                 children: [

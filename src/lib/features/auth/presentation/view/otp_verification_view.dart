@@ -14,6 +14,8 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -29,22 +31,32 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
         title: Text(
           'Xác thực OTP',
           style: TextStyle(
-            color: Theme.of(context).colorScheme.primary,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
         centerTitle: true,
       ),
-      body: AnimatedBuilder(
-          animation: _vm,
-          builder: (context, child) {
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF08142D), Color(0xFF0B1A38), Color(0xFF0A1834)],
+                )
+              : null,
+        ),
+        child: AnimatedBuilder(
+            animation: _vm,
+            builder: (context, child) {
+              return SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                     Icon(
                       Icons.mark_email_read,
                       size: 80,
@@ -100,6 +112,11 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         minimumSize: const Size(double.infinity, 56),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: isDark ? 10 : null,
+                        shadowColor: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.35),
                       ),
                       child: _vm.isLoading
                           ? CircularProgressIndicator(
@@ -150,11 +167,12 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                         ),
                       ),
                     )
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
-          }
+              );
+            }
+        ),
       ),
     );
   }
@@ -163,9 +181,15 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
     return Container(
       width: 35, height: 48, // Thu nhỏ kích thước ô lại để nhét vừa 8 ô trên 1 dòng
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF344765)
+            : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF4A5F80)
+              : Theme.of(context).colorScheme.outline,
+        ),
       ),
       child: TextField(
         onChanged: (value) {
