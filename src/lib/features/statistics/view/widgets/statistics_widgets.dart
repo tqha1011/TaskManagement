@@ -11,12 +11,17 @@ class DailyProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(30),
+        border: isDark
+            ? Border.all(color: const Color(0xFF2A3E62), width: 1)
+            : null,
       ),
       child: Column(
         children: [
@@ -47,8 +52,21 @@ class DailyProgressCard extends StatelessWidget {
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('$completed/$total', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
-                    Text('Công việc', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                    Text(
+                      '$completed/$total',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      'Công việc',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -58,7 +76,10 @@ class DailyProgressCard extends StatelessWidget {
           RichText(
             textAlign: TextAlign.center,
             text: TextSpan(
-              style: const TextStyle(fontSize: 16, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
               children: [
                 const TextSpan(text: 'Tuyệt vời! Bạn đã hoàn thành '),
                 TextSpan(
@@ -97,18 +118,24 @@ class WeeklyChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bool isPositive = growthPercentage >= 0;
-    final Color trendColor = isPositive ? const Color(0xFF2ECC71) : Colors.redAccent;
-    final Color trendBgColor = isPositive ? const Color(0xFFE9F7EF) : const Color(0xFFFFEBEE);
+    final Color trendColor = isPositive ? const Color(0xFF3DDC84) : Colors.redAccent;
+    final Color trendBgColor = isPositive
+        ? (isDark ? const Color(0xFF173B3D) : const Color(0xFFE9F7EF))
+        : (isDark ? const Color(0xFF402129) : const Color(0xFFFFEBEE));
     final String trendText = "${isPositive ? '+' : ''}$growthPercentage% vs tuần trước";
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(30),
+        border: isDark
+            ? Border.all(color: const Color(0xFF2A3E62), width: 1)
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,7 +156,14 @@ class WeeklyChartCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 5),
-                  Text('$thisWeekTotal Tasks', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+                  Text(
+                    '$thisWeekTotal Tasks',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
                 ],
               ),
               Container(
@@ -173,7 +207,9 @@ class WeeklyChartCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: isActive
                   ? Theme.of(context).colorScheme.primary
-                  : const Color(0xFFF5F7FA),
+                  : (Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF334764)
+                      : const Color(0xFFF5F7FA)),
               borderRadius: BorderRadius.circular(8),
             ),
           ),
@@ -203,6 +239,7 @@ class CompletedTaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final time = task.updatedAt;
     final hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
@@ -239,14 +276,22 @@ class CompletedTaskCard extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 15),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(25),
+              border: isDark
+                  ? Border.all(color: const Color(0xFF2A3E62), width: 1)
+                  : null,
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: const Color(0xFFF1F7FD), borderRadius: BorderRadius.circular(15)),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF23395D)
+                        : const Color(0xFFF1F7FD),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                   child: icon,
                 ),
                 const SizedBox(width: 15),
@@ -254,9 +299,22 @@ class CompletedTaskCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(task.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+                      Text(
+                        task.title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text(timeString, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                      Text(
+                        timeString,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 ),

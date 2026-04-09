@@ -256,6 +256,7 @@ class FocusScreen extends StatelessWidget {
           ),
         ),
       ),
+    )
     );
   }
 }

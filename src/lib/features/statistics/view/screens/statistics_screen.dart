@@ -28,25 +28,24 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
 
-  Icon _getIconForCategory(BuildContext context, String category) {
-    switch (category) {
-      case 'Design':
-        return Icon(
-          Icons.checklist_rtl_rounded,
-          color: Theme.of(context).colorScheme.primary,
-        );
-      case 'Research': return const Icon(Icons.timer_outlined, color: Color(0xFFE67E22));
-      case 'Development': return const Icon(Icons.calendar_month_outlined, color: Color(0xFF9B59B6));
-      default: return const Icon(Icons.task_alt_rounded, color: Colors.green);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Consumer<StatisticsViewmodel>(
-        builder: (context, viewModel, child) {
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF08142D), Color(0xFF0B1A38), Color(0xFF0A1834)],
+                )
+              : null,
+        ),
+        child: Consumer<StatisticsViewmodel>(
+          builder: (context, viewModel, child) {
 
           if (viewModel.isLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -66,37 +65,51 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
           final currentTasks = data.recentTasks;
 
-          return SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   // --- Header ---
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Row(
-                        children: [
-                          CircleAvatar(
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const CircleAvatar(
                               radius: 22,
-                              backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a042581f4e29026704d')
-                          ),
-                          SizedBox(width: 15),
-                          Text('Thống kê', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
-                        ],
-                      ),
+                              backgroundImage: NetworkImage(
+                                'https://i.pravatar.cc/150?u=a042581f4e29026704d',
+                              ),
+                            ),
+                            const SizedBox(width: 15),
+                            Text(
+                              'Thống kê',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
                       Container(
                         padding: const EdgeInsets.all(10),
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF172744)
+                              : Theme.of(context).colorScheme.surface,
+                          shape: BoxShape.circle,
+                        ),
                         child: Icon(
                           Icons.notifications_none_rounded,
                           color: Theme.of(context).colorScheme.primary,
                         ),
                       )
-                    ],
-                  ),
-                  const SizedBox(height: 30),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
 
 
                   DailyProgressCard(
@@ -120,10 +133,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   const SizedBox(height: 30),
 
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Hoàn thành gần đây', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Hoàn thành gần đây',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
                       Text(
                         'Xem tất cả',
                         style: TextStyle(
@@ -132,20 +152,25 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
+                      ],
+                    ),
+                    const SizedBox(height: 15),
 
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: currentTasks.isEmpty
                         ? Container(
-                      key: const ValueKey('empty_state'),
-                      padding: const EdgeInsets.all(30),
-                      alignment: Alignment.center,
-                      child: Text('Chưa có công việc nào hoàn thành gần đây.',
-                          style: TextStyle(color: Colors.grey.shade500), textAlign: TextAlign.center),
-                    )
+                            key: const ValueKey('empty_state'),
+                            padding: const EdgeInsets.all(30),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Chưa có công việc nào hoàn thành gần đây.',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          )
                         : Column(
                       key: ValueKey('list_$_selectedDayIndex'),
                       children: currentTasks.map((task) {
@@ -161,12 +186,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 80),
-                ],
+                    const SizedBox(height: 80),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
