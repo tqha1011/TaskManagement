@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../model/task_model.dart';
 import '../widgets/task_widgets.dart'; // Contains TimePickerWidget
@@ -51,7 +50,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Task updated successfully!'), backgroundColor: Colors.green),
+      SnackBar(
+        content: const Text('Task updated successfully!'),
+        backgroundColor: Theme.of(context).colorScheme.tertiary,
+      ),
     );
 
     // Return to the previous screen
@@ -62,20 +64,30 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   Widget build(BuildContext context) {
     // Format date for display
     String formattedDate = DateFormat('EEEE, d MMMM').format(widget.task.date);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Mock categories (Fetch from database later)
     List<String> categories = ['Development', 'Research', 'Design', 'Backend'];
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundBlue,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Task Details', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Task Details',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -86,8 +98,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             child: Container(
               margin: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(30),
+                border: isDark
+                    ? Border.all(color: Theme.of(context).colorScheme.outline)
+                    : null,
                 boxShadow: [
                   BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 5))
                 ],
@@ -120,12 +135,24 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                               onSelected: (selected) {
                                 if (selected) setState(() => _currentCategory = categories[index]);
                               },
-                              backgroundColor: const Color(0xFFF1F7FD),
-                              selectedColor: AppColors.primaryBlue,
-                              labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.primaryBlue, fontSize: 14),
+                              backgroundColor: isDark
+                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                  : const Color(0xFFF1F7FD),
+                              selectedColor: Theme.of(context).colorScheme.primary,
+                              labelStyle: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : Theme.of(context).colorScheme.primary,
+                                fontSize: 14,
+                              ),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  side: const BorderSide(color: Color(0xFFF1F7FD), width: 1)),
+                                  side: BorderSide(
+                                    color: isDark
+                                        ? Theme.of(context).colorScheme.outline
+                                        : const Color(0xFFF1F7FD),
+                                    width: 1,
+                                  )),
                               showCheckmark: false,
                             ),
                           );
@@ -137,7 +164,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     // Display Task Date
                     Text('Date', style: Theme.of(context).textTheme.labelLarge),
                     const SizedBox(height: 5),
-                    Text(formattedDate, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
+                    Text(
+                      formattedDate,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
                     const SizedBox(height: 25),
 
                     // Time Pickers for Start and End time
@@ -177,7 +211,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       child: ElevatedButton(
                         onPressed: _saveChanges,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryBlue,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
