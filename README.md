@@ -1,11 +1,13 @@
-Bao gồm các file sau
+## Chi tiết mã nguồn
 
-- File 1: task_model.dart — thêm Priority + TagModel
-- File 2: task_viewmodel.dart — logic Provider
-- File 3: priority_selector.dart — widget chọn priority
-- File 4: tag_selector.dart — widget chọn tag
-- File 5: create_task_screen.dart — ghép 2 widget vào form
-- File 6: main.dart — đăng ký Provider 
-- File 7: home_screen.dart — hiển thị task nhóm theo priority
+| Tên file | Vai trò / Thay đổi chính |
+| :--- | :--- |
+| `task_model.dart` | Thêm thuộc tính Priority + `TagModel` |
+| `task_viewmodel.dart` | Xử lý logic state management (Provider) |
+| `priority_selector.dart` | Widget UI chọn mức độ ưu tiên |
+| `tag_selector.dart` | Widget UI chọn tag (thời gian, trạng thái, custom) |
+| `create_task_screen.dart` | Ghép 2 widget trên vào Form tạo task |
+| `main.dart` | Đăng ký Provider khởi chạy ứng dụng |
+| `home_screen.dart` | Hiển thị danh sách task phân nhóm theo Priority |
 
 <img width="464" height="195" alt="image" src="https://github.com/user-attachments/assets/7a2244b4-82e4-4354-8029-1559c6c7766e" />
