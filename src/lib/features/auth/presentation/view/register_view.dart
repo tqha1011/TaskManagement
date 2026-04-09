@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:task_management_app/features/auth/presentation/view/login_view.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/auth_layout_template.dart';
 import '../../../../core/theme/custom_text_field.dart';
@@ -31,10 +30,8 @@ class _RegisterViewState extends State<RegisterView> {
 
           if (errorMessage == null) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đăng ký thành công!'), backgroundColor: AppColors.success));
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginView()),
-            );
+            // Return to the existing LoginView to avoid stacking duplicate login routes.
+            Navigator.pop(context);
           } else {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage), backgroundColor: AppColors.error));
           }
