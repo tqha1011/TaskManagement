@@ -1,5 +1,10 @@
-```markdown
+
 # Bản update từ nhánh `priority_selector_and_tag_system`
+- file1: task_viewmodel.dart
+- file2: tag_selector.dart
+- file3: task_detail_screen.dart
+
+<img width="445" height="108" alt="image" src="https://github.com/user-attachments/assets/4763d417-a73d-484d-9ae3-b145045dc624" />
 
 **Nâng cấp thêm các tag: Thời gian, Trạng thái và Custom**
 
@@ -14,5 +19,3 @@
 Mở file `pubspec.yaml`, tìm phần `dependencies` và dán dòng này vào ngay dưới `provider: ^6.1.5+1`:
 ```yaml
 shared_preferences: ^2.3.2
-
-<img width="445" height="108" alt="image" src="https://github.com/user-attachments/assets/4763d417-a73d-484d-9ae3-b145045dc624" />
