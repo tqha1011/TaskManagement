@@ -7,6 +7,8 @@ import 'package:task_management_app/features/main/view/screens/main_screen.dart'
 import 'core/theme/app_theme.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import 'features/tasks/viewmodel/task_viewmodel.dart';
 
 import 'core/theme/theme_provider.dart';
 
@@ -14,6 +16,7 @@ import 'core/theme/theme_provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Tải cấu hình từ file .env
   await dotenv.load(fileName: ".env");
 
   String supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
@@ -23,11 +26,7 @@ Future<void> main() async {
     debugPrint('Error: SUPABASE_URL or SUPABASE_ANON_KEY is missing');
   }
 
-  // 3. Khởi tạo kết nối Supabase
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  );
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
   SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
@@ -39,10 +38,7 @@ Future<void> main() async {
       child: const TaskApp()));
 }
 
-// 4. Create a global variable for ViewModel to call API quickly
 final supabase = Supabase.instance.client;
-
-
 
 class TaskApp extends StatelessWidget {
   const TaskApp({super.key});
