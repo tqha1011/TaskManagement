@@ -63,7 +63,6 @@ class TaskProvider extends ChangeNotifier {
 }
 
 // ==========================================
-// 2. GIAO DIỆN CHÍNH (Giữ nguyên UI của bé)
 // ==========================================
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
