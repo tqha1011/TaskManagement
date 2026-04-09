@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
 import 'package:task_management_app/features/tasks/view/screens/home_screen.dart';
+import 'settings_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../note/view/focus_screen.dart';
 import '../../../note/viewmodel/focus_viewmodel.dart';
@@ -29,7 +30,7 @@ class _MainScreenState extends State<MainScreen> {
         create: (_) => StatisticsViewmodel(),
         child: const StatisticsScreen(),
     ),
-    const Center(child: Text('Màn hình Cài đặt')),
+    const SettingsScreen(),
   ];
 
   @override

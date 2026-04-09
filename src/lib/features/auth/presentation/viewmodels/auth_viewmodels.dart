@@ -44,6 +44,7 @@ class BaseViewModel extends ChangeNotifier {
       'already registered': 'Email này đã được đăng ký!',
       'already exists': 'Email này đã được đăng ký!',
       'invalid login credentials': 'Email hoặc mật khẩu không chính xác!',
+      'email not confirmed': 'Email chưa được xác nhận. Vui lòng kiểm tra hộp thư!',
       'rate limit': 'Bạn thao tác quá nhanh, vui lòng thử lại sau!',
       'over_email_send_rate_limit': 'Bạn thao tác quá nhanh, vui lòng thử lại sau!',
       'token has expired or is invalid': 'Mã OTP không hợp lệ hoặc đã hết hạn!',

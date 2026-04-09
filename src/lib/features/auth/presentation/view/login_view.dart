@@ -44,6 +44,8 @@ class _LoginViewState extends State<LoginView> {
 
           if (errorMessage == null) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đăng nhập thành công!'), backgroundColor: AppColors.success));
+            // If LoginView was pushed on top of AuthGate, pop back to root so MainScreen is visible.
+            Navigator.of(context).popUntil((route) => route.isFirst);
           } else {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage), backgroundColor: AppColors.error));
           }

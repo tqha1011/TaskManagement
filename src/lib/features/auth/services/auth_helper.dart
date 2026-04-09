@@ -15,16 +15,21 @@ class AuthHelper {
         password: password,
       );
 
-      if (response.user != null) {
-        final userId = response.user!.id;
-
+      final user = response.user;
+      if (user != null) {
+        final userId = user.id;
+        final userMetadata = user.userMetadata ?? {};
+        final String? username = userMetadata['username']?.toString();
         final timezoneObj = await FlutterTimezone.getLocalTimezone();
         final String currentTimezone = timezoneObj.toString();
 
         final profileData = await supabase
             .from('profile')
-            .update({'timezone': currentTimezone})
-            .eq('id', userId)
+            .upsert({
+              'id': userId,
+              if (username != null && username.isNotEmpty) 'username': username,
+              'timezone': currentTimezone,
+            })
             .select()
             .single();
 
@@ -77,14 +82,26 @@ class AuthHelper {
           }
       );
 
-      if (response.user != null) {
-        final userId = response.user!.id;
+      final user = response.user;
+      if (user != null) {
+        if (response.session == null) {
+          // Email confirmation may be required; skip profile write until login.
+          return UserModel(
+            id: user.id,
+            email: email,
+            username: username,
+            timezone: currentTimezone,
+          );
+        }
 
-        // Step 2: Insert directly into the 'profile' table
         final profileData = await supabase
             .from('profile')
+            .upsert({
+              'id': user.id,
+              'username': username,
+              'timezone': currentTimezone,
+            })
             .select()
-            .eq('id', userId)
             .single();
 
         return UserModel.fromJson(profileData, email);
