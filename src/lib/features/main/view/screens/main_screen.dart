@@ -33,7 +33,7 @@ class _MainScreenState extends State<MainScreen> {
         child: const StatisticsScreen(),
     ),
     ChangeNotifierProvider(
-        create: (_) => UserProfileViewModel()..loadProfile(),
+        create: (_) => UserProfileViewModel(useMockData: true)..loadProfile(),
         child: const UserProfileView(),
     ),
     const SettingsScreen(),

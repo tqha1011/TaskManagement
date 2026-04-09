@@ -10,7 +10,10 @@ import '../service/user_service.dart';
 class UserProfileViewModel extends ChangeNotifier {
   final UserService _userService = UserService();
   final _supabase = Supabase.instance.client;
+  final bool useMockData;
   String? _lastAppliedAppearance;
+
+  UserProfileViewModel({this.useMockData = true});
 
   UserProfileModel? _user;
   UserProfileModel? get user => _user;
@@ -24,23 +27,33 @@ class UserProfileViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _user = await _userService.fetchUserProfile();
+      if (useMockData) {
+        await Future.delayed(const Duration(milliseconds: 400));
+        _user = _buildMockUser();
+      } else {
+        _user = await _userService.fetchUserProfile();
+      }
       _lastAppliedAppearance = null;
     } catch (e) {
       debugPrint("Error loading profile: $e");
-      _user = UserProfileModel(
-        name: 'Alex Thompson',
-        avatarUrl: '',
-        appearance: 'Light',
-        tasksDone: 24,
-        streaks: 12,
-        isNotificationEnabled: true,
-        id: '',
-      );
+      _user = _buildMockUser();
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  UserProfileModel _buildMockUser() {
+    return UserProfileModel(
+      id: 'mock-user-001',
+      name: 'Alex Thompson',
+      // Valid URL so profile header can test normal network-avatar path.
+      avatarUrl: 'https://i.pravatar.cc/300?img=12',
+      appearance: 'Dark',
+      tasksDone: 24,
+      streaks: 12,
+      isNotificationEnabled: true,
+    );
   }
 
   /// Toggle notification preference

@@ -9,6 +9,7 @@ class FocusScreen extends StatelessWidget {
   // Shows the configuration dialog for timer and notification settings
   void _showSettingsDialog(BuildContext context) {
     final vm = context.read<FocusViewModel>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     double currentPomodoro = (vm.pomodoroTime / 60).toDouble();
     double currentBreak = (vm.shortBreakTime / 60).toDouble();
@@ -21,9 +22,16 @@ class FocusScreen extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              backgroundColor: Colors.white,
+              backgroundColor:
+                  isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: const Text('Cài đặt', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+              title: Text(
+                'Cài đặt',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -33,7 +41,14 @@ class FocusScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Pomodoro', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(
+                          'Pomodoro',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
                         Text(
                           '${currentPomodoro.toInt()} phút',
                           style: TextStyle(
@@ -55,29 +70,69 @@ class FocusScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Nghỉ ngắn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(
+                          'Nghỉ ngắn',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
                         Text('${currentBreak.toInt()} phút', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
                       ],
                     ),
-                    Slider(value: currentBreak, min: 1, max: 30, divisions: 29, activeColor: Colors.orange, onChanged: (val) => setStateDialog(() => currentBreak = val)),
-                    const Divider(height: 30),
+                    Slider(
+                      value: currentBreak,
+                      min: 1,
+                      max: 30,
+                      divisions: 29,
+                      activeColor: Colors.orange,
+                      onChanged: (val) => setStateDialog(() => currentBreak = val),
+                    ),
+                    Divider(
+                      height: 30,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
 
                     // --- Hardware Settings ---
                     SwitchListTile(
-                      title: const Text('Rung', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      title: Text(
+                        'Rung',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                       value: currentVibrate,
-                      activeColor: Theme.of(context).colorScheme.primary,
+                      activeThumbColor: Theme.of(context).colorScheme.primary,
                       contentPadding: EdgeInsets.zero,
                       onChanged: (val) => setStateDialog(() => currentVibrate = val),
                     ),
                     const SizedBox(height: 10),
-                    const Text('Âm thanh', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    Text(
+                      'Âm thanh',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
                     const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 15),
-                      decoration: BoxDecoration(color: const Color(0xFFF4F6F9), borderRadius: BorderRadius.circular(15)),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF12223D)
+                            : Theme.of(context).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<int>(
+                          dropdownColor: isDark
+                              ? const Color(0xFF1A2945)
+                              : Theme.of(context).colorScheme.surface,
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                           isExpanded: true,
                           value: currentRingtone,
                           items: const [
@@ -95,7 +150,14 @@ class FocusScreen extends StatelessWidget {
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Hủy',
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                ),
                 ElevatedButton(
                   onPressed: () {
                     // Update settings in ViewModel
@@ -118,23 +180,46 @@ class FocusScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF08142D), Color(0xFF0B1A38), Color(0xFF0A1834)],
+                )
+              : null,
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // --- Header ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      CircleAvatar(radius: 22, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a042581f4e29026704d')),
-                      SizedBox(width: 15),
-                      Text('Tập trung', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+                      const CircleAvatar(
+                        radius: 22,
+                        backgroundImage:
+                            NetworkImage('https://i.pravatar.cc/150?u=a042581f4e29026704d'),
+                      ),
+                      const SizedBox(width: 15),
+                      Text(
+                        'Tập trung',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                     ],
                   ),
                   // Settings Icon
@@ -142,8 +227,10 @@ class FocusScreen extends StatelessWidget {
                     onTap: () => _showSettingsDialog(context),
                     child: Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF172744)
+                            : Theme.of(context).colorScheme.surface,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
