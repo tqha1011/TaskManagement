@@ -6,11 +6,13 @@ import 'features/auth/presentation/view/login_view.dart';
 import 'features/auth/presentation/view/auth_gate.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'package:provider/provider.dart';
+import 'features/tasks/viewmodel/task_viewmodel.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Tải cấu hình từ file .env
   await dotenv.load(fileName: ".env");
 
   String supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
@@ -20,43 +22,49 @@ Future<void> main() async {
     debugPrint('Error: SUPABASE_URL or SUPABASE_ANON_KEY is missing');
   }
 
-  // 3. Khởi tạo kết nối Supabase
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  );
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
   SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+    const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
+  );
+
   runApp(const TaskApp());
 }
 
-// 4. Create a global variable for ViewModel to call API quickly
 final supabase = Supabase.instance.client;
-
-
 
 class TaskApp extends StatelessWidget {
   const TaskApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Task Management App',
-      theme: ThemeData(
-        scaffoldBackgroundColor: AppColors.backgroundBlue,
-        primaryColor: AppColors.primaryBlue,
-        useMaterial3: true,
-        fontFamily: 'Montserrat',
-        textTheme: const TextTheme(
-          headlineMedium: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black),
-          titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
-          bodyMedium: TextStyle(fontSize: 14, color: AppColors.grayText),
-          labelLarge: TextStyle(fontSize: 16, color: AppColors.primaryBlue),
+    return ChangeNotifierProvider(
+      create: (_) => TaskViewModel(),
+      child: MaterialApp(
+        title: 'Task Management App',
+        theme: ThemeData(
+          scaffoldBackgroundColor: AppColors.backgroundBlue,
+          primaryColor: AppColors.primaryBlue,
+          useMaterial3: true,
+          fontFamily: 'Montserrat',
+          textTheme: const TextTheme(
+            headlineMedium: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+            titleMedium: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+            bodyMedium: TextStyle(fontSize: 14, color: AppColors.grayText),
+            labelLarge: TextStyle(fontSize: 16, color: AppColors.primaryBlue),
+          ),
         ),
+        home: const AuthGate(),
+        debugShowCheckedModeBanner: false,
       ),
-      home: const AuthGate(),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
