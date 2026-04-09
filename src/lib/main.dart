@@ -55,7 +55,7 @@ class TaskApp extends StatelessWidget {
           labelLarge: TextStyle(fontSize: 16, color: AppColors.primaryBlue),
         ),
       ),
-      home: const AuthGate(),
+      home: const MainScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

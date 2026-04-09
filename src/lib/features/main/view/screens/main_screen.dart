@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
 import 'package:task_management_app/features/tasks/view/screens/home_screen.dart';
 import 'settings_screen.dart';
+import 'package:task_management_app/features/user/viewmodel/user_profile_viewmodel.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../note/view/focus_screen.dart';
 import '../../../note/viewmodel/focus_viewmodel.dart';
 import '../../../statistics/view/screens/statistics_screen.dart';
 // import '../../../tasks/view/screens/home_screen.dart'; 
 import 'package:provider/provider.dart';
+
+import '../../../user/view/user_profile_view.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -29,6 +32,10 @@ class _MainScreenState extends State<MainScreen> {
     ChangeNotifierProvider(
         create: (_) => StatisticsViewmodel(),
         child: const StatisticsScreen(),
+    ),
+    ChangeNotifierProvider(
+        create: (_) => UserProfileViewModel()..loadProfile(),
+        child: const UserProfileView(),
     ),
     const SettingsScreen(),
   ];
@@ -56,7 +63,7 @@ class _MainScreenState extends State<MainScreen> {
               _buildNavItem(Icons.calendar_today_rounded, 'Lịch', 1),
               _buildNavItem(Icons.timer_rounded, 'Tập trung', 2),
               _buildNavItem(Icons.bar_chart_rounded, 'Thống kê', 3),
-              _buildNavItem(Icons.settings_rounded, 'Cài đặt', 4),
+              _buildNavItem(Icons.person_2_rounded, 'Cá nhân', 4),
             ],
           ),
         ),
