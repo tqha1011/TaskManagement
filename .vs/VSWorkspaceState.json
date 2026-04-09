@@ -1,0 +1,13 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\documentation",
+    "\\documentation\\architecture",
+    "\\documentation\\guidelines",
+    "\\src",
+    "\\src\\lib",
+    "\\supabase"
+  ],
+  "SelectedNode": "\\src\\lib\\main.dart",
+  "PreviewInSolutionExplorer": false
+}
