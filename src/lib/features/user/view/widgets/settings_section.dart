@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class SettingsSection extends StatelessWidget {
   final String title;
@@ -16,16 +15,16 @@ class SettingsSection extends StatelessWidget {
           padding: const EdgeInsets.only(left: 16, bottom: 12),
           child: Text(
             title.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
-              color: AppColors.grayText,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               letterSpacing: 1.2,
             ),
           ),
         ),
         Material(
-          color: AppColors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),

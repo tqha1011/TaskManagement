@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../model/task_model.dart';
 import '../widgets/task_widgets.dart';
 import 'create_task_screen.dart';
@@ -39,7 +38,10 @@ class HomeScreen extends StatelessWidget {
         children: [
           Positioned(
             top: 0, left: 0, right: 0, height: 250,
-            child: ClipPath(clipper: TopWaveClipper(), child: Container(color: AppColors.primaryBlue)),
+            child: ClipPath(
+              clipper: TopWaveClipper(),
+              child: Container(color: Theme.of(context).colorScheme.primary),
+            ),
           ),
           SafeArea(
             child: Column(
@@ -85,7 +87,13 @@ class HomeScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text('Today', style: Theme.of(context).textTheme.titleMedium),
-                            Text(formattedDate, style: const TextStyle(color: AppColors.grayText, fontSize: 14)),
+                            Text(
+                              formattedDate,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                fontSize: 14,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 20),
@@ -122,7 +130,11 @@ class HomeScreen extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                                child: const Icon(Icons.add_rounded, size: 20, color: AppColors.primaryBlue),
+                                child: Icon(
+                                  Icons.add_rounded,
+                                  size: 20,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
                               ),
                             )
                           ],
@@ -133,7 +145,10 @@ class HomeScreen extends StatelessWidget {
                         leading: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(color: const Color(0xFFF1F7FD), borderRadius: BorderRadius.circular(15)),
-                          child: const Icon(Icons.call_outlined, color: AppColors.primaryBlue),
+                          child: Icon(
+                            Icons.call_outlined,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                         ),
                       ),
                       // ----------------------------------------

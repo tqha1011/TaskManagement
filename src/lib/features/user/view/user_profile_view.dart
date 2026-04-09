@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme/app_colors.dart';
-
 import '../viewmodel/user_profile_viewmodel.dart';
 import 'widgets/profile_header.dart';
 import 'widgets/stat_card.dart';
@@ -15,23 +13,26 @@ class UserProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: true,
         scrolledUnderElevation: 0,
-        title: const Text(
+        title: Text(
           'Profile',
           style: TextStyle(
-            color: AppColors.primaryBlue,
+            color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.w800,
             fontSize: 20,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings, color: AppColors.primaryBlue),
+            icon: Icon(
+              Icons.settings,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             onPressed: () {},
             splashRadius: 24,
           ),
@@ -42,16 +43,23 @@ class UserProfileView extends StatelessWidget {
           return AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             child: vm.isLoading
-                ? const Center(
+                ? Center(
               key: ValueKey('loading'),
-              child: CircularProgressIndicator(color: AppColors.primaryBlue),
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
             )
                 : vm.user == null
                 ? const Center(
               key: ValueKey('error'),
               child: Text("Error loading profile"),
             )
-                : _buildProfileContent(context, vm),
+                : Builder(
+                    builder: (innerContext) {
+                      vm.syncThemeWithProfile(innerContext);
+                      return _buildProfileContent(innerContext, vm);
+                    },
+                  ),
           );
         },
       ),
@@ -98,33 +106,42 @@ class UserProfileView extends StatelessWidget {
               SettingsListTile(
                 icon: Icons.notifications,
                 title: 'Notifications',
-                iconBgColor: AppColors.border,
-                iconColor: AppColors.grayText,
+                iconBgColor: Theme.of(context).colorScheme.outline,
+                iconColor: Theme.of(context).colorScheme.onSurfaceVariant,
                 onTap: () => vm.toggleNotification(!user.isNotificationEnabled),
                 trailing: Switch(
                   value: user.isNotificationEnabled,
-                  activeColor: AppColors.white,
-                  activeTrackColor: AppColors.primaryBlue,
-                  inactiveThumbColor: AppColors.grayText,
-                  inactiveTrackColor: AppColors.border,
+                  activeColor: Theme.of(context).colorScheme.surface,
+                  activeTrackColor: Theme.of(context).colorScheme.primary,
+                  inactiveThumbColor:
+                      Theme.of(context).colorScheme.onSurfaceVariant,
+                  inactiveTrackColor: Theme.of(context).colorScheme.outline,
                   onChanged: (val) => vm.toggleNotification(val),
                 ),
               ),
-              const Divider(height: 1, indent: 64, endIndent: 24, color: AppColors.border),
+              Divider(
+                height: 1,
+                indent: 64,
+                endIndent: 24,
+                color: Theme.of(context).colorScheme.outline,
+              ),
               SettingsListTile(
                 icon: Icons.dark_mode,
                 title: 'Appearance',
-                iconBgColor: AppColors.border,
-                iconColor: AppColors.grayText,
+                iconBgColor: Theme.of(context).colorScheme.outline,
+                iconColor: Theme.of(context).colorScheme.onSurfaceVariant,
                 trailing: Text(
                   user.appearance,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.grayText,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
-                onTap: () {},
+                onTap: () => vm.updateAppearance(
+                  context,
+                  user.appearance == 'Dark' ? 'Light' : 'Dark',
+                ),
               ),
             ],
           ),

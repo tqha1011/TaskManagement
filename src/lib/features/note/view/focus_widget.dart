@@ -1,7 +1,6 @@
 import 'dart:io'; // Import to display image files
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../viewmodel/focus_viewmodel.dart';
 
 // --- Tab Selector Widget ---
@@ -22,27 +21,46 @@ class FocusTabSelector extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildTabBtn('Pomodoro', vm.isPomodoroMode, () => vm.setMode(true)),
-          _buildTabBtn('Nghỉ ngắn', !vm.isPomodoroMode, () => vm.setMode(false)),
+          _buildTabBtn(
+            context,
+            'Pomodoro',
+            vm.isPomodoroMode,
+            () => vm.setMode(true),
+          ),
+          _buildTabBtn(
+            context,
+            'Nghỉ ngắn',
+            !vm.isPomodoroMode,
+            () => vm.setMode(false),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTabBtn(String label, bool isSelected, VoidCallback onTap) {
+  Widget _buildTabBtn(
+    BuildContext context,
+    String label,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(15),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : const Color(0xFF757575),
+            color: isSelected
+                ? Colors.white
+                : Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.bold,
             fontSize: 14,
           ),
@@ -73,7 +91,7 @@ class TimerDisplayWidget extends StatelessWidget {
           child: CircularProgressIndicator(
             value: vm.progress,
             strokeWidth: 14,
-            color: AppColors.primaryBlue,
+            color: Theme.of(context).colorScheme.primary,
             backgroundColor: Colors.transparent,
             strokeCap: StrokeCap.round,
           ),
@@ -96,7 +114,12 @@ class TimerDisplayWidget extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 vm.isPomodoroMode ? 'TẬP TRUNG' : 'NGHỈ NGƠI',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryBlue.withOpacity(0.8), letterSpacing: 2),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                  letterSpacing: 2,
+                ),
               ),
             ],
           ),
@@ -130,7 +153,9 @@ class TimerControlsWidget extends StatelessWidget {
           icon: vm.isRinging
               ? Icons.notifications_off_rounded // Muted bell icon
               : (vm.isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded),
-          bgColor: vm.isRinging ? Colors.redAccent : AppColors.primaryBlue,
+          bgColor: vm.isRinging
+              ? Colors.redAccent
+              : Theme.of(context).colorScheme.primary,
           iconColor: Colors.white,
           size: 85,
           hasShadow: true,
@@ -197,9 +222,16 @@ class QuickNoteCard extends StatelessWidget {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Ghi chú nhanh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
-              Text('Đang thực hiện', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grayText)),
+            children: [
+              const Text('Ghi chú nhanh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+              Text(
+                'Đang thực hiện',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 15),
@@ -282,7 +314,11 @@ class QuickNoteCard extends StatelessWidget {
                   // IMAGE PICKER BUTTON
                   GestureDetector(
                     onTap: () => vm.pickImage(),
-                    child: Icon(Icons.image_outlined, color: AppColors.primaryBlue, size: 22),
+                    child: Icon(
+                      Icons.image_outlined,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 22,
+                    ),
                   ),
                 ],
               ),
@@ -292,7 +328,7 @@ class QuickNoteCard extends StatelessWidget {
                   context.read<FocusViewModel>().addNote();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   elevation: 0,
@@ -329,7 +365,13 @@ class QuickNoteCard extends StatelessWidget {
                           margin: const EdgeInsets.only(top: 2, right: 12),
                           width: 22,
                           height: 22,
-                          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.primaryBlue, width: 2)),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
                         ),
                       ),
                       // CONTENT (TEXT AND IMAGE)

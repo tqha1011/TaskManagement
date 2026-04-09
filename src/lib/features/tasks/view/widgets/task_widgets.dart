@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../model/task_model.dart';
 import '../screens/task_detail_screen.dart';
 
@@ -44,7 +43,9 @@ class DateBox extends StatelessWidget {
       width: 55,
       margin: const EdgeInsets.only(right: 15),
       decoration: BoxDecoration(
-        color: isSelected ? AppColors.primaryBlue : Colors.white,
+        color: isSelected
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade300, width: 1),
       ),
@@ -60,7 +61,9 @@ class DateBox extends StatelessWidget {
           Text(weekday,
               style: TextStyle(
                   fontSize: 12,
-                  color: isSelected ? AppColors.textLightBlue : AppColors.grayText)),
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.secondary
+                      : Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -105,7 +108,7 @@ class TaskCard extends StatelessWidget {
           child: Container(
             margin: const EdgeInsets.only(bottom: 20),
             decoration: BoxDecoration(
-              color: AppColors.taskCardBg,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(25),
               boxShadow: [
                 BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 5))
@@ -116,8 +119,8 @@ class TaskCard extends StatelessWidget {
                 Positioned(
                   left: 0, top: 25, bottom: 25, width: 4,
                   child: Container(
-                    decoration: const BoxDecoration(
-                        color: AppColors.primaryBlue,
+                    decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5))),
                   ),
                 ),
@@ -139,7 +142,10 @@ class TaskCard extends StatelessWidget {
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(color: AppColors.timeBoxBg, borderRadius: BorderRadius.circular(10)),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.secondary,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         child: Text(timeString, style: const TextStyle(color: Colors.white, fontSize: 12)),
                       ),
                     ],
@@ -183,8 +189,11 @@ class TimePickerWidget extends StatelessWidget {
                   style: const TextStyle(
                       fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(width: 5),
-              const Icon(Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.primaryBlue, size: 20)
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              )
             ],
           ),
           const SizedBox(height: 5),

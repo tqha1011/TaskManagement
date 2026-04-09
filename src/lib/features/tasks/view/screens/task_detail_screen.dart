@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../model/task_model.dart';
 import '../widgets/task_widgets.dart'; // Contains TimePickerWidget
@@ -67,7 +66,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     List<String> categories = ['Development', 'Research', 'Design', 'Backend'];
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundBlue,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -121,8 +120,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                 if (selected) setState(() => _currentCategory = categories[index]);
                               },
                               backgroundColor: const Color(0xFFF1F7FD),
-                              selectedColor: AppColors.primaryBlue,
-                              labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.primaryBlue, fontSize: 14),
+                              selectedColor: Theme.of(context).colorScheme.primary,
+                              labelStyle: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : Theme.of(context).colorScheme.primary,
+                                fontSize: 14,
+                              ),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   side: const BorderSide(color: Color(0xFFF1F7FD), width: 1)),
@@ -177,7 +181,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       child: ElevatedButton(
                         onPressed: _saveChanges,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryBlue,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),

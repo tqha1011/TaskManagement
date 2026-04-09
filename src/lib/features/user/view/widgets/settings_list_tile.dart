@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class SettingsListTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final Widget trailing;
-  final Color iconBgColor;
-  final Color iconColor;
+  final Color? iconBgColor;
+  final Color? iconColor;
   final VoidCallback? onTap;
 
   const SettingsListTile({
@@ -14,13 +13,17 @@ class SettingsListTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.trailing,
-    this.iconBgColor = AppColors.backgroundBlue,
-    this.iconColor = AppColors.primaryBlue,
+    this.iconBgColor,
+    this.iconColor,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final resolvedIconBgColor =
+        iconBgColor ?? Theme.of(context).colorScheme.surfaceContainerHighest;
+    final resolvedIconColor = iconColor ?? Theme.of(context).colorScheme.primary;
+
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -30,19 +33,19 @@ class SettingsListTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: iconBgColor,
+                color: resolvedIconBgColor,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: iconColor, size: 22),
+              child: Icon(icon, color: resolvedIconColor, size: 22),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textDark,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),

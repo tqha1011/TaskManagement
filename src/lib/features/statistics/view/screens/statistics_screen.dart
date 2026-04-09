@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../viewmodel/statistics_viewmodel.dart';
 import '../widgets/statistics_widgets.dart';
 
@@ -29,9 +28,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
 
-  Icon _getIconForCategory(String category) {
+  Icon _getIconForCategory(BuildContext context, String category) {
     switch (category) {
-      case 'Design': return const Icon(Icons.checklist_rtl_rounded, color: AppColors.primaryBlue);
+      case 'Design':
+        return Icon(
+          Icons.checklist_rtl_rounded,
+          color: Theme.of(context).colorScheme.primary,
+        );
       case 'Research': return const Icon(Icons.timer_outlined, color: Color(0xFFE67E22));
       case 'Development': return const Icon(Icons.calendar_month_outlined, color: Color(0xFF9B59B6));
       default: return const Icon(Icons.task_alt_rounded, color: Colors.green);
@@ -41,7 +44,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Consumer<StatisticsViewmodel>(
         builder: (context, viewModel, child) {
 
@@ -86,7 +89,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                        child: const Icon(Icons.notifications_none_rounded, color: AppColors.primaryBlue),
+                        child: Icon(
+                          Icons.notifications_none_rounded,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       )
                     ],
                   ),
@@ -118,7 +124,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Hoàn thành gần đây', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
-                      Text('Xem tất cả', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primaryBlue)),
+                      Text(
+                        'Xem tất cả',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 15),

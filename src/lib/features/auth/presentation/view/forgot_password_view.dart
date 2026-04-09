@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/auth_layout_template.dart';
 import '../../../../core/theme/custom_text_field.dart';
 import '../viewmodels/auth_viewmodels.dart';
@@ -26,12 +25,16 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
         isLoading: _vm.isLoading,
         customHeaderIcon: Container(
           width: 120, height: 120,
-          decoration: const BoxDecoration(
-            color: AppColors.white,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
             shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: Color(0xFFD1D9E6), blurRadius: 16)],
+            boxShadow: const [BoxShadow(color: Color(0xFFD1D9E6), blurRadius: 16)],
           ),
-          child: const Icon(Icons.lock_reset, size: 64, color: AppColors.primary),
+          child: Icon(
+            Icons.lock_reset,
+            size: 64,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
         onSubmit: () async {
           FocusScope.of(context).unfocus(); // Đóng bàn phím
@@ -45,7 +48,12 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const OtpVerificationView()));
           } else {
             // Có lỗi (như nhập sai định dạng, spam nút) -> Vã cái lỗi màu đỏ ra
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage), backgroundColor: AppColors.error));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
           }
         },
         formContent: CustomTextField(
@@ -54,14 +62,25 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
           icon: Icons.mail,
           controller: _vm.emailCtrl,
         ),
-        footerContent: const Padding(
+        footerContent: Padding(
           padding: EdgeInsets.only(bottom: 24.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.help, size: 16, color: AppColors.primary),
-              SizedBox(width: 4),
-              Text('Cần hỗ trợ? Liên hệ CSKH', style: TextStyle(color: AppColors.textSecondary, fontSize: 14, fontWeight: FontWeight.bold)),
+              Icon(
+                Icons.help,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Cần hỗ trợ? Liên hệ CSKH',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
         ),

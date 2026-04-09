@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
 
 /// The master layout template for all authentication screens.
 /// Handles the UI skeleton, loading states, backgrounds, and responsive scrolling.
@@ -36,13 +35,16 @@ class AuthLayoutTemplate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: Navigator.canPop(context)
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
@@ -54,9 +56,11 @@ class AuthLayoutTemplate extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildHeader(),
+                _buildHeader(context),
                 const SizedBox(height: 32),
-                useCard ? _buildCardContainer() : _buildTransparentContainer(),
+                useCard
+                    ? _buildCardContainer(context)
+                    : _buildTransparentContainer(context),
                 const SizedBox(height: 32),
                 if (footerContent != null) footerContent!,
               ],
@@ -67,7 +71,7 @@ class AuthLayoutTemplate extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Column(
       children: [
         customHeaderIcon ??
@@ -75,37 +79,41 @@ class AuthLayoutTemplate extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
                 ],
               ),
-              child: const Center(
-                child: Icon(Icons.task_alt, size: 48, color: AppColors.primary),
+              child: Center(
+                child: Icon(
+                  Icons.task_alt,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
             ),
         const SizedBox(height: 24),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w800,
-            color: AppColors.textDark,
+            color: Theme.of(context).colorScheme.onSurface,
             letterSpacing: -0.5,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           subtitle,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: AppColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           textAlign: TextAlign.center,
         ),
@@ -113,27 +121,28 @@ class AuthLayoutTemplate extends StatelessWidget {
     );
   }
 
-  Widget _buildCardContainer() {
+  Widget _buildCardContainer(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: _buildFormElements(),
+      child: _buildFormElements(context),
     );
   }
 
-  Widget _buildTransparentContainer() => _buildFormElements();
+  Widget _buildTransparentContainer(BuildContext context) =>
+      _buildFormElements(context);
 
-  Widget _buildFormElements() {
+  Widget _buildFormElements(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -143,8 +152,9 @@ class AuthLayoutTemplate extends StatelessWidget {
           // Disable button if loading
           onPressed: isLoading ? null : onSubmit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            disabledBackgroundColor: AppColors.primary.withOpacity(0.6),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            disabledBackgroundColor:
+                Theme.of(context).colorScheme.primary.withOpacity(0.6),
             padding: const EdgeInsets.symmetric(vertical: 20),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -152,11 +162,11 @@ class AuthLayoutTemplate extends StatelessWidget {
             elevation: isLoading ? 0 : 4,
           ),
           child: isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   height: 20,
                   width: 20,
                   child: CircularProgressIndicator(
-                    color: AppColors.white,
+                    color: Theme.of(context).colorScheme.surface,
                     strokeWidth: 2,
                   ),
                 )
@@ -165,16 +175,16 @@ class AuthLayoutTemplate extends StatelessWidget {
                   children: [
                     Text(
                       submitText,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.white,
+                        color: Theme.of(context).colorScheme.surface,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(
+                    Icon(
                       Icons.arrow_forward,
-                      color: AppColors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       size: 20,
                     ),
                   ],
@@ -182,21 +192,21 @@ class AuthLayoutTemplate extends StatelessWidget {
         ),
         if (showSocial) ...[
           const SizedBox(height: 32),
-          const Row(
+          Row(
             children: [
-              Expanded(child: Divider(color: AppColors.border)),
-              Padding(
+              Expanded(
+                child: Divider(color: Theme.of(context).colorScheme.outline),
+              ),
+              const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   'OR',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
                 ),
               ),
-              Expanded(child: Divider(color: AppColors.border)),
+              Expanded(
+                child: Divider(color: Theme.of(context).colorScheme.outline),
+              ),
             ],
           ),
           const SizedBox(height: 24),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../widgets/task_widgets.dart';
 
@@ -78,8 +77,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                               selected: isSelected,
                               onSelected: (selected) => setState(() => _selectedCategoryIndex = selected ? index : 0),
                               backgroundColor: const Color(0xFFF1F7FD),
-                              selectedColor: AppColors.primaryBlue,
-                              labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.primaryBlue, fontSize: 14),
+                              selectedColor: Theme.of(context).colorScheme.primary,
+                              labelStyle: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : Theme.of(context).colorScheme.primary,
+                                fontSize: 14,
+                              ),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   side: const BorderSide(color: Color(0xFFF1F7FD), width: 1)),
@@ -118,7 +122,10 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                         ),
                         Container(
                           padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: AppColors.primaryBlue, borderRadius: BorderRadius.circular(15)),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
                           child: const Icon(Icons.date_range_rounded, color: Colors.white),
                         )
                       ],
@@ -156,7 +163,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                       child: ElevatedButton(
                         onPressed: () {},
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryBlue,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),

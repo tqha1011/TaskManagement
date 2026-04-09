@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../viewmodel/focus_viewmodel.dart';
 import '../view/focus_widget.dart';
 
@@ -35,10 +34,23 @@ class FocusScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Pomodoro', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text('${currentPomodoro.toInt()} phút', style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                        Text(
+                          '${currentPomodoro.toInt()} phút',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
-                    Slider(value: currentPomodoro, min: 5, max: 60, divisions: 55, activeColor: AppColors.primaryBlue, onChanged: (val) => setStateDialog(() => currentPomodoro = val)),
+                    Slider(
+                      value: currentPomodoro,
+                      min: 5,
+                      max: 60,
+                      divisions: 55,
+                      activeColor: Theme.of(context).colorScheme.primary,
+                      onChanged: (val) => setStateDialog(() => currentPomodoro = val),
+                    ),
                     const SizedBox(height: 5),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -53,7 +65,9 @@ class FocusScreen extends StatelessWidget {
                     // --- Hardware Settings ---
                     SwitchListTile(
                       title: const Text('Rung', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      value: currentVibrate, activeColor: AppColors.primaryBlue, contentPadding: EdgeInsets.zero,
+                      value: currentVibrate,
+                      activeColor: Theme.of(context).colorScheme.primary,
+                      contentPadding: EdgeInsets.zero,
                       onChanged: (val) => setStateDialog(() => currentVibrate = val),
                     ),
                     const SizedBox(height: 10),
@@ -88,7 +102,10 @@ class FocusScreen extends StatelessWidget {
                     vm.updateSettings(newPomodoroMinutes: currentPomodoro.toInt(), newBreakMinutes: currentBreak.toInt(), vibrate: currentVibrate, ringtone: currentRingtone);
                     Navigator.pop(context);
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                   child: const Text('Lưu', style: TextStyle(color: Colors.white)),
                 ),
               ],
@@ -102,7 +119,7 @@ class FocusScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -123,7 +140,17 @@ class FocusScreen extends StatelessWidget {
                   // Settings Icon
                   GestureDetector(
                     onTap: () => _showSettingsDialog(context),
-                    child: Container(padding: const EdgeInsets.all(10), decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle), child: const Icon(Icons.settings_outlined, color: AppColors.primaryBlue)),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.settings_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
                   ),
                 ],
               ),

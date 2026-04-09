@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
 
 /// A highly reusable text input field component.
 class CustomTextField extends StatelessWidget {
@@ -36,7 +35,7 @@ class CustomTextField extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textDark.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 letterSpacing: 1,
               ),
             ),
@@ -44,21 +43,21 @@ class CustomTextField extends StatelessWidget {
           TextFormField(
             controller: controller,
             obscureText: obscureText,
-            style: const TextStyle(
-              color: AppColors.textDark,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
               fontSize: 16,
             ),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(
-                color: AppColors.textDark.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                 fontWeight: FontWeight.w400,
                 fontSize: 16,
               ),
               filled: true,
-              fillColor: AppColors.inputBackground,
-              prefixIcon: Icon(icon, color: AppColors.primary),
+              fillColor: Theme.of(context).colorScheme.surface,
+              prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary),
               suffixIcon: isPassword
                   ? IconButton(
                       icon: Icon(
@@ -78,12 +77,12 @@ class CustomTextField extends StatelessWidget {
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
                   width: 2,
                 ),
               ),

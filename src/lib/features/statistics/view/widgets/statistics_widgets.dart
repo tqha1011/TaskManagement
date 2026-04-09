@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:task_management_app/features/statistics/model/StatisticsModel.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../tasks/model/task_model.dart';
 import '../../../tasks/view/screens/task_detail_screen.dart';
 
@@ -21,7 +20,14 @@ class DailyProgressCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Text('Tiến độ hôm nay', style: TextStyle(color: AppColors.grayText, fontSize: 16, fontWeight: FontWeight.w600)),
+          Text(
+            'Tiến độ hôm nay',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 20),
           SizedBox(
             height: 140,
@@ -32,8 +38,11 @@ class DailyProgressCard extends StatelessWidget {
                 CircularProgressIndicator(
                   value: (total > 0) ? percentage / 100 : 0,
                   strokeWidth: 12,
-                  backgroundColor: AppColors.backgroundBlue,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.primary,
+                  ),
                 ),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -52,7 +61,13 @@ class DailyProgressCard extends StatelessWidget {
               style: const TextStyle(fontSize: 16, color: Colors.black87),
               children: [
                 const TextSpan(text: 'Tuyệt vời! Bạn đã hoàn thành '),
-                TextSpan(text: '${percentage.toInt()}%', style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                TextSpan(
+                  text: '${percentage.toInt()}%',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const TextSpan(text: '\nmục tiêu.'),
               ],
             ),
@@ -105,7 +120,14 @@ class WeeklyChartCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Tuần này', style: TextStyle(color: AppColors.grayText, fontSize: 14, fontWeight: FontWeight.w600)),
+                  Text(
+                    'Tuần này',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 5),
                   Text('$thisWeekTotal Tasks', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
                 ],
@@ -123,13 +145,13 @@ class WeeklyChartCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
 
-              _buildBar('T2', weeklyHeights.length > 0 ? weeklyHeights[0] : 0.1, 0),
-              _buildBar('T3', weeklyHeights.length > 1 ? weeklyHeights[1] : 0.1, 1),
-              _buildBar('T4', weeklyHeights.length > 2 ? weeklyHeights[2] : 0.1, 2),
-              _buildBar('T5', weeklyHeights.length > 3 ? weeklyHeights[3] : 0.1, 3),
-              _buildBar('T6', weeklyHeights.length > 4 ? weeklyHeights[4] : 0.1, 4),
-              _buildBar('T7', weeklyHeights.length > 5 ? weeklyHeights[5] : 0.1, 5),
-              _buildBar('CN', weeklyHeights.length > 6 ? weeklyHeights[6] : 0.1, 6),
+              _buildBar(context, 'T2', weeklyHeights.length > 0 ? weeklyHeights[0] : 0.1, 0),
+              _buildBar(context, 'T3', weeklyHeights.length > 1 ? weeklyHeights[1] : 0.1, 1),
+              _buildBar(context, 'T4', weeklyHeights.length > 2 ? weeklyHeights[2] : 0.1, 2),
+              _buildBar(context, 'T5', weeklyHeights.length > 3 ? weeklyHeights[3] : 0.1, 3),
+              _buildBar(context, 'T6', weeklyHeights.length > 4 ? weeklyHeights[4] : 0.1, 4),
+              _buildBar(context, 'T7', weeklyHeights.length > 5 ? weeklyHeights[5] : 0.1, 5),
+              _buildBar(context, 'CN', weeklyHeights.length > 6 ? weeklyHeights[6] : 0.1, 6),
             ],
           ),
         ],
@@ -137,7 +159,7 @@ class WeeklyChartCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBar(String label, double heightRatio, int index) {
+  Widget _buildBar(BuildContext context, String label, double heightRatio, int index) {
     bool isActive = index == selectedIndex;
     return GestureDetector(
       onTap: () => onDaySelected(index),
@@ -149,12 +171,23 @@ class WeeklyChartCard extends StatelessWidget {
             width: 35,
             height: 100 * (heightRatio > 0 ? heightRatio : 0.1), // Tối thiểu 10% để cột không bị "biến mất"
             decoration: BoxDecoration(
-              color: isActive ? AppColors.primaryBlue : const Color(0xFFF5F7FA),
+              color: isActive
+                  ? Theme.of(context).colorScheme.primary
+                  : const Color(0xFFF5F7FA),
               borderRadius: BorderRadius.circular(8),
             ),
           ),
           const SizedBox(height: 10),
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isActive ? AppColors.primaryBlue : AppColors.grayText)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isActive
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );

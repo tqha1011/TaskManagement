@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/auth_layout_template.dart';
 import '../../../../core/theme/custom_text_field.dart';
 import '../viewmodels/auth_viewmodels.dart';
@@ -23,10 +22,14 @@ class _NewPasswordViewState extends State<NewPasswordView> {
         subtitle: 'Mật khẩu mới phải khác với mật khẩu cũ',
         submitText: 'Cập nhật',
         isLoading: _vm.isLoading,
-        customHeaderIcon: const CircleAvatar(
+        customHeaderIcon: CircleAvatar(
           radius: 40,
           backgroundColor: Color(0xFFEBF2FF),
-          child: Icon(Icons.lock_reset, size: 40, color: AppColors.primary),
+          child: Icon(
+            Icons.lock_reset,
+            size: 40,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
         onSubmit: () async {
           FocusScope.of(context).unfocus();
@@ -37,12 +40,22 @@ class _NewPasswordViewState extends State<NewPasswordView> {
 
           if (errorMessage == null) {
             // Null -> Thành công -> Báo xanh mướt
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đổi mật khẩu thành công!'), backgroundColor: AppColors.success));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Đổi mật khẩu thành công!'),
+                backgroundColor: Theme.of(context).colorScheme.tertiary,
+              ),
+            );
             // Cú đá chót: Xóa hết lịch sử trang, đá thẳng mặt về trang Login (isFirst)
             Navigator.popUntil(context, (route) => route.isFirst);
           } else {
             // Nếu lỗi do User nhập lệch pass -> Chửi
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage), backgroundColor: AppColors.error));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
           }
         },
         formContent: Column(
@@ -62,12 +75,22 @@ class _NewPasswordViewState extends State<NewPasswordView> {
                 color: const Color(0xFFEBF2FF),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.info, color: AppColors.primary, size: 16),
-                  SizedBox(width: 8),
+                  Icon(
+                    Icons.info,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Text('Mật khẩu tối thiểu 6 ký tự để đảm bảo an toàn.', style: TextStyle(fontSize: 12, color: AppColors.primary)),
+                    child: Text(
+                      'Mật khẩu tối thiểu 6 ký tự để đảm bảo an toàn.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
                   ),
                 ],
               ),

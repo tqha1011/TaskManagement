@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:task_management_app/features/main/view/screens/main_screen.dart';
-import 'core/theme/app_colors.dart';
-import 'features/auth/presentation/view/login_view.dart';
-import 'features/auth/presentation/view/auth_gate.dart';
+import 'core/theme/app_theme.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'core/theme/theme_provider.dart';
 
 
 Future<void> main() async {
@@ -28,7 +29,12 @@ Future<void> main() async {
 
   SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
-  runApp(const TaskApp());
+  runApp(
+      MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => ThemeProvider()),
+          ],
+      child: const TaskApp()));
 }
 
 // 4. Create a global variable for ViewModel to call API quickly
@@ -41,20 +47,12 @@ class TaskApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp(
       title: 'Task Management App',
-      theme: ThemeData(
-        scaffoldBackgroundColor: AppColors.backgroundBlue,
-        primaryColor: AppColors.primaryBlue,
-        useMaterial3: true,
-        fontFamily: 'Montserrat',
-        textTheme: const TextTheme(
-          headlineMedium: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black),
-          titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
-          bodyMedium: TextStyle(fontSize: 14, color: AppColors.grayText),
-          labelLarge: TextStyle(fontSize: 16, color: AppColors.primaryBlue),
-        ),
-      ),
+      themeMode: themeProvider.themeMode,
+      theme: AppTheme.lightTheme,         // Bộ màu sáng ông vừa map xong
+      darkTheme: AppTheme.darkTheme,
       home: const MainScreen(),
       debugShowCheckedModeBanner: false,
     );
