@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../core/theme/app_colors.dart';
 import '../auth/viewmodels/auth_viewmodels.dart';
 import '../auth/presentation/view/new_password_view.dart';
 
@@ -18,18 +17,21 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'OTP Verification',
           style: TextStyle(
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -46,24 +48,26 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.mark_email_read,
                       size: 80,
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     const SizedBox(height: 32),
-                    const Text(
+                    Text(
                       'Enter 8-digit code', // Show correct 8-digit count
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'The code has been sent to your email.',
-                      style: TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 40),
 
@@ -117,28 +121,28 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(errorMessage),
-                              backgroundColor: AppColors.error,
+                              backgroundColor: Theme.of(context).colorScheme.error,
                             ),
                           );
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         minimumSize: const Size(double.infinity, 56),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                       child: _vm.isLoading
-                          ? const CircularProgressIndicator(
-                        color: AppColors.white,
+                          ? CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.surface,
                       )
-                          : const Text(
+                          : Text(
                         'CONFIRM',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.white,
+                          color: Theme.of(context).colorScheme.surface,
                         ),
                       ),
                     ),
@@ -154,24 +158,31 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
 
                         if (errorMessage == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                            SnackBar(
                               content: Text('OTP code resent!'),
-                              backgroundColor: AppColors.success,
+                              backgroundColor: Theme.of(context).colorScheme.tertiary,
                             ),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(errorMessage),
-                              backgroundColor: AppColors.error,
+                              backgroundColor: Theme.of(context).colorScheme.error,
                             ),
                           );
                         }
                       },
-                      icon: const Icon(Icons.refresh, size: 18, color: AppColors.primary),
-                      label: const Text(
+                      icon: Icon(
+                        Icons.refresh,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      label: Text(
                         'Resend code',
-                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     )
                   ],
@@ -190,9 +201,9 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
       width: boxWidth, // Use calculated width
       height: 48,
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: TextField(
         onChanged: (value) {
@@ -205,10 +216,10 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
             FocusScope.of(context).previousFocus();
           }
         },
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: AppColors.textDark,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,

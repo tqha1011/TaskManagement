@@ -14,6 +14,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     String formattedDate = DateFormat('EEEE, d MMMM').format(DateTime.now());
     final viewModel = context.watch<TaskViewModel>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Nhóm task theo priority
     Map<Priority, List<TaskModel>> grouped = {};
@@ -50,12 +51,19 @@ class HomeScreen extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.menu_rounded, color: Colors.black),
+                      Icon(
+                        Icons.menu_rounded,
+                        color: isDark
+                            ? Theme.of(context).colorScheme.surface
+                            : Colors.black,
+                      ),
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.notifications_none_rounded,
-                            color: Colors.black,
+                            color: isDark
+                                ? Theme.of(context).colorScheme.surface
+                                : Colors.black,
                           ),
                           const SizedBox(width: 15),
                           const CircleAvatar(
@@ -66,16 +74,13 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 10),
                           IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.add_rounded,
-                              color: Colors.black,
+                              color: isDark
+                                  ? Theme.of(context).colorScheme.surface
+                                  : Colors.black,
                             ),
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const CreateTaskScreen(),
-                              ),
-                            ),
+                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateTaskScreen())),
                           ),
                         ],
                       ),
@@ -88,8 +93,11 @@ class HomeScreen extends StatelessWidget {
                   width: double.infinity,
                   margin: const EdgeInsets.symmetric(horizontal: 20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(30),
+                    border: isDark
+                        ? Border.all(color: Theme.of(context).colorScheme.outline)
+                        : null,
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(25.0),
@@ -104,14 +112,11 @@ class HomeScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Today',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
+                            Text('Today', style: Theme.of(context).textTheme.titleMedium),
                             Text(
                               formattedDate,
-                              style: const TextStyle(
-                                color: AppColors.grayText,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontSize: 14,
                               ),
                             ),
@@ -172,6 +177,27 @@ class HomeScreen extends StatelessWidget {
                                 color: viewModel.sortByPriority
                                     ? Colors.white
                                     : AppColors.primaryBlue,
+                      // --- SỬ DỤNG MOCK DATA VÀO TASKCARD ---
+                      TaskCard(
+                        task: task1, // Truyền task1 vào đây
+                        leading: Stack(
+                          children: [
+                            const CircleAvatar(radius: 15, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=user2')),
+                            const Positioned(left: 10, child: CircleAvatar(radius: 15, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=user3'))),
+                            const Positioned(left: 20, child: CircleAvatar(radius: 15, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=user4'))),
+                            Positioned(
+                              left: 30,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.add_rounded,
+                                  size: 20,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
                               ),
                               const SizedBox(width: 5),
                               Text(
