@@ -64,9 +64,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     context.read<TaskViewModel>().updateTaskTags(widget.task.id, _currentTags);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Task updated successfully!'),
-        backgroundColor: Colors.green,
+      SnackBar(
+        content: const Text('Task updated successfully!'),
+        backgroundColor: Theme.of(context).colorScheme.tertiary,
       ),
     );
     Navigator.pop(context);
@@ -76,23 +76,29 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   Widget build(BuildContext context) {
     final viewModel = context.watch<TaskViewModel>();
     String formattedDate = DateFormat('EEEE, d MMMM').format(widget.task.date);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Mock categories (Fetch from database later)
     List<String> categories = ['Development', 'Research', 'Design', 'Backend'];
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundBlue,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: Colors.black,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Task Details',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
@@ -104,8 +110,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             child: Container(
               margin: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(30),
+                border: isDark
+                    ? Border.all(color: Theme.of(context).colorScheme.outline)
+                    : null,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -153,21 +162,24 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                   );
                                 }
                               },
-                              backgroundColor: const Color(0xFFF1F7FD),
-                              selectedColor: AppColors.primaryBlue,
+                              backgroundColor: isDark
+                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                  : const Color(0xFFF1F7FD),
+                              selectedColor: Theme.of(context).colorScheme.primary,
                               labelStyle: TextStyle(
                                 color: isSelected
                                     ? Colors.white
-                                    : AppColors.primaryBlue,
+                                    : Theme.of(context).colorScheme.primary,
                                 fontSize: 14,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                side: const BorderSide(
-                                  color: Color(0xFFF1F7FD),
-                                  width: 1,
-                                ),
-                              ),
+                                  borderRadius: BorderRadius.circular(10),
+                                  side: BorderSide(
+                                    color: isDark
+                                        ? Theme.of(context).colorScheme.outline
+                                        : const Color(0xFFF1F7FD),
+                                    width: 1,
+                                  )),
                               showCheckmark: false,
                             ),
                           );
@@ -181,10 +193,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     const SizedBox(height: 5),
                     Text(
                       formattedDate,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 25),
@@ -352,7 +364,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       child: ElevatedButton(
                         onPressed: _saveChanges,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryBlue,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 50,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/auth_layout_template.dart';
 import '../../../../core/theme/custom_text_field.dart';
 import '../viewmodels/auth_viewmodels.dart';
@@ -16,6 +15,8 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AnimatedBuilder(
       animation: _vm,
       builder: (context, _) => AuthLayoutTemplate(
@@ -26,12 +27,23 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
         isLoading: _vm.isLoading,
         customHeaderIcon: Container(
           width: 120, height: 120,
-          decoration: const BoxDecoration(
-            color: AppColors.white,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1B2A46) : Theme.of(context).colorScheme.surface,
             shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: Color(0xFFD1D9E6), blurRadius: 16)],
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.22)
+                    : const Color(0xFFD1D9E6),
+                blurRadius: 24,
+              )
+            ],
           ),
-          child: const Icon(Icons.lock_reset, size: 64, color: AppColors.primary),
+          child: Icon(
+            Icons.lock_reset,
+            size: 64,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
         onSubmit: () async {
           FocusScope.of(context).unfocus(); // Đóng bàn phím
@@ -45,7 +57,12 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const OtpVerificationView()));
           } else {
             // Có lỗi (như nhập sai định dạng, spam nút) -> Vã cái lỗi màu đỏ ra
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage), backgroundColor: AppColors.error));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
           }
         },
         formContent: CustomTextField(
@@ -54,15 +71,34 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
           icon: Icons.mail,
           controller: _vm.emailCtrl,
         ),
-        footerContent: const Padding(
-          padding: EdgeInsets.only(bottom: 24.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.help, size: 16, color: AppColors.primary),
-              SizedBox(width: 4),
-              Text('Cần hỗ trợ? Liên hệ CSKH', style: TextStyle(color: AppColors.textSecondary, fontSize: 14, fontWeight: FontWeight.bold)),
-            ],
+        footerContent: Padding(
+          padding: const EdgeInsets.only(bottom: 24.0),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF111E37) : Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.help,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Cần hỗ trợ? Liên hệ CSKH',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -192,6 +192,8 @@ class TaskViewModel extends ChangeNotifier {
           .where((t) => t.tags.any((tag) => tag.id == _filterTagId))
           .toList();
     }
+
+    // Sắp xếp theo priority (urgent → high → medium → low)
     if (_sortByPriority) {
       const order = [
         Priority.urgent,

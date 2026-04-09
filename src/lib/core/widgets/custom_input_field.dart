@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 
 class CustomInputField extends StatelessWidget {
   final String label;
@@ -32,8 +31,11 @@ class CustomInputField extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             enabledBorder: const UnderlineInputBorder(
                 borderSide: BorderSide(color: Colors.black26)),
-            focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: AppColors.primaryBlue)),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
         ),
       ],

@@ -1,21 +1,25 @@
+# Task Management App - Life Organizer
 
-# Bản update từ nhánh `priority_selector_and_tag_system`
-- file1: task_viewmodel.dart
-- file2: tag_selector.dart
-- file3: task_detail_screen.dart
+## 1. Introduction
+This repository contains the source code for the **Task Management App (Life Organizer)**, developed as a project for the **SE346** course at the University of Information Technology - VNUHCM (UIT).
 
-<img width="445" height="108" alt="image" src="https://github.com/user-attachments/assets/4763d417-a73d-484d-9ae3-b145045dc624" />
+Going beyond a traditional to-do list, this application is designed to be a comprehensive personal assistant. It helps users easily organize various life contexts, such as tracking utility bills, managing grocery shopping lists, building daily habits, and handling household chores efficiently.
 
-**Nâng cấp thêm các tag: Thời gian, Trạng thái và Custom**
+## 2. Authors
+This project is built and maintained by a dedicated team of 4 members:
+* [Trần Quang Hạ](https://github.com/tqha1011) 
+* [Nguyễn Lê Hoàng Hảo](https://github.com/hoanghaoz) 
+* [Nguyễn Anh Kiệt](https://github.com/anhkietbienhoa-crypto) 
+* [Nguyễn Trí Kiệt](https://github.com/Ender-Via)
 
-- **Thời gian & Trạng thái:** Chỉnh sửa sau khi tạo task tại màn hình `task_detail_screen.dart`.
-- **Tag Custom:** - Tối đa 12 ký tự/tag.
-  - Tối đa 5 tags/nhiệm vụ.
-  - Các tag đã tạo sẽ được lưu nội bộ trên máy để dùng lại cho lần sau mà không cần nhập lại.
+## 3. Tech Stack
+The application is built with a focus on performance, security, and clean code principles, strictly following the **Feature-Based MVVM** architecture:
+* **Frontend:** Flutter
+* **Backend & Database:** Supabase (PostgreSQL, Auth, Row Level Security)
+* **Code Quality & CI/CD:** GitHub Actions, SonarCloud
 
-**⚠️ Lưu ý cài đặt:**
-Để sử dụng tính năng lưu tag custom, **phải thêm** package `shared_preferences`. 
-
-Mở file `pubspec.yaml`, tìm phần `dependencies` và dán dòng này vào ngay dưới `provider: ^6.1.5+1`:
-```yaml
-shared_preferences: ^2.3.2
+## 4. Documentation
+For a deeper dive into our system design and development workflows, please explore the attached documentation:
+* [Flutter App Architecture](documentation/architecture/flutter-architecture.md)
+* [Database Schema & ERD](documentation/architecture/database-schema.md)
+* [Git & Conventional Commits Guidelines](documentation/guidelines/conventional-commit.md)

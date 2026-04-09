@@ -31,15 +31,17 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   @override
   Widget build(BuildContext context) {
     String formattedDate = DateFormat('EEEE, d MMMM').format(_selectedDate);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             // ─── Header ───────────────────────────────────────
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
@@ -57,14 +59,20 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios_new_rounded,
-                      color: Colors.black,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Icon(Icons.menu_rounded, color: Colors.black),
-                  const Icon(Icons.assignment_outlined, color: Colors.black),
+                  Icon(
+                    Icons.menu_rounded,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  Icon(
+                    Icons.assignment_outlined,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ],
               ),
             ),
@@ -114,26 +122,25 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                             child: ChoiceChip(
                               label: Text(categories[index]),
                               selected: isSelected,
-                              onSelected: (selected) => setState(
-                                () => _selectedCategoryIndex = selected
-                                    ? index
-                                    : 0,
-                              ),
-                              backgroundColor: const Color(0xFFF1F7FD),
-                              selectedColor: AppColors.primaryBlue,
+                              onSelected: (selected) => setState(() => _selectedCategoryIndex = selected ? index : 0),
+                              backgroundColor: isDark
+                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                  : const Color(0xFFF1F7FD),
+                              selectedColor: Theme.of(context).colorScheme.primary,
                               labelStyle: TextStyle(
                                 color: isSelected
                                     ? Colors.white
-                                    : AppColors.primaryBlue,
+                                    : Theme.of(context).colorScheme.primary,
                                 fontSize: 14,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                side: const BorderSide(
-                                  color: Color(0xFFF1F7FD),
-                                  width: 1,
-                                ),
-                              ),
+                                  borderRadius: BorderRadius.circular(10),
+                                  side: BorderSide(
+                                    color: isDark
+                                        ? Theme.of(context).colorScheme.outline
+                                        : const Color(0xFFF1F7FD),
+                                    width: 1,
+                                  )),
                               showCheckmark: false,
                             ),
                           );
@@ -179,17 +186,18 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                 children: [
                                   Text(
                                     formattedDate,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.onSurface,
                                     ),
                                   ),
                                   const SizedBox(height: 5),
                                   Container(
                                     width: 150,
                                     height: 1,
-                                    color: Colors.black26,
-                                  ),
+                                    color: Theme.of(context).colorScheme.outline,
+                                  )
                                 ],
                               ),
                             ),
@@ -198,14 +206,11 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryBlue,
+                            color: Theme.of(context).colorScheme.primary,
                             borderRadius: BorderRadius.circular(15),
                           ),
-                          child: const Icon(
-                            Icons.date_range_rounded,
-                            color: Colors.white,
-                          ),
-                        ),
+                          child: const Icon(Icons.date_range_rounded, color: Colors.white),
+                        )
                       ],
                     ),
                     const SizedBox(height: 25),
@@ -288,7 +293,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryBlue,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 100,
