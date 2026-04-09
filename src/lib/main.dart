@@ -55,7 +55,7 @@ class TaskApp extends StatelessWidget {
       themeMode: themeProvider.themeMode,
       theme: AppTheme.lightTheme,         // Bộ màu sáng ông vừa map xong
       darkTheme: AppTheme.darkTheme,
-      home: const LoginView(),
+      home: const MainScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

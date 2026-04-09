@@ -41,6 +41,8 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       extendBody: true,
       body: IndexedStack(
@@ -50,7 +52,9 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark
+              ? const Color(0xFF1A2945)
+              : Theme.of(context).colorScheme.surface,
           borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, -5))],
         ),
@@ -80,7 +84,11 @@ class _MainScreenState extends State<MainScreen> {
         curve: Curves.easeInOut,
         padding: EdgeInsets.symmetric(horizontal: isSelected ? 15 : 10, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE8F0FE) : Colors.transparent,
+          color: isSelected
+              ? (Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF23395D)
+                  : const Color(0xFFE8F0FE))
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(15),
         ),
         child: Column(

@@ -10,6 +10,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String formattedDate = DateFormat('EEEE, d MMMM').format(DateTime.now());
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // --- TẠO DỮ LIỆU GIẢ LẬP (MOCK DATA) ---
     final task1 = TaskModel(
@@ -52,10 +53,20 @@ class HomeScreen extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.menu_rounded, color: Colors.black),
+                      Icon(
+                        Icons.menu_rounded,
+                        color: isDark
+                            ? Theme.of(context).colorScheme.surface
+                            : Colors.black,
+                      ),
                       Row(
                         children: [
-                          const Icon(Icons.notifications_none_rounded, color: Colors.black),
+                          Icon(
+                            Icons.notifications_none_rounded,
+                            color: isDark
+                                ? Theme.of(context).colorScheme.surface
+                                : Colors.black,
+                          ),
                           const SizedBox(width: 15),
                           const CircleAvatar(
                             radius: 20,
@@ -63,7 +74,12 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 10),
                           IconButton(
-                            icon: const Icon(Icons.add_rounded, color: Colors.black),
+                            icon: Icon(
+                              Icons.add_rounded,
+                              color: isDark
+                                  ? Theme.of(context).colorScheme.surface
+                                  : Colors.black,
+                            ),
                             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateTaskScreen())),
                           ),
                         ],
@@ -75,7 +91,13 @@ class HomeScreen extends StatelessWidget {
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.symmetric(horizontal: 20),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30)),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(30),
+                    border: isDark
+                        ? Border.all(color: Theme.of(context).colorScheme.outline)
+                        : null,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(25.0),
                     child: Column(
@@ -129,7 +151,10 @@ class HomeScreen extends StatelessWidget {
                               left: 30,
                               child: Container(
                                 padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  shape: BoxShape.circle,
+                                ),
                                 child: Icon(
                                   Icons.add_rounded,
                                   size: 20,
@@ -144,7 +169,12 @@ class HomeScreen extends StatelessWidget {
                         task: task2, // Truyền task2 vào đây
                         leading: Container(
                           padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: const Color(0xFFF1F7FD), borderRadius: BorderRadius.circular(15)),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Theme.of(context).colorScheme.surfaceContainerHighest
+                                : const Color(0xFFF1F7FD),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
                           child: Icon(
                             Icons.call_outlined,
                             color: Theme.of(context).colorScheme.primary,

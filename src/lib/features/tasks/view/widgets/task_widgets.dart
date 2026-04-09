@@ -38,6 +38,7 @@ class DateBox extends StatelessWidget {
   Widget build(BuildContext context) {
     String day = DateFormat('d').format(date);
     String weekday = DateFormat('E').format(date).toUpperCase();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: 55,
@@ -47,7 +48,12 @@ class DateBox extends StatelessWidget {
             ? Theme.of(context).colorScheme.primary
             : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade300, width: 1),
+        border: Border.all(
+          color: isDark
+              ? Theme.of(context).colorScheme.outline
+              : Colors.grey.shade300,
+          width: 1,
+        ),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -56,7 +62,9 @@ class DateBox extends StatelessWidget {
               style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.white : Colors.black)),
+                  color: isSelected
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 5),
           Text(weekday,
               style: TextStyle(
@@ -186,8 +194,11 @@ class TimePickerWidget extends StatelessWidget {
           Row(
             children: [
               Text(formattedTime,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  )),
               const SizedBox(width: 5),
               Icon(
                 Icons.keyboard_arrow_down_rounded,
@@ -197,7 +208,7 @@ class TimePickerWidget extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 5),
-          Container(height: 1, color: Colors.black26)
+          Container(height: 1, color: Theme.of(context).colorScheme.outline)
         ],
       ),
     );
