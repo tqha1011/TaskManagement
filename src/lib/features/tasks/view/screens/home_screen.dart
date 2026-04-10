@@ -177,27 +177,6 @@ class HomeScreen extends StatelessWidget {
                                 color: viewModel.sortByPriority
                                     ? Colors.white
                                     : AppColors.primaryBlue,
-                      // --- SỬ DỤNG MOCK DATA VÀO TASKCARD ---
-                      TaskCard(
-                        task: task1, // Truyền task1 vào đây
-                        leading: Stack(
-                          children: [
-                            const CircleAvatar(radius: 15, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=user2')),
-                            const Positioned(left: 10, child: CircleAvatar(radius: 15, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=user3'))),
-                            const Positioned(left: 20, child: CircleAvatar(radius: 15, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=user4'))),
-                            Positioned(
-                              left: 30,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.add_rounded,
-                                  size: 20,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
                               ),
                               const SizedBox(width: 5),
                               Text(
