@@ -178,20 +178,9 @@ class HomeScreen extends StatelessWidget {
                                     ? Colors.white
                                     : AppColors.primaryBlue,
                               ),
-                              const SizedBox(width: 5),
-                              Text(
-                                'Sort',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: viewModel.sortByPriority
-                                      ? Colors.white
-                                      : AppColors.primaryBlue,
-                                ),
-                              ),
-                            ],
+                            ]
                           ),
-                        ),
+                        )
                       ),
                       const SizedBox(width: 8),
 
