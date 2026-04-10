@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:task_management_app/features/auth/presentation/view/auth_gate.dart';
-import 'package:task_management_app/features/auth/presentation/view/login_view.dart';
 import 'package:task_management_app/features/main/view/screens/main_screen.dart';
+import 'package:task_management_app/features/tasks/viewmodel/task_viewmodel.dart';
 import 'core/theme/app_theme.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:provider/provider.dart';
-import 'features/tasks/viewmodel/task_viewmodel.dart';
 
 import 'core/theme/theme_provider.dart';
 
@@ -34,6 +32,9 @@ Future<void> main() async {
       MultiProvider(
           providers: [
             ChangeNotifierProvider(create: (_) => ThemeProvider()),
+            ChangeNotifierProvider<TaskViewModel>(
+              create: (_) => TaskViewModel(),
+            ),
           ],
       child: const TaskApp()));
 }
@@ -51,7 +52,7 @@ class TaskApp extends StatelessWidget {
       themeMode: themeProvider.themeMode,
       theme: AppTheme.lightTheme,         // Bộ màu sáng ông vừa map xong
       darkTheme: AppTheme.darkTheme,
-      home: const MainScreen(),
+      home: const AuthGate(),
       debugShowCheckedModeBanner: false,
     );
   }
