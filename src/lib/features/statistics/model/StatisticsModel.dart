@@ -42,7 +42,7 @@ class UserStatisticsModel {
   final int thisWeekTotal;
   final double growthPercentage;
   final List<RecentTaskModel> recentTasks;
-  final List<int> dailyCounts; // <--- THÊM DÒNG NÀY (Hứng mảng 7 ngày)
+  final List<int> dailyCounts;
 
   UserStatisticsModel({
     required this.today,
@@ -50,7 +50,7 @@ class UserStatisticsModel {
     required this.thisWeekTotal,
     required this.growthPercentage,
     required this.recentTasks,
-    required this.dailyCounts, // <--- Cập nhật constructor
+    required this.dailyCounts,
   });
 
   factory UserStatisticsModel.fromJson(Map<String, dynamic> json) {
