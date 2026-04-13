@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_heatmap_calendar/flutter_heatmap_calendar.dart';
 import '../viewmodel/user_profile_viewmodel.dart';
 import 'widgets/profile_header.dart';
 import 'widgets/stat_card.dart';
@@ -44,7 +45,7 @@ class UserProfileView extends StatelessWidget {
             duration: const Duration(milliseconds: 300),
             child: vm.isLoading
                 ? Center(
-              key: ValueKey('loading'),
+              key: const ValueKey('loading'),
               child: CircularProgressIndicator(
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -55,11 +56,11 @@ class UserProfileView extends StatelessWidget {
               child: Text("Error loading profile"),
             )
                 : Builder(
-                    builder: (innerContext) {
-                      vm.syncThemeWithProfile(innerContext);
-                      return _buildProfileContent(innerContext, vm);
-                    },
-                  ),
+              builder: (innerContext) {
+                vm.syncThemeWithProfile(innerContext);
+                return _buildProfileContent(innerContext, vm);
+              },
+            ),
           );
         },
       ),
@@ -93,7 +94,7 @@ class UserProfileView extends StatelessWidget {
                 child: StatCard(
                   value: user.streaks.toString(),
                   label: 'Streaks',
-                  onTap: () {},
+                  onTap: () => _showHeatmapBottomSheet(context),
                 ),
               ),
             ],
@@ -114,7 +115,7 @@ class UserProfileView extends StatelessWidget {
                   activeColor: Theme.of(context).colorScheme.surface,
                   activeTrackColor: Theme.of(context).colorScheme.primary,
                   inactiveThumbColor:
-                      Theme.of(context).colorScheme.onSurfaceVariant,
+                  Theme.of(context).colorScheme.onSurfaceVariant,
                   inactiveTrackColor: Theme.of(context).colorScheme.outline,
                   onChanged: (val) => vm.toggleNotification(val),
                 ),
@@ -151,6 +152,99 @@ class UserProfileView extends StatelessWidget {
           LogoutButton(onPressed: () => vm.logout(context)),
         ],
       ),
+    );
+  }
+
+  void _showHeatmapBottomSheet(BuildContext context) {
+    // mock data for testing
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final Map<DateTime, int> mockHeatmapData = {
+      today.subtract(const Duration(days: 1)): 3,
+      today.subtract(const Duration(days: 2)): 7,
+      today.subtract(const Duration(days: 3)): 4,
+      today.subtract(const Duration(days: 4)): 8,
+      today.subtract(const Duration(days: 5)): 2,
+      today.subtract(const Duration(days: 8)): 5,
+    };
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (bottomSheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.outline,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                Text(
+                  'Bản đồ hoạt động',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Giữ vững phong độ nhé! 🔥',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                Center(
+                  child: HeatMap(
+                    datasets: mockHeatmapData,
+                    colorMode: ColorMode.opacity,
+                    showText: false,
+                    scrollable: true,
+                    size: 30,
+
+                    colorsets: {
+                      1: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                      3: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
+                      5: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+                      7: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                      9: Theme.of(context).colorScheme.primary,
+                    },
+                    onClick: (value) {
+                      // Khi bấm vào 1 ô vuông, hiện số task hoàn thành ngày đó
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Đã hoàn thành $value công việc'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

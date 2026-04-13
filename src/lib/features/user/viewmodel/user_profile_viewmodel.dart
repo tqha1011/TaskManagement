@@ -36,7 +36,12 @@ class UserProfileViewModel extends ChangeNotifier {
       _lastAppliedAppearance = null;
     } catch (e) {
       debugPrint("Error loading profile: $e");
-      _user = _buildMockUser();
+      if(useMockData){
+        _user = _buildMockUser();
+      }
+      else{
+        _user = null;
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -47,7 +52,6 @@ class UserProfileViewModel extends ChangeNotifier {
     return UserProfileModel(
       id: 'mock-user-001',
       name: 'Alex Thompson',
-      // Valid URL so profile header can test normal network-avatar path.
       avatarUrl: 'https://i.pravatar.cc/300?img=12',
       appearance: 'Dark',
       tasksDone: 24,
