@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:task_management_app/features/auth/presentation/view/login_view.dart';
 import '../../../../core/theme/auth_layout_template.dart';
 import '../../../../core/theme/custom_text_field.dart';
 import '../viewmodels/auth_viewmodels.dart';
@@ -21,6 +21,7 @@ class _RegisterViewState extends State<RegisterView> {
         title: 'Tạo tài khoản mới',
         subtitle: 'Bắt đầu quản lý công việc khoa học',
         submitText: 'Đăng ký',
+        compactMode: true,
         isLoading: _vm.isLoading,
         showSocial: true,
         onSubmit: () async {
@@ -29,11 +30,21 @@ class _RegisterViewState extends State<RegisterView> {
           if (!context.mounted) return;
 
           if (errorMessage == null) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đăng ký thành công!'), backgroundColor: AppColors.success));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Đăng ký thành công!'),
+                backgroundColor: Theme.of(context).colorScheme.tertiary,
+              ),
+            );
             // Return to the existing LoginView to avoid stacking duplicate login routes.
             Navigator.pop(context);
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage), backgroundColor: AppColors.error));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
           }
         },
         formContent: Column(
@@ -51,15 +62,28 @@ class _RegisterViewState extends State<RegisterView> {
           ],
         ),
         footerContent: Padding(
-          padding: const EdgeInsets.only(bottom: 24.0),
+          padding: const EdgeInsets.only(bottom: 14.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Đã có tài khoản? ', style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+              Text(
+                'Đã có tài khoản? ',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 15,
+                ),
+              ),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(minimumSize: const Size(50, 48)),
-                child: const Text('Đăng nhập', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16)),
+                style: TextButton.styleFrom(minimumSize: const Size(50, 40)),
+                child: Text(
+                  'Đăng nhập',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
               ),
             ],
           ),

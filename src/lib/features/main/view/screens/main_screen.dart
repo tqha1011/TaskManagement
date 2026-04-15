@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
 import 'package:task_management_app/features/tasks/view/screens/home_screen.dart';
 import 'settings_screen.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:task_management_app/features/user/viewmodel/user_profile_viewmodel.dart';
 import '../../../note/view/focus_screen.dart';
 import '../../../note/viewmodel/focus_viewmodel.dart';
 import '../../../statistics/view/screens/statistics_screen.dart';
 // import '../../../tasks/view/screens/home_screen.dart'; 
 import 'package:provider/provider.dart';
+
+import '../../../user/view/user_profile_view.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -30,11 +32,17 @@ class _MainScreenState extends State<MainScreen> {
         create: (_) => StatisticsViewmodel(),
         child: const StatisticsScreen(),
     ),
+    ChangeNotifierProvider(
+        create: (_) => UserProfileViewModel(useMockData: true)..loadProfile(),
+        child: const UserProfileView(),
+    ),
     const SettingsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       extendBody: true,
       body: IndexedStack(
@@ -44,7 +52,9 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark
+              ? const Color(0xFF1A2945)
+              : Theme.of(context).colorScheme.surface,
           borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, -5))],
         ),
@@ -52,11 +62,11 @@ class _MainScreenState extends State<MainScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.checklist_rounded, 'Công việc', 0),
-              _buildNavItem(Icons.calendar_today_rounded, 'Lịch', 1),
-              _buildNavItem(Icons.timer_rounded, 'Tập trung', 2),
-              _buildNavItem(Icons.bar_chart_rounded, 'Thống kê', 3),
-              _buildNavItem(Icons.settings_rounded, 'Cài đặt', 4),
+              _buildNavItem(context, Icons.checklist_rounded, 'Công việc', 0),
+              _buildNavItem(context, Icons.calendar_today_rounded, 'Lịch', 1),
+              _buildNavItem(context, Icons.timer_rounded, 'Tập trung', 2),
+              _buildNavItem(context, Icons.bar_chart_rounded, 'Thống kê', 3),
+              _buildNavItem(context, Icons.person_2_rounded, 'Cá nhân', 4),
             ],
           ),
         ),
@@ -64,7 +74,7 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, int index) {
+  Widget _buildNavItem(BuildContext context, IconData icon, String label, int index) {
     bool isSelected = _currentIndex == index;
 
     return GestureDetector(
@@ -74,20 +84,32 @@ class _MainScreenState extends State<MainScreen> {
         curve: Curves.easeInOut,
         padding: EdgeInsets.symmetric(horizontal: isSelected ? 15 : 10, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE8F0FE) : Colors.transparent,
+          color: isSelected
+              ? (Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF23395D)
+                  : const Color(0xFFE8F0FE))
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(15),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: isSelected ? AppColors.primaryBlue : AppColors.grayText, size: 24),
+            Icon(
+              icon,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+              size: 24,
+            ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? AppColors.primaryBlue : AppColors.grayText,
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             )
           ],
