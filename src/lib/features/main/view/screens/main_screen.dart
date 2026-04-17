@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+// import '../../../tasks/view/screens/home_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:task_management_app/features/chatbot/view/chatbot_view.dart';
 import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
 import 'package:task_management_app/features/tasks/view/screens/home_screen.dart';
-import 'settings_screen.dart';
 import 'package:task_management_app/features/user/viewmodel/user_profile_viewmodel.dart';
+
+import '../../../category/viewmodel/category_viewmodel.dart';
 import '../../../note/view/focus_screen.dart';
 import '../../../note/viewmodel/focus_viewmodel.dart';
 import '../../../statistics/view/screens/statistics_screen.dart';
-// import '../../../tasks/view/screens/home_screen.dart'; 
-import 'package:provider/provider.dart';
-
+import '../../../tag/viewmodel/tag_viewmodel.dart';
 import '../../../user/view/user_profile_view.dart';
+import 'settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -23,21 +26,31 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const Center(child: HomeScreen()),
-    const Center(child: Text('Màn hình Lịch')),
+    const ChatBotView(),
     ChangeNotifierProvider(
       create: (_) => FocusViewModel(),
       child: const FocusScreen(),
     ),
     ChangeNotifierProvider(
-        create: (_) => StatisticsViewmodel(),
-        child: const StatisticsScreen(),
+      create: (_) => StatisticsViewmodel(),
+      child: const StatisticsScreen(),
     ),
     ChangeNotifierProvider(
-        create: (_) => UserProfileViewModel(useMockData: true)..loadProfile(),
-        child: const UserProfileView(),
+      create: (_) => UserProfileViewModel(useMockData: true)..loadProfile(),
+      child: const UserProfileView(),
     ),
     const SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CategoryViewModel>().loadCategories();
+      context.read<TagViewModel>().loadTags();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,25 +58,31 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       extendBody: true,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
         decoration: BoxDecoration(
           color: isDark
               ? const Color(0xFF1A2945)
               : Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, -5))],
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
         ),
         child: SafeArea(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(context, Icons.checklist_rounded, 'Công việc', 0),
-              _buildNavItem(context, Icons.calendar_today_rounded, 'Lịch', 1),
+              _buildNavItem(context, Icons.smart_toy_rounded, 'Chat', 1),
               _buildNavItem(context, Icons.timer_rounded, 'Tập trung', 2),
               _buildNavItem(context, Icons.bar_chart_rounded, 'Thống kê', 3),
               _buildNavItem(context, Icons.person_2_rounded, 'Cá nhân', 4),
@@ -74,7 +93,12 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildNavItem(BuildContext context, IconData icon, String label, int index) {
+  Widget _buildNavItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    int index,
+  ) {
     bool isSelected = _currentIndex == index;
 
     return GestureDetector(
@@ -82,12 +106,15 @@ class _MainScreenState extends State<MainScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        padding: EdgeInsets.symmetric(horizontal: isSelected ? 15 : 10, vertical: 10),
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 15 : 10,
+          vertical: 10,
+        ),
         decoration: BoxDecoration(
           color: isSelected
               ? (Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF23395D)
-                  : const Color(0xFFE8F0FE))
+                    ? const Color(0xFF23395D)
+                    : const Color(0xFFE8F0FE))
               : Colors.transparent,
           borderRadius: BorderRadius.circular(15),
         ),
@@ -111,7 +138,7 @@ class _MainScreenState extends State<MainScreen> {
                     ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-            )
+            ),
           ],
         ),
       ),

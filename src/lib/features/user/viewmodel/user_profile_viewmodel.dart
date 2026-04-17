@@ -36,7 +36,12 @@ class UserProfileViewModel extends ChangeNotifier {
       _lastAppliedAppearance = null;
     } catch (e) {
       debugPrint("Error loading profile: $e");
-      _user = _buildMockUser();
+      
+      if (useMockData) {
+        _user = _buildMockUser();
+      } else {
+        _user = null;
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -44,15 +49,26 @@ class UserProfileViewModel extends ChangeNotifier {
   }
 
   UserProfileModel _buildMockUser() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final Map<DateTime, int> mockHeatmapData = {
+      today.subtract(const Duration(days: 1)): 3,
+      today.subtract(const Duration(days: 2)): 7,
+      today.subtract(const Duration(days: 3)): 4,
+      today.subtract(const Duration(days: 4)): 8,
+      today.subtract(const Duration(days: 5)): 2,
+      today.subtract(const Duration(days: 8)): 5,
+    };
     return UserProfileModel(
       id: 'mock-user-001',
       name: 'Alex Thompson',
-      // Valid URL so profile header can test normal network-avatar path.
       avatarUrl: 'https://i.pravatar.cc/300?img=12',
       appearance: 'Dark',
       tasksDone: 24,
       streaks: 12,
       isNotificationEnabled: true,
+      heatmapData: mockHeatmapData,
     );
   }
 
@@ -64,7 +80,6 @@ class UserProfileViewModel extends ChangeNotifier {
     }
   }
 
-
   void updateAppearance(BuildContext context, String newAppearance) {
     if (_user != null) {
       _user!.appearance = newAppearance;
@@ -72,7 +87,7 @@ class UserProfileViewModel extends ChangeNotifier {
       notifyListeners();
 
       if (context.mounted) {
-         context.read<ThemeProvider>().updateTheme(newAppearance);
+        context.read<ThemeProvider>().updateTheme(newAppearance);
       }
     }
   }
@@ -94,16 +109,15 @@ class UserProfileViewModel extends ChangeNotifier {
       if (context.mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const AuthGate()),
-              (route) => false,
+          (route) => false,
         );
       }
-
     } catch (e) {
       debugPrint("Lỗi đăng xuất: $e");
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi đăng xuất: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi đăng xuất: $e')));
       }
     }
   }

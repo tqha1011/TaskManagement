@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:task_management_app/core/utils/adaptive_color_extension.dart';
+import 'package:task_management_app/features/category/model/category_model.dart';
+import 'package:task_management_app/features/category/view/widgets/category_choice_chips.dart';
+import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
+import 'package:task_management_app/features/tag/model/tag_model.dart';
+import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
+
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../model/task_model.dart';
 import '../../viewmodel/task_viewmodel.dart';
@@ -20,7 +26,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   late TextEditingController _descController;
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
-  late String _currentCategory;
+  late CategoryModel _currentCategory;
   late List<TagModel> _currentTags;
 
   @override
@@ -32,6 +38,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     _endTime = widget.task.endTime;
     _currentCategory = widget.task.category;
     _currentTags = List.from(widget.task.tags);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<CategoryViewModel>().loadCategories();
+      context.read<TagViewModel>().loadTags();
+    });
   }
 
   @override
@@ -74,12 +86,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<TaskViewModel>();
+    final categoryViewModel = context.watch<CategoryViewModel>();
+    final tagViewModel = context.watch<TagViewModel>();
     String formattedDate = DateFormat('EEEE, d MMMM').format(widget.task.date);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Mock categories (Fetch from database later)
-    List<String> categories = ['Development', 'Research', 'Design', 'Backend'];
+    final categories = categoryViewModel.categories;
+    final tags = tagViewModel.tags;
+
+    if (categories.isNotEmpty && !categories.any((c) => c.id == _currentCategory.id)) {
+      _currentCategory = categories.first;
+    }
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -143,48 +160,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                     const SizedBox(height: 10),
                     SizedBox(
-                      height: 40,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: categories.length,
-                        itemBuilder: (context, index) {
-                          bool isSelected =
-                              categories[index] == _currentCategory;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: ChoiceChip(
-                              label: Text(categories[index]),
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                if (selected) {
-                                  setState(
-                                    () => _currentCategory = categories[index],
-                                  );
-                                }
+                      child: categories.isEmpty
+                          ? Text(
+                              categoryViewModel.isLoading
+                                  ? 'Loading categories...'
+                                  : 'No categories found',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            )
+                          : CategoryChoiceChips(
+                              categories: categories,
+                              selectedCategoryId: _currentCategory.id,
+                              onSelected: (category) {
+                                setState(() => _currentCategory = category);
                               },
-                              backgroundColor: isDark
-                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                  : const Color(0xFFF1F7FD),
-                              selectedColor: Theme.of(context).colorScheme.primary,
-                              labelStyle: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : Theme.of(context).colorScheme.primary,
-                                fontSize: 14,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  side: BorderSide(
-                                    color: isDark
-                                        ? Theme.of(context).colorScheme.outline
-                                        : const Color(0xFFF1F7FD),
-                                    width: 1,
-                                  )),
-                              showCheckmark: false,
                             ),
-                          );
-                        },
-                      ),
                     ),
                     const SizedBox(height: 25),
 
@@ -201,16 +190,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                     const SizedBox(height: 25),
 
-                    // ─── Time Tags ────────────────────────────
+                    // ─── Tags ─────────────────────────────────
                     Text(
-                      'Thời gian',
+                      'Tags',
                       style: Theme.of(context).textTheme.labelLarge,
                     ),
                     const SizedBox(height: 10),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: viewModel.timeTags.map((tag) {
+                      children: tags.map((tag) {
+                        final adaptiveTagColor = tag.color.toAdaptiveColor(context);
                         final isSelected = _isTagSelected(tag);
                         return GestureDetector(
                           onTap: () => _toggleTag(tag),
@@ -222,8 +212,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             ),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? tag.color
-                                  : tag.color.withValues(alpha: 0.1),
+                                  ? adaptiveTagColor
+                                  : adaptiveTagColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
@@ -244,61 +234,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                     fontWeight: FontWeight.w500,
                                     color: isSelected
                                         ? Colors.white
-                                        : tag.color,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ─── Status Tags ──────────────────────────
-                    Text(
-                      'Trạng thái',
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: viewModel.statusTags.map((tag) {
-                        final isSelected = _isTagSelected(tag);
-                        return GestureDetector(
-                          onTap: () => _toggleTag(tag),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? tag.color
-                                  : tag.color.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (isSelected) ...[
-                                  const Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 14,
-                                  ),
-                                  const SizedBox(width: 4),
-                                ],
-                                Text(
-                                  tag.name,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : tag.color,
+                                        : adaptiveTagColor,
                                   ),
                                 ),
                               ],
