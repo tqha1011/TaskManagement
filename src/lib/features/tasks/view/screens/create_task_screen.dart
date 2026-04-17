@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:task_management_app/features/category/view/widgets/category_choice_chips.dart';
+import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
+import 'package:task_management_app/features/tag/view/widgets/tag_selector.dart';
+import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
+
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../model/task_model.dart';
 import '../../viewmodel/task_viewmodel.dart';
 import '../widgets/task_widgets.dart';
 import '../widgets/priority_selector.dart';
-import '../widgets/tag_selector.dart';
 
 class CreateTaskScreen extends StatefulWidget {
   const CreateTaskScreen({super.key});
@@ -26,12 +29,28 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _startTime = const TimeOfDay(hour: 10, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 11, minute: 0);
-  int _selectedCategoryIndex = 0;
+  int? _selectedCategoryId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<CategoryViewModel>().loadCategories();
+      context.read<TagViewModel>().loadTags();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final categoryViewModel = context.watch<CategoryViewModel>();
+    final tagViewModel = context.watch<TagViewModel>();
     String formattedDate = DateFormat('EEEE, d MMMM').format(_selectedDate);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final categories = categoryViewModel.categories;
+
+    if (_selectedCategoryId == null && categories.isNotEmpty) {
+      _selectedCategoryId = categories.first.id;
+    }
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -105,47 +124,20 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     ),
                     const SizedBox(height: 10),
                     SizedBox(
-                      height: 40,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: 4,
-                        itemBuilder: (context, index) {
-                          List<String> categories = [
-                            'Development',
-                            'Research',
-                            'Design',
-                            'Backend',
-                          ];
-                          bool isSelected = index == _selectedCategoryIndex;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: ChoiceChip(
-                              label: Text(categories[index]),
-                              selected: isSelected,
-                              onSelected: (selected) => setState(() => _selectedCategoryIndex = selected ? index : 0),
-                              backgroundColor: isDark
-                                  ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                  : const Color(0xFFF1F7FD),
-                              selectedColor: Theme.of(context).colorScheme.primary,
-                              labelStyle: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : Theme.of(context).colorScheme.primary,
-                                fontSize: 14,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  side: BorderSide(
-                                    color: isDark
-                                        ? Theme.of(context).colorScheme.outline
-                                        : const Color(0xFFF1F7FD),
-                                    width: 1,
-                                  )),
-                              showCheckmark: false,
+                      child: categories.isEmpty
+                          ? Text(
+                              categoryViewModel.isLoading
+                                  ? 'Loading categories...'
+                                  : 'No categories found',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            )
+                          : CategoryChoiceChips(
+                              categories: categories,
+                              selectedCategoryId: _selectedCategoryId,
+                              onSelected: (category) {
+                                setState(() => _selectedCategoryId = category.id);
+                              },
                             ),
-                          );
-                        },
-                      ),
                     ),
                     const SizedBox(height: 20),
 
@@ -270,26 +262,35 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           final viewModel = context.read<TaskViewModel>();
-                          final List<String> categories = [
-                            'Development',
-                            'Research',
-                            'Design',
-                            'Backend',
-                          ];
+                          if (categories.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please create a category first.'),
+                              ),
+                            );
+                            return;
+                          }
+
+                          final selectedCategory = categories.firstWhere(
+                            (category) => category.id == _selectedCategoryId,
+                            orElse: () => categories.first,
+                          );
+
                           final newTask = TaskModel(
                             id: DateTime.now().millisecondsSinceEpoch
                                 .toString(),
                             title: _nameController.text,
                             description: _descController.text,
-                            category: categories[_selectedCategoryIndex],
+                            category: selectedCategory,
                             startTime: _startTime,
                             endTime: _endTime,
                             date: _selectedDate,
                             priority: viewModel.selectedPriority,
-                            tags: List.from(viewModel.selectedTags),
+                            tags: List.from(tagViewModel.selectedTags),
                           );
                           viewModel.addTask(newTask);
                           viewModel.reset();
+                          context.read<TagViewModel>().resetSelection();
                           Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(

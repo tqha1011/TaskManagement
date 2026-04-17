@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:task_management_app/features/category/model/category_model.dart';
+import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
 import 'package:task_management_app/features/statistics/model/StatisticsModel.dart';
+
 import '../../../tasks/model/task_model.dart';
 import '../../../tasks/view/screens/task_detail_screen.dart';
 
@@ -7,7 +11,13 @@ class DailyProgressCard extends StatelessWidget {
   final int total;
   final int completed;
   final double percentage;
-  const DailyProgressCard({super.key, required this.total, required this.completed, required this.percentage});
+
+  const DailyProgressCard({
+    super.key,
+    required this.total,
+    required this.completed,
+    required this.percentage,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +27,9 @@ class DailyProgressCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
+        color: isDark
+            ? const Color(0xFF1A2945)
+            : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(30),
         border: isDark
             ? Border.all(color: const Color(0xFF2A3E62), width: 1)
@@ -43,8 +55,9 @@ class DailyProgressCard extends StatelessWidget {
                 CircularProgressIndicator(
                   value: (total > 0) ? percentage / 100 : 0,
                   strokeWidth: 12,
-                  backgroundColor:
-                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     Theme.of(context).colorScheme.primary,
                   ),
@@ -99,7 +112,6 @@ class DailyProgressCard extends StatelessWidget {
   }
 }
 
-
 class WeeklyChartCard extends StatelessWidget {
   final int selectedIndex;
   final int thisWeekTotal;
@@ -121,17 +133,22 @@ class WeeklyChartCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bool isPositive = growthPercentage >= 0;
-    final Color trendColor = isPositive ? const Color(0xFF3DDC84) : Colors.redAccent;
+    final Color trendColor = isPositive
+        ? const Color(0xFF3DDC84)
+        : Colors.redAccent;
     final Color trendBgColor = isPositive
         ? (isDark ? const Color(0xFF173B3D) : const Color(0xFFE9F7EF))
         : (isDark ? const Color(0xFF402129) : const Color(0xFFFFEBEE));
-    final String trendText = "${isPositive ? '+' : ''}$growthPercentage% vs tuần trước";
+    final String trendText =
+        "${isPositive ? '+' : ''}$growthPercentage% vs tuần trước";
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
+        color: isDark
+            ? const Color(0xFF1A2945)
+            : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(30),
         border: isDark
             ? Border.all(color: const Color(0xFF2A3E62), width: 1)
@@ -167,9 +184,22 @@ class WeeklyChartCard extends StatelessWidget {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: trendBgColor, borderRadius: BorderRadius.circular(15)),
-                child: Text(trendText, style: TextStyle(color: trendColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: trendBgColor,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Text(
+                  trendText,
+                  style: TextStyle(
+                    color: trendColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
@@ -178,14 +208,48 @@ class WeeklyChartCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-
-              _buildBar(context, 'T2', weeklyHeights.length > 0 ? weeklyHeights[0] : 0.1, 0),
-              _buildBar(context, 'T3', weeklyHeights.length > 1 ? weeklyHeights[1] : 0.1, 1),
-              _buildBar(context, 'T4', weeklyHeights.length > 2 ? weeklyHeights[2] : 0.1, 2),
-              _buildBar(context, 'T5', weeklyHeights.length > 3 ? weeklyHeights[3] : 0.1, 3),
-              _buildBar(context, 'T6', weeklyHeights.length > 4 ? weeklyHeights[4] : 0.1, 4),
-              _buildBar(context, 'T7', weeklyHeights.length > 5 ? weeklyHeights[5] : 0.1, 5),
-              _buildBar(context, 'CN', weeklyHeights.length > 6 ? weeklyHeights[6] : 0.1, 6),
+              _buildBar(
+                context,
+                'T2',
+                weeklyHeights.length > 0 ? weeklyHeights[0] : 0.1,
+                0,
+              ),
+              _buildBar(
+                context,
+                'T3',
+                weeklyHeights.length > 1 ? weeklyHeights[1] : 0.1,
+                1,
+              ),
+              _buildBar(
+                context,
+                'T4',
+                weeklyHeights.length > 2 ? weeklyHeights[2] : 0.1,
+                2,
+              ),
+              _buildBar(
+                context,
+                'T5',
+                weeklyHeights.length > 3 ? weeklyHeights[3] : 0.1,
+                3,
+              ),
+              _buildBar(
+                context,
+                'T6',
+                weeklyHeights.length > 4 ? weeklyHeights[4] : 0.1,
+                4,
+              ),
+              _buildBar(
+                context,
+                'T7',
+                weeklyHeights.length > 5 ? weeklyHeights[5] : 0.1,
+                5,
+              ),
+              _buildBar(
+                context,
+                'CN',
+                weeklyHeights.length > 6 ? weeklyHeights[6] : 0.1,
+                6,
+              ),
             ],
           ),
         ],
@@ -193,7 +257,12 @@ class WeeklyChartCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBar(BuildContext context, String label, double heightRatio, int index) {
+  Widget _buildBar(
+    BuildContext context,
+    String label,
+    double heightRatio,
+    int index,
+  ) {
     bool isActive = index == selectedIndex;
     return GestureDetector(
       onTap: () => onDaySelected(index),
@@ -203,13 +272,13 @@ class WeeklyChartCard extends StatelessWidget {
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             width: 35,
-            height: 100 * (heightRatio > 0 ? heightRatio : 0.1), // Tối thiểu 10% để cột không bị "biến mất"
+            height: 100 * (heightRatio > 0 ? heightRatio : 0.1),
             decoration: BoxDecoration(
               color: isActive
                   ? Theme.of(context).colorScheme.primary
                   : (Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF334764)
-                      : const Color(0xFFF5F7FA)),
+                        ? const Color(0xFF334764)
+                        : const Color(0xFFF5F7FA)),
               borderRadius: BorderRadius.circular(8),
             ),
           ),
@@ -239,10 +308,22 @@ class CompletedTaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final categoryViewModel = context.watch<CategoryViewModel>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final CategoryModel fallbackCategory = CategoryModel(
+      id: 0,
+      name: 'General',
+      colorCode: '#5A8DF3',
+      profileId: '',
+    );
+    final CategoryModel category = categoryViewModel.categories.isNotEmpty
+        ? categoryViewModel.categories.first
+        : fallbackCategory;
 
     final time = task.updatedAt;
-    final hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
+    final hour = time.hour > 12
+        ? time.hour - 12
+        : (time.hour == 0 ? 12 : time.hour);
     final minute = time.minute.toString().padLeft(2, '0');
     final period = time.hour >= 12 ? 'PM' : 'AM';
     final timeString = 'Hoàn thành lúc $hour:$minute $period';
@@ -255,28 +336,41 @@ class CompletedTaskCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(25),
           onTap: () {
             final mappedTask = TaskModel(
-              id: task.id.toString(), // Convert int to String if your TaskModel uses String IDs
+              id: task.id.toString(),
+              // Convert int to String if your TaskModel uses String IDs
               title: task.title,
-              description: 'Completed task details from Statistics.', // Default filler
-              category: 'Development', // Default filler
-              startTime: TimeOfDay(hour: task.updatedAt.hour, minute: task.updatedAt.minute),
-              endTime: TimeOfDay(hour: task.updatedAt.hour + 1, minute: task.updatedAt.minute), // Add 1 hour just for display
+              description: 'Completed task details from Statistics.',
+              category: category,
+              startTime: TimeOfDay(
+                hour: task.updatedAt.hour,
+                minute: task.updatedAt.minute,
+              ),
+              endTime: TimeOfDay(
+                hour: task.updatedAt.hour + 1,
+                minute: task.updatedAt.minute,
+              ),
+              // Add 1 hour just for display
               date: task.updatedAt,
             );
 
-            Navigator.push(context, PageRouteBuilder(
-              transitionDuration: const Duration(milliseconds: 500),
-              pageBuilder: (_, __, ___) => TaskDetailScreen(task: mappedTask),
-              transitionsBuilder: (_, animation, __, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-            ));
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                transitionDuration: const Duration(milliseconds: 500),
+                pageBuilder: (_, __, ___) => TaskDetailScreen(task: mappedTask),
+                transitionsBuilder: (_, animation, __, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+              ),
+            );
           },
           child: Container(
             margin: const EdgeInsets.only(bottom: 15),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
+              color: isDark
+                  ? const Color(0xFF1A2945)
+                  : Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(25),
               border: isDark
                   ? Border.all(color: const Color(0xFF2A3E62), width: 1)
@@ -318,7 +412,11 @@ class CompletedTaskCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(Icons.check_circle, color: Color(0xFF2ECC71), size: 28),
+                const Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF2ECC71),
+                  size: 28,
+                ),
               ],
             ),
           ),
