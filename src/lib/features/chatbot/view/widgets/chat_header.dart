@@ -38,10 +38,6 @@ class ChatHeader extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.settings, color: scheme.onSurfaceVariant),
-          ),
         ],
       ),
     );
