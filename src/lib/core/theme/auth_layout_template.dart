@@ -15,6 +15,7 @@ class AuthLayoutTemplate extends StatelessWidget {
   final Widget? footerContent;
   final VoidCallback? onGoogleTap; // Login with Google
   final VoidCallback? onFacebookTap; // Login with Facebook
+  final bool compactMode;
 
   const AuthLayoutTemplate({
     super.key,
@@ -30,6 +31,7 @@ class AuthLayoutTemplate extends StatelessWidget {
     this.footerContent,
     this.onGoogleTap,
     this.onFacebookTap,
+    this.compactMode = false,
   });
 
   @override
@@ -61,48 +63,54 @@ class AuthLayoutTemplate extends StatelessWidget {
               )
             : null,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: isDark
-              ? const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF08142D), Color(0xFF0B1A38), Color(0xFF0A1834)],
-                )
-              : null,
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 48.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildHeader(context),
-                  const SizedBox(height: 32),
-                  useCard
-                      ? _buildCardContainer(context)
-                      : _buildTransparentContainer(context),
-                  const SizedBox(height: 32),
-                  if (footerContent != null) footerContent!,
-                ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = compactMode || constraints.maxHeight <= 780;
+
+          return Container(
+            decoration: BoxDecoration(
+              gradient: isDark
+                  ? const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF08142D), Color(0xFF0B1A38), Color(0xFF0A1834)],
+                    )
+                  : null,
+            ),
+            child: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(20.0, isCompact ? 8.0 : 16.0, 20.0, isCompact ? 16.0 : 36.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildHeader(context, isCompact),
+                      SizedBox(height: isCompact ? 16 : 28),
+                      useCard
+                          ? _buildCardContainer(context, isCompact)
+                          : _buildTransparentContainer(context, isCompact),
+                      SizedBox(height: isCompact ? 12 : 24),
+                      if (footerContent != null) footerContent!,
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, bool isCompact) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       children: [
         customHeaderIcon ??
             Container(
-              width: 80,
-              height: 80,
+              width: isCompact ? 64 : 80,
+              height: isCompact ? 64 : 80,
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E2B47) : Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(24),
@@ -117,26 +125,26 @@ class AuthLayoutTemplate extends StatelessWidget {
               child: Center(
                 child: Icon(
                   Icons.task_alt,
-                  size: 48,
+                    size: isCompact ? 36 : 48,
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),
-        const SizedBox(height: 24),
+        SizedBox(height: isCompact ? 12 : 24),
         Text(
           title,
           style: TextStyle(
-            fontSize: 28,
+            fontSize: isCompact ? 24 : 28,
             fontWeight: FontWeight.w800,
             color: Theme.of(context).colorScheme.onSurface,
             letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: isCompact ? 4 : 8),
         Text(
           subtitle,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: isCompact ? 13 : 14,
             fontWeight: FontWeight.w500,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -146,11 +154,11 @@ class AuthLayoutTemplate extends StatelessWidget {
     );
   }
 
-  Widget _buildCardContainer(BuildContext context) {
+  Widget _buildCardContainer(BuildContext context, bool isCompact) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(isCompact ? 20 : 32),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(32),
@@ -163,21 +171,21 @@ class AuthLayoutTemplate extends StatelessWidget {
           ),
         ],
       ),
-      child: _buildFormElements(context),
+      child: _buildFormElements(context, isCompact),
     );
   }
 
-  Widget _buildTransparentContainer(BuildContext context) =>
-      _buildFormElements(context);
+  Widget _buildTransparentContainer(BuildContext context, bool isCompact) =>
+      _buildFormElements(context, isCompact);
 
-  Widget _buildFormElements(BuildContext context) {
+  Widget _buildFormElements(BuildContext context, bool isCompact) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         formContent,
-        const SizedBox(height: 16),
+        SizedBox(height: isCompact ? 12 : 16),
         ElevatedButton(
           // Disable button if loading
           onPressed: isLoading ? null : onSubmit,
@@ -185,7 +193,7 @@ class AuthLayoutTemplate extends StatelessWidget {
             backgroundColor: Theme.of(context).colorScheme.primary,
             disabledBackgroundColor:
                 Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
-            padding: const EdgeInsets.symmetric(vertical: 20),
+            padding: EdgeInsets.symmetric(vertical: isCompact ? 14 : 20),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -209,7 +217,7 @@ class AuthLayoutTemplate extends StatelessWidget {
                     Text(
                       submitText,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: isCompact ? 15 : 16,
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.surface,
                       ),
@@ -224,14 +232,14 @@ class AuthLayoutTemplate extends StatelessWidget {
                 ),
         ),
         if (showSocial) ...[
-          const SizedBox(height: 32),
+          SizedBox(height: isCompact ? 16 : 32),
           Row(
             children: [
               Expanded(
                 child: Divider(color: Theme.of(context).colorScheme.outline),
               ),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: isCompact ? 12 : 16),
                 child: Text(
                   'OR',
                   style: TextStyle(
@@ -246,7 +254,7 @@ class AuthLayoutTemplate extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: isCompact ? 12 : 24),
           Row(
             children: [
               Expanded(
@@ -259,7 +267,7 @@ class AuthLayoutTemplate extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: isCompact ? 10 : 14),
                   ),
                   onPressed: onGoogleTap,
                   icon: const Icon(
@@ -270,7 +278,7 @@ class AuthLayoutTemplate extends StatelessWidget {
                   label: const Text('Google'),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: isCompact ? 10 : 16),
               Expanded(
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
@@ -281,7 +289,7 @@ class AuthLayoutTemplate extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: isCompact ? 10 : 14),
                   ),
                   onPressed: onFacebookTap,
                   icon: const Icon(Icons.facebook, color: Color(0xFF1877F2)),

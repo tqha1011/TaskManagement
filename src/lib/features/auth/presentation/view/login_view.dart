@@ -22,6 +22,7 @@ class _LoginViewState extends State<LoginView> {
         title: 'Task Management',
         subtitle: 'Chào mừng trở lại!',
         submitText: 'Đăng nhập',
+        compactMode: true,
         isLoading: _vm.isLoading,
         showSocial: true,
         onGoogleTap: () async {
@@ -79,6 +80,7 @@ class _LoginViewState extends State<LoginView> {
             ),
             TextButton(
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordView())),
+              style: TextButton.styleFrom(minimumSize: const Size(50, 40), padding: const EdgeInsets.symmetric(horizontal: 4)),
               child: Text(
                 'Quên mật khẩu?',
                 style: TextStyle(
@@ -94,8 +96,8 @@ class _LoginViewState extends State<LoginView> {
           'Chưa có tài khoản? ',
           'Đăng ký ngay',
           () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterView()));
-        },
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterView()));
+          },
         ),
       ),
     );
@@ -108,7 +110,7 @@ class _LoginViewState extends State<LoginView> {
     VoidCallback onTap,
   ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24.0),
+      padding: const EdgeInsets.only(bottom: 14.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -116,18 +118,18 @@ class _LoginViewState extends State<LoginView> {
             text,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 16,
+              fontSize: 15,
             ),
           ),
           TextButton(
             onPressed: onTap,
-            style: TextButton.styleFrom(minimumSize: const Size(50, 48)),
+            style: TextButton.styleFrom(minimumSize: const Size(50, 40)),
             child: Text(
               action,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
+                fontSize: 15,
               ),
             ),
           ),

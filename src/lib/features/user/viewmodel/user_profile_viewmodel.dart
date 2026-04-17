@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart'; // Import thêm Provider
 
 import '../../../core/theme/theme_provider.dart';
 import '../../auth/presentation/view/auth_gate.dart';
@@ -16,11 +16,9 @@ class UserProfileViewModel extends ChangeNotifier {
   UserProfileViewModel({this.useMockData = true});
 
   UserProfileModel? _user;
-
   UserProfileModel? get user => _user;
 
   bool _isLoading = true;
-
   bool get isLoading => _isLoading;
 
   /// Load profile data
@@ -38,6 +36,7 @@ class UserProfileViewModel extends ChangeNotifier {
       _lastAppliedAppearance = null;
     } catch (e) {
       debugPrint("Error loading profile: $e");
+      
       if (useMockData) {
         _user = _buildMockUser();
       } else {

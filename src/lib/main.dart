@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:task_management_app/features/auth/presentation/view/auth_gate.dart';
 import 'package:task_management_app/features/auth/presentation/view/login_view.dart';
 import 'package:task_management_app/features/main/view/screens/main_screen.dart';
+import 'package:task_management_app/features/tasks/viewmodel/task_viewmodel.dart';
 import 'core/theme/app_theme.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,6 +15,7 @@ import 'core/theme/theme_provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Tải cấu hình từ file .env
   await dotenv.load(fileName: ".env");
 
   String supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
@@ -23,11 +25,7 @@ Future<void> main() async {
     debugPrint('Error: SUPABASE_URL or SUPABASE_ANON_KEY is missing');
   }
 
-  // 3. Khởi tạo kết nối Supabase
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  );
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
   SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
@@ -35,14 +33,14 @@ Future<void> main() async {
       MultiProvider(
           providers: [
             ChangeNotifierProvider(create: (_) => ThemeProvider()),
+            ChangeNotifierProvider<TaskViewModel>(
+              create: (_) => TaskViewModel(),
+            ),
           ],
       child: const TaskApp()));
 }
 
-// 4. Create a global variable for ViewModel to call API quickly
 final supabase = Supabase.instance.client;
-
-
 
 class TaskApp extends StatelessWidget {
   const TaskApp({super.key});
@@ -55,7 +53,7 @@ class TaskApp extends StatelessWidget {
       themeMode: themeProvider.themeMode,
       theme: AppTheme.lightTheme,         // Bộ màu sáng ông vừa map xong
       darkTheme: AppTheme.darkTheme,
-      home: const MainScreen(),
+      home: const AuthGate(),
       debugShowCheckedModeBanner: false,
     );
   }

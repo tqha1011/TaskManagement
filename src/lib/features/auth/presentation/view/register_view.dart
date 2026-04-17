@@ -21,6 +21,7 @@ class _RegisterViewState extends State<RegisterView> {
         title: 'Tạo tài khoản mới',
         subtitle: 'Bắt đầu quản lý công việc khoa học',
         submitText: 'Đăng ký',
+        compactMode: true,
         isLoading: _vm.isLoading,
         showSocial: true,
         onSubmit: () async {
@@ -61,7 +62,7 @@ class _RegisterViewState extends State<RegisterView> {
           ],
         ),
         footerContent: Padding(
-          padding: const EdgeInsets.only(bottom: 24.0),
+          padding: const EdgeInsets.only(bottom: 14.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -69,18 +70,18 @@ class _RegisterViewState extends State<RegisterView> {
                 'Đã có tài khoản? ',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 16,
+                  fontSize: 15,
                 ),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(minimumSize: const Size(50, 48)),
+                style: TextButton.styleFrom(minimumSize: const Size(50, 40)),
                 child: Text(
                   'Đăng nhập',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 15,
                   ),
                 ),
               ),
