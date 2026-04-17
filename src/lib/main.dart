@@ -7,6 +7,7 @@ import 'package:task_management_app/features/tasks/viewmodel/task_viewmodel.dart
 import 'core/theme/app_theme.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:task_management_app/features/tasks/view/screens/create_task_screen.dart';
 
 import 'core/theme/theme_provider.dart';
 
@@ -28,6 +29,22 @@ Future<void> main() async {
 
   SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+      
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      child: Container(
+        color: Colors.black87,
+        padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          child: Text(
+            'Lỗi!\n\n${details.exception}\n\nStack Trace:\n${details.stack}',
+            style: const TextStyle(color: Colors.greenAccent, fontSize: 14),
+          ),
+        ),
+      ),
+    );
+  };
+  
   runApp(
       MultiProvider(
           providers: [
@@ -35,10 +52,11 @@ Future<void> main() async {
             ChangeNotifierProvider<TaskViewModel>(
               create: (_) => TaskViewModel(),
             ),
+            // ĐÂY LÀ DÒNG CỨU CÁNH CHO ĐẠI VƯƠNG:
+            ChangeNotifierProvider(create: (_) => CreateTaskProvider()), 
           ],
       child: const TaskApp()));
 }
-
 final supabase = Supabase.instance.client;
 
 class TaskApp extends StatelessWidget {

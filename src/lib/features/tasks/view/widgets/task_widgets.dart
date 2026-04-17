@@ -82,11 +82,13 @@ class DateBox extends StatelessWidget {
 class TaskCard extends StatelessWidget {
   final TaskModel task;
   final Widget leading;
+  final Widget? trailing; // 1. Thêm biến trailing để nhận nhãn Priority
 
   const TaskCard({
     super.key,
     required this.task,
     required this.leading,
+    this.trailing, // 2. Bổ sung vào constructor
   });
 
   @override
@@ -129,7 +131,7 @@ class TaskCard extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.primary,
-                        borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5))),
+                        borderRadius: const BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5))),
                   ),
                 ),
                 Padding(
@@ -138,6 +140,7 @@ class TaskCard extends StatelessWidget {
                     children: [
                       leading,
                       const SizedBox(width: 15),
+                      // Phần tiêu đề và mô tả
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,13 +151,26 @@ class TaskCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.secondary,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(timeString, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                      const SizedBox(width: 10),
+                      
+                      // 3. CỤM HIỂN THỊ TRÊN GÓC PHẢI (Priority đè lên Time)
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (trailing != null) ...[
+                            trailing!, // Hiển thị nhãn Priority ở đây
+                            const SizedBox(height: 8), // Cách cái giờ ra một tí
+                          ],
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.secondary,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(timeString, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -167,7 +183,6 @@ class TaskCard extends StatelessWidget {
     );
   }
 }
-
 // --- Widget chọn giờ (TimePickerWidget) ---
 class TimePickerWidget extends StatelessWidget {
   final TimeOfDay time;

@@ -77,3 +77,23 @@ class TaskModel {
     this.tags = const [],
   });
 }
+
+class NoteModel {
+  final int id;
+  final String content;
+  final bool pinned;
+
+  NoteModel({
+    required this.id,
+    required this.content,
+    this.pinned = false,
+  });
+
+  factory NoteModel.fromJson(Map<String, dynamic> json) {
+    return NoteModel(
+      id: json['id'],
+      content: json['content'] ?? '',
+      pinned: json['pinned'] ?? false,
+    );
+  }
+}

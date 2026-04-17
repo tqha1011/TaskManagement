@@ -11,10 +11,10 @@ import 'create_task_screen.dart';
 // ==========================================
 // 1. STATE MANAGEMENT LOGIC (Giữ logic Supabase của bạn)
 // ==========================================
-class TaskProvider extends ChangeNotifier {
+/*class TaskProvider extends ChangeNotifier {
   DateTime _selectedDate = DateTime.now();
   DateTime get selectedDate => _selectedDate;
-
+  
   List<Map<String, dynamic>> _allTasks = [];
   Priority? _filterPriority; // Thêm filter logic
   Priority? get filterPriority => _filterPriority;
@@ -53,9 +53,16 @@ class TaskProvider extends ChangeNotifier {
                taskDate.month == _selectedDate.month &&
                taskDate.year == _selectedDate.year;
         
-        // Filter theo chip (nếu có chọn)
+        // --- LOGIC LỌC ĐÃ ĐƯỢC FIX ---
         if (_filterPriority != null) {
-          return matchesDate && task['priority'] == _filterPriority!.label;
+          // Quy đổi Priority đang chọn ra số (giống hệt lúc insert vào DB)
+          int filterId = 3; // Medium
+          if (_filterPriority!.label.toLowerCase() == 'urgent') filterId = 1;
+          else if (_filterPriority!.label.toLowerCase() == 'high') filterId = 2;
+          else if (_filterPriority!.label.toLowerCase() == 'low') filterId = 4;
+
+          // So sánh số trong DB với số đang chọn
+          return matchesDate && task['priority'] == filterId;
         }
         
         return matchesDate;
@@ -74,7 +81,7 @@ class TaskProvider extends ChangeNotifier {
     _filterPriority = p;
     notifyListeners();
   }
-}
+}*/
 
 // ==========================================
 // 2. UI SCREEN (Merge UI mới vào Logic cũ)
@@ -85,7 +92,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => TaskProvider()..fetchTasks(),
+      create: (_) => TaskViewModel()..fetchTasks(),
       child: Scaffold(
         body: Builder(
           builder: (innerContext) {
@@ -123,9 +130,9 @@ class HomeScreen extends StatelessWidget {
                       
                       // --- TASK LIST (Nhóm theo Priority từ bản UI mới) ---
                       Expanded(
-                        child: Consumer<TaskProvider>(
+                        child: Consumer<TaskViewModel>(
                           builder: (context, provider, child) {
-                            final tasks = provider.filteredTasks;
+                            final tasks = provider.tasks;
                             if (tasks.isEmpty) return _buildEmptyState();
 
                             // Logic grouping tasks
@@ -177,7 +184,7 @@ class HomeScreen extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (ctx) => const CreateTaskScreen(), // Giả sử đã bọc Provider bên trong CreateTaskScreen
                     ),
-                  ).then((_) => context.read<TaskProvider>().fetchTasks());
+                  ).then((_) => context.read<TaskViewModel>().fetchTasks());
                 },
               ),
             ],
@@ -202,7 +209,7 @@ class HomeScreen extends StatelessWidget {
           children: [
             Text('My Task', style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 5),
-            Consumer<TaskProvider>(
+            Consumer<TaskViewModel>(
               builder: (context, provider, child) {
                 String formattedDate = DateFormat('EEEE, d MMMM').format(provider.selectedDate);
                 return Row(
@@ -217,7 +224,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 20),
             SizedBox(
               height: 80,
-              child: Consumer<TaskProvider>(
+              child: Consumer<TaskViewModel>(
                 builder: (context, provider, child) {
                   return ListView.builder(
                     scrollDirection: Axis.horizontal,
@@ -243,7 +250,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildFilterBar(BuildContext context) {
-    final provider = context.watch<TaskProvider>();
+    final provider = context.watch<TaskViewModel>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: SingleChildScrollView(
@@ -272,37 +279,72 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTaskItem(Map<String, dynamic> item, int index) {
-    DateTime dt = item['create_at'] != null 
-        ? DateTime.parse(item['create_at'].toString()) 
+  Widget _buildTaskItem(TaskModel item, int index) {
+    DateTime dt = item.date != null 
+        ? DateTime.parse(item.date.toString()) 
         : DateTime.now();
 
+    // Ánh xạ priority từ database
+    final priority = _mapPriority(item.priority?.toString());
+
     final taskModel = TaskModel(
-      id: item['id']?.toString() ?? index.toString(),
-      title: item['title'] ?? 'No Title',
-      description: item['description'] ?? 'No Description',
+      id: item.id?.toString() ?? index.toString(),
+      title: item.title ?? 'No Title',
+      description: item.description ?? 'No Description',
       category: 'General', 
       startTime: TimeOfDay.fromDateTime(dt),
       endTime: TimeOfDay.fromDateTime(dt.add(const Duration(hours: 1))),
       date: dt,
-      priority: _mapPriority(item['priority']), // Ánh xạ string từ DB sang Enum
+      priority: priority, // Truyền priority vào model
     );
 
-    return TaskCard(
-      task: taskModel,
-      leading: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: taskModel.priority.color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(15)
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15.0), // Cách các task ra một chút cho đẹp
+      child: TaskCard(
+        task: taskModel,
+        leading: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: priority.color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(15)
+          ),
+          child: Icon(priority.icon, color: priority.color),
         ),
-        child: Icon(taskModel.priority.icon, color: taskModel.priority.color),
+        // TRUYỀN CÁI NHÃN VÀO ĐÂY NÈ ÔNG:
+        trailing: _buildPriorityBadge(priority), 
       ),
     );
   }
 
+// Hàm vẽ cái nhãn Priority nhỏ xinh (Thêm hàm này vào class HomeScreen luôn)
+Widget _buildPriorityBadge(Priority priority) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(
+      color: priority.color.withOpacity(0.15),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: priority.color.withOpacity(0.5), width: 1),
+    ),
+    child: Text(
+      priority.label.toUpperCase(),
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+        color: priority.color,
+      ),
+    ),
+  );
+}
+
   Priority _mapPriority(String? p) {
-    switch (p?.toLowerCase()) {
+    // Database của ông giờ đang lưu số (1, 2, 3, 4)
+    switch (p) {
+      case '1': return Priority.urgent;
+      case '2': return Priority.high;
+      case '3': return Priority.medium;
+      case '4': return Priority.low;
+      
+      // Khúc này tui để dự phòng, lỡ trong DB ông còn sót mấy cái task cũ lưu bằng chữ
       case 'urgent': return Priority.urgent;
       case 'high': return Priority.high;
       case 'low': return Priority.low;
@@ -312,7 +354,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildEmptyState() {
     return const Center(
-      child: Text('Không có task nào hết Kiệt ơi!', style: TextStyle(color: AppColors.grayText)),
+      child: Text('Không có task nào hết!', style: TextStyle(color: AppColors.grayText)),
     );
   }
 }
