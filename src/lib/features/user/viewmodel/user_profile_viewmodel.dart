@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:provider/provider.dart'; // Import thêm Provider
 
 import '../../../core/theme/theme_provider.dart';
 import '../../auth/presentation/view/auth_gate.dart';
@@ -16,9 +16,11 @@ class UserProfileViewModel extends ChangeNotifier {
   UserProfileViewModel({this.useMockData = true});
 
   UserProfileModel? _user;
+
   UserProfileModel? get user => _user;
 
   bool _isLoading = true;
+
   bool get isLoading => _isLoading;
 
   /// Load profile data
@@ -36,10 +38,9 @@ class UserProfileViewModel extends ChangeNotifier {
       _lastAppliedAppearance = null;
     } catch (e) {
       debugPrint("Error loading profile: $e");
-      if(useMockData){
+      if (useMockData) {
         _user = _buildMockUser();
-      }
-      else{
+      } else {
         _user = null;
       }
     } finally {
@@ -49,6 +50,17 @@ class UserProfileViewModel extends ChangeNotifier {
   }
 
   UserProfileModel _buildMockUser() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final Map<DateTime, int> mockHeatmapData = {
+      today.subtract(const Duration(days: 1)): 3,
+      today.subtract(const Duration(days: 2)): 7,
+      today.subtract(const Duration(days: 3)): 4,
+      today.subtract(const Duration(days: 4)): 8,
+      today.subtract(const Duration(days: 5)): 2,
+      today.subtract(const Duration(days: 8)): 5,
+    };
     return UserProfileModel(
       id: 'mock-user-001',
       name: 'Alex Thompson',
@@ -57,6 +69,7 @@ class UserProfileViewModel extends ChangeNotifier {
       tasksDone: 24,
       streaks: 12,
       isNotificationEnabled: true,
+      heatmapData: mockHeatmapData,
     );
   }
 
@@ -68,7 +81,6 @@ class UserProfileViewModel extends ChangeNotifier {
     }
   }
 
-
   void updateAppearance(BuildContext context, String newAppearance) {
     if (_user != null) {
       _user!.appearance = newAppearance;
@@ -76,7 +88,7 @@ class UserProfileViewModel extends ChangeNotifier {
       notifyListeners();
 
       if (context.mounted) {
-         context.read<ThemeProvider>().updateTheme(newAppearance);
+        context.read<ThemeProvider>().updateTheme(newAppearance);
       }
     }
   }
@@ -98,16 +110,15 @@ class UserProfileViewModel extends ChangeNotifier {
       if (context.mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const AuthGate()),
-              (route) => false,
+          (route) => false,
         );
       }
-
     } catch (e) {
       debugPrint("Lỗi đăng xuất: $e");
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi đăng xuất: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi đăng xuất: $e')));
       }
     }
   }

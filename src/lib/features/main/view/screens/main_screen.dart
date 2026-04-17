@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
 import 'package:task_management_app/features/tasks/view/screens/home_screen.dart';
+import 'package:task_management_app/features/chatbot/view/chatbot_view.dart';
 import 'settings_screen.dart';
 import 'package:task_management_app/features/user/viewmodel/user_profile_viewmodel.dart';
 import '../../../note/view/focus_screen.dart';
@@ -23,7 +24,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const Center(child: HomeScreen()),
-    const Center(child: Text('Màn hình Lịch')),
+    const ChatBotView(),
     ChangeNotifierProvider(
       create: (_) => FocusViewModel(),
       child: const FocusScreen(),
@@ -63,7 +64,7 @@ class _MainScreenState extends State<MainScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(context, Icons.checklist_rounded, 'Công việc', 0),
-              _buildNavItem(context, Icons.calendar_today_rounded, 'Lịch', 1),
+              _buildNavItem(context, Icons.smart_toy_rounded, 'Chat', 1),
               _buildNavItem(context, Icons.timer_rounded, 'Tập trung', 2),
               _buildNavItem(context, Icons.bar_chart_rounded, 'Thống kê', 3),
               _buildNavItem(context, Icons.person_2_rounded, 'Cá nhân', 4),

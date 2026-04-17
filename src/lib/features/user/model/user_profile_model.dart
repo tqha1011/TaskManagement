@@ -6,6 +6,7 @@ class UserProfileModel {
   final String avatarUrl;
   bool isNotificationEnabled;
   String appearance;
+  final Map<DateTime, int> heatmapData;
 
   UserProfileModel({
     required this.id,
@@ -15,6 +16,7 @@ class UserProfileModel {
     required this.avatarUrl,
     this.isNotificationEnabled = true,
     this.appearance = 'Light',
+    required this.heatmapData,
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
@@ -25,25 +27,44 @@ class UserProfileModel {
       return 0;
     }
 
+    Map<DateTime, int> parseHeatmap = {};
+    if (json['heatmapData'] != null) {
+      final Map<String, dynamic> rawHeatmap = json['heatmapData'];
+      rawHeatmap.forEach((dateString, count) {
+        try {
+          parseHeatmap[DateTime.parse(dateString)] = parseInt(count);
+        } catch (e) {
+          // skip error
+        }
+      });
+    }
     return UserProfileModel(
       id: json['id'] as String? ?? '',
       name:
           (json['name'] ?? json['full_name'] ?? json['username']) as String? ??
-              'Unknown User',
+          'Unknown User',
       tasksDone: parseInt(json['tasksDone'] ?? json['tasks_done']),
       streaks: parseInt(json['streaks'] ?? json['streak_count']),
       avatarUrl:
-          (json['avatarUrl'] ?? json['avatar_url'] ?? json['avatar']) as String? ??
-              '',
+          (json['avatarUrl'] ?? json['avatar_url'] ?? json['avatar'])
+              as String? ??
+          '',
       isNotificationEnabled:
-          (json['isNotificationEnabled'] ?? json['is_notification_enabled']) as bool? ??
-              true,
-      appearance: (json['appearance'] ?? json['theme_mode']) as String? ?? 'Light',
+          (json['isNotificationEnabled'] ?? json['is_notification_enabled'])
+              as bool? ??
+          true,
+      appearance:
+          (json['appearance'] ?? json['theme_mode']) as String? ?? 'Light',
+
+      heatmapData: parseHeatmap,
     );
   }
 
-
   Map<String, dynamic> toJson() {
+    Map<String, dynamic> heatmapJson = {};
+    heatmapData.forEach((date, count) {
+      heatmapJson[date.toIso8601String().split('T').first] = count;
+    });
     return {
       'id': id,
       'name': name,
@@ -52,6 +73,7 @@ class UserProfileModel {
       'avatarUrl': avatarUrl,
       'isNotificationEnabled': isNotificationEnabled,
       'appearance': appearance,
+      'heatmapData': heatmapJson,
     };
   }
 
@@ -63,6 +85,7 @@ class UserProfileModel {
     String? avatarUrl,
     bool? isNotificationEnabled,
     String? appearance,
+    Map<DateTime, int>? heatmapData,
   }) {
     return UserProfileModel(
       id: id ?? this.id,
@@ -70,8 +93,10 @@ class UserProfileModel {
       tasksDone: tasksDone ?? this.tasksDone,
       streaks: streaks ?? this.streaks,
       avatarUrl: avatarUrl ?? this.avatarUrl,
-      isNotificationEnabled: isNotificationEnabled ?? this.isNotificationEnabled,
+      isNotificationEnabled:
+          isNotificationEnabled ?? this.isNotificationEnabled,
       appearance: appearance ?? this.appearance,
+      heatmapData: heatmapData ?? this.heatmapData,
     );
   }
 }
