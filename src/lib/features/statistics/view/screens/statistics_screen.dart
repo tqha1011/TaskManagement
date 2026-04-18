@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodel/statistics_viewmodel.dart';
@@ -23,6 +24,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId != null) {
         context.read<StatisticsViewmodel>().getStatisticsData(userId);
+        final categoryViewModel = context.read<CategoryViewModel>();
+        if (categoryViewModel.categories.isEmpty) {
+          categoryViewModel.loadCategories();
+        }
       }
     });
   }

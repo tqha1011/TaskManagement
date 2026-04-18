@@ -43,6 +43,8 @@ dependencies:
   flutter_ringtone_player: ^4.0.0+4
   image_picker: ^1.2.1
   shared_preferences: ^2.5.5
+  flutter_heatmap_calendar: ^1.0.5
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   flutter_test:

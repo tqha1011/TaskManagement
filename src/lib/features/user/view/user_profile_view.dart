@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_heatmap_calendar/flutter_heatmap_calendar.dart';
 import 'package:provider/provider.dart';
+
 import '../viewmodel/user_profile_viewmodel.dart';
-import 'widgets/profile_header.dart';
-import 'widgets/stat_card.dart';
-import 'widgets/settings_section.dart';
-import 'widgets/settings_list_tile.dart';
 import 'widgets/logout_button.dart';
+import 'widgets/profile_header.dart';
+import 'widgets/settings_list_tile.dart';
+import 'widgets/settings_section.dart';
+import 'widgets/stat_card.dart';
 
 class UserProfileView extends StatelessWidget {
   const UserProfileView({super.key});
@@ -44,22 +46,27 @@ class UserProfileView extends StatelessWidget {
             duration: const Duration(milliseconds: 300),
             child: vm.isLoading
                 ? Center(
-              key: ValueKey('loading'),
-              child: CircularProgressIndicator(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            )
+                    key: const ValueKey('loading'),
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  )
                 : vm.user == null
                 ? const Center(
-              key: ValueKey('error'),
-              child: Text("Error loading profile"),
-            )
+                    key: ValueKey('error'),
+                    child: Text("Error loading profile"),
+                  )
                 : Builder(
-                    builder: (innerContext) {
+                  builder: (innerContext) {
+                    // Bọc nó lại trong addPostFrameCallback để bảo Flutter: 
+                    // "Vẽ xong cái màn hình này đi đã rồi hẵng thực hiện lệnh này"
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
                       vm.syncThemeWithProfile(innerContext);
-                      return _buildProfileContent(innerContext, vm);
-                    },
-                  ),
+                    });
+                    
+                    return _buildProfileContent(innerContext, vm);
+                  },
+                ),
           );
         },
       ),
@@ -93,7 +100,7 @@ class UserProfileView extends StatelessWidget {
                 child: StatCard(
                   value: user.streaks.toString(),
                   label: 'Streaks',
-                  onTap: () {},
+                  onTap: () => _showHeatmapBottomSheet(context, vm),
                 ),
               ),
             ],
@@ -113,8 +120,9 @@ class UserProfileView extends StatelessWidget {
                   value: user.isNotificationEnabled,
                   activeColor: Theme.of(context).colorScheme.surface,
                   activeTrackColor: Theme.of(context).colorScheme.primary,
-                  inactiveThumbColor:
-                      Theme.of(context).colorScheme.onSurfaceVariant,
+                  inactiveThumbColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant,
                   inactiveTrackColor: Theme.of(context).colorScheme.outline,
                   onChanged: (val) => vm.toggleNotification(val),
                 ),
@@ -151,6 +159,93 @@ class UserProfileView extends StatelessWidget {
           LogoutButton(onPressed: () => vm.logout(context)),
         ],
       ),
+    );
+  }
+
+  void _showHeatmapBottomSheet(BuildContext context, UserProfileViewModel vm) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (bottomSheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.outline,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                Text(
+                  'Bản đồ hoạt động',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Giữ vững phong độ nhé! 🔥',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                Center(
+                  child: HeatMap(
+                    datasets: vm.user!.heatmapData,
+                    colorMode: ColorMode.opacity,
+                    showText: false,
+                    scrollable: true,
+                    size: 30,
+
+                    colorsets: {
+                      1: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.2),
+                      3: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.4),
+                      5: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.6),
+                      7: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.8),
+                      9: Theme.of(context).colorScheme.primary,
+                    },
+                    onClick: (value) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Đã hoàn thành $value công việc'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -7,6 +7,7 @@ import '../../model/task_model.dart';
 import '../../viewmodel/task_viewmodel.dart';
 import '../widgets/task_widgets.dart';
 import 'create_task_screen.dart';
+import 'package:task_management_app/features/category/model/category_model.dart';
 
 // ==========================================
 // 1. STATE MANAGEMENT LOGIC (Giữ logic Supabase của bạn)
@@ -182,7 +183,11 @@ class HomeScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (ctx) => const CreateTaskScreen(), // Giả sử đã bọc Provider bên trong CreateTaskScreen
+                      // Bọc cái ChangeNotifierProvider ở ngay cửa ngõ để cấp Wi-Fi cho màn hình mới
+                      builder: (ctx) => ChangeNotifierProvider(
+                        create: (_) => CreateTaskProvider(), 
+                        child: const CreateTaskScreen(),
+                      ),
                     ),
                   ).then((_) => context.read<TaskViewModel>().fetchTasks());
                 },
@@ -291,7 +296,12 @@ class HomeScreen extends StatelessWidget {
       id: item.id?.toString() ?? index.toString(),
       title: item.title ?? 'No Title',
       description: item.description ?? 'No Description',
-      category: 'General', 
+      category: const CategoryModel(
+        id: 0, 
+        name: 'General',
+        colorCode: '#5A8DF3', // Lấy luôn màu mặc định từ hàm của ông cho tông xuyệt tông
+        profileId: '',
+      ),
       startTime: TimeOfDay.fromDateTime(dt),
       endTime: TimeOfDay.fromDateTime(dt.add(const Duration(hours: 1))),
       date: dt,

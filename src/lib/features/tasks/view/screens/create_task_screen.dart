@@ -9,7 +9,17 @@ import '../../../../core/widgets/custom_input_field.dart';
 import '../../model/task_model.dart';
 import '../../viewmodel/task_viewmodel.dart';
 import '../widgets/priority_selector.dart'; // Import 2 cục UI ở trên vào
-import '../widgets/tag_selector.dart';
+//import '../widgets/tag_selector.dart';
+import 'package:task_management_app/features/category/view/widgets/category_choice_chips.dart';
+import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
+import 'package:task_management_app/features/tag/view/widgets/tag_selector.dart';
+import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
+
+import '../../../../core/widgets/custom_input_field.dart';
+import '../../model/task_model.dart';
+import '../../viewmodel/task_viewmodel.dart';
+import '../widgets/task_widgets.dart';
+import '../widgets/priority_selector.dart';
 
 // ============================================================================
 // 1. STATE MANAGEMENT (PROVIDER) - Xử lý logic Supabase
@@ -54,80 +64,83 @@ class CreateTaskProvider extends ChangeNotifier {
   }
 
   Future<void> submitTask(
-    BuildContext context, {
-    required String taskName,
-    required String description,
-    required dynamic priority,
-    required List<dynamic> tags,
-  }) async {
-    if (taskName.trim().isEmpty) {
-      _showSnackBar(context, "Task name is required.");
-      return;
-    }
-
-    final user = _supabase.auth.currentUser;
-    if (user == null) {
-      _showSnackBar(context, "Session not found. Please re-authenticate.");
-      return;
-    }
-
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      final categoryMapping = {
-        "Development": 1,
-        "Research": 2,
-        "Design": 3,
-        "Backend": 4,
-      };
-      final int categoryId = categoryMapping[_selectedCategory] ?? 1;
-
-      int priorityId = 3;
-      final String priorityStr = priority.toString().toLowerCase();
-
-      if (priorityStr.contains('urgent')) {
-        priorityId = 1;
-      } else if (priorityStr.contains('high')) {
-        priorityId = 2;
-      } else if (priorityStr.contains('medium')) {
-        priorityId = 3;
-      } else if (priorityStr.contains('low')) {
-        priorityId = 4;
-      }
-
-      final scheduledDateTime = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _startTime.hour,
-        _startTime.minute,
-      );
-
-      await _supabase.from('task').insert({
-        'title': taskName.trim(),
-        'status': 0,
-        'priority': priorityId,
-        'profile_id': user.id,
-        'category_id': categoryId,
-        'create_at': scheduledDateTime.toIso8601String(),
-        // 'description': description.trim(), 
-      });
-
-      if (context.mounted) {
-        _showSnackBar(context, "Task created successfully.");
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      debugPrint("Data Persistence Error: $e");
-      if (context.mounted) {
-        _showSnackBar(context, "Database synchronization failed: $e");
-      }
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+  BuildContext context, {
+  required String taskName,
+  required String description,
+  required dynamic priority,
+  required List<dynamic> tags,
+  required int? categoryId, // Thêm tham số ID từ UI truyền vào
+}) async {
+  if (taskName.trim().isEmpty) {
+    _showSnackBar(context, "Task name is required.");
+    return;
   }
+
+  // Check xem có chọn Category chưa
+  if (categoryId == null) {
+    _showSnackBar(context, "Please select a category.");
+    return;
+  }
+
+  final user = _supabase.auth.currentUser;
+  if (user == null) {
+    _showSnackBar(context, "Session not found. Please re-authenticate.");
+    return;
+  }
+
+  _isLoading = true;
+  notifyListeners();
+
+  try {
+    // 1. Xử lý Priority ID
+    int priorityId = 3; // Mặc định Medium
+    final String priorityStr = priority.toString().toLowerCase();
+
+    if (priorityStr.contains('urgent')) {
+      priorityId = 1;
+    } else if (priorityStr.contains('high')) {
+      priorityId = 2;
+    } else if (priorityStr.contains('medium')) {
+      priorityId = 3;
+    } else if (priorityStr.contains('low')) {
+      priorityId = 4;
+    }
+
+    // 2. Xử lý thời gian
+    final scheduledDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _startTime.hour,
+      _startTime.minute,
+    );
+
+    // 3. Insert vào Supabase
+    await _supabase.from('task').insert({
+      'title': taskName.trim(),
+      //'description': description.trim(), // Tui mở comment cái này ra cho ông luôn
+      'status': 0,
+      'priority': priorityId,
+      'profile_id': user.id,
+      'category_id': categoryId, // Dùng ID thực tế từ UI
+      'create_at': scheduledDateTime.toIso8601String(),
+    });
+
+    if (context.mounted) {
+      _showSnackBar(context, "Task created successfully.");
+      // Chỉ để pop ở đây, bên ngoài UI ông xoá cái pop kia đi nhé
+      Navigator.pop(context); 
+    }
+  } catch (e) {
+    debugPrint("Data Persistence Error: $e");
+    if (context.mounted) {
+      _showSnackBar(context, "Database synchronization failed: $e");
+    }
+  } finally {
+    _isLoading = false;
+    notifyListeners();
+  }
+}
 
   void _showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -151,20 +164,38 @@ class CreateTaskScreen extends StatefulWidget {
 }
 
 class _CreateTaskScreenState extends State<CreateTaskScreen> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController(
+    text: 'Team Meeting',
+  );
+  final TextEditingController _descController = TextEditingController(
+    text: 'Discuss all questions about new projects',
+  );
+  
+
+  int? _selectedCategoryId;
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _descController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<CategoryViewModel>().loadCategories();
+      context.read<TagViewModel>().loadTags();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final categoryViewModel = context.watch<CategoryViewModel>();
+    final tagViewModel = context.watch<TagViewModel>();
+    String formattedDate = DateFormat('EEEE, d MMMM').format(context.read<CreateTaskProvider>().selectedDate);
+    final categories = categoryViewModel.categories;
+
+    if (_selectedCategoryId == null && categories.isNotEmpty) {
+      _selectedCategoryId = categories.first.id;
+    }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -236,53 +267,21 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     // --- Category ---
                     Text('Select Category', style: theme.textTheme.labelLarge),
                     const SizedBox(height: 10),
-                    Consumer<CreateTaskProvider>(
-                      builder: (context, provider, child) {
-                        final List<String> categories = [
-                          'Development', 'Research', 'Design', 'Backend'
-                        ];
-                        return SizedBox(
-                          height: 40,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: categories.length,
-                            itemBuilder: (context, index) {
-                              final category = categories[index];
-                              final isSelected = category == provider.selectedCategory;
-                              
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 10),
-                                child: ChoiceChip(
-                                  label: Text(category),
-                                  selected: isSelected,
-                                  onSelected: (selected) {
-                                    if (selected) {
-                                      provider.setCategory(category);
-                                    }
-                                  },
-                                  backgroundColor: isDark
-                                      ? theme.colorScheme.surfaceContainerHighest
-                                      : const Color(0xFFF1F7FD),
-                                  selectedColor: theme.colorScheme.primary,
-                                  labelStyle: TextStyle(
-                                    color: isSelected ? Colors.white : theme.colorScheme.primary,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    side: BorderSide(
-                                      color: isDark ? theme.colorScheme.outline : const Color(0xFFF1F7FD),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  showCheckmark: false,
-                                ),
-                              );
-                            },
-                          ),
-                        );
-                      },
+                    SizedBox(
+                      child: categories.isEmpty
+                          ? Text(
+                              categoryViewModel.isLoading
+                                  ? 'Loading categories...'
+                                  : 'No categories found',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            )
+                          : CategoryChoiceChips(
+                              categories: categories,
+                              selectedCategoryId: _selectedCategoryId,
+                              onSelected: (category) {
+                                setState(() => _selectedCategoryId = category.id);
+                              },
+                            ),
                     ),
                     const SizedBox(height: 20),
 
@@ -361,6 +360,127 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     ),
                     const SizedBox(height: 25),
 
+                    //Clock
+                    /*Row(
+                      children: [
+                        // --- Start Time ---
+                        Expanded(
+                          child: Consumer<CreateTaskProvider>(
+                            builder: (context, provider, child) {
+                              final formattedStartTime = provider.startTime.format(context);
+                              return InkWell(
+                                onTap: () async {
+                                  final TimeOfDay? picked = await showTimePicker(
+                                    context: context,
+                                    initialTime: provider.startTime,
+                                  );
+                                  if (picked != null) {
+                                    provider.setStartTime(picked);
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(15),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 5.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Start Time', style: theme.textTheme.labelLarge),
+                                            const SizedBox(height: 5),
+                                            Text(
+                                              formattedStartTime,
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: theme.colorScheme.onSurface,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 5),
+                                            Container(height: 1, color: theme.colorScheme.outline),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: theme.colorScheme.primary,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(Icons.access_time_rounded, color: Colors.white, size: 20),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        
+                        const SizedBox(width: 20), // Khoảng cách giữa 2 cục thời gian
+                        
+                        // --- End Time ---
+                        Expanded(
+                          child: Consumer<CreateTaskProvider>(
+                            builder: (context, provider, child) {
+                              final formattedEndTime = provider.endTime.format(context);
+                              return InkWell(
+                                onTap: () async {
+                                  final TimeOfDay? picked = await showTimePicker(
+                                    context: context,
+                                    initialTime: provider.endTime,
+                                  );
+                                  if (picked != null) {
+                                    provider.setEndTime(picked);
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(15),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 5.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('End Time', style: theme.textTheme.labelLarge),
+                                            const SizedBox(height: 5),
+                                            Text(
+                                              formattedEndTime,
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: theme.colorScheme.onSurface,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 5),
+                                            Container(height: 1, color: theme.colorScheme.outline),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: theme.colorScheme.primary,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(Icons.access_time_filled_rounded, color: Colors.white, size: 20),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),*/
+
                     // --- Input Desc ---
                     CustomInputField(
                       label: 'Description',
@@ -370,54 +490,41 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     ),
                     const SizedBox(height: 40),
 
-                    // --- Nút Submit ---
-                    Consumer<CreateTaskProvider>(
-                      builder: (context, provider, child) {
-                        return Center(
-                          child: ElevatedButton(
-                            onPressed: provider.isLoading
-                                ? null
-                                : () {
-                                    final viewModel = context.read<TaskViewModel>();
+                    // ─── Create Button ────────────────────────
+                    Center(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            // Kiểm tra loading để tránh user bấm liên tọi
+                            if (context.read<CreateTaskProvider>().isLoading) return;
 
-                                    provider.submitTask(
-                                      context,
-                                      taskName: _nameController.text,
-                                      description: _descController.text,
-                                      priority: viewModel.selectedPriority,
-                                      tags: List.from(viewModel.selectedTags),
-                                    );
-                                  },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: theme.colorScheme.primary,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 100, vertical: 15),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              elevation: 2,
+                            await context.read<CreateTaskProvider>().submitTask(
+                              context,
+                              taskName: _nameController.text,
+                              description: _descController.text,
+                              priority: context.read<TaskViewModel>().selectedPriority,
+                              tags: List.from(context.read<TagViewModel>().selectedTags),
+                              categoryId: _selectedCategoryId, // Truyền cái biến state ở UI vào đây
+                            );
+
+                            // Sau khi tạo xong, reset mấy cái linh tinh
+                            if (mounted) {
+                              context.read<TaskViewModel>().reset();
+                              context.read<TagViewModel>().resetSelection();
+                            }
+                            
+                            // KHÔNG dùng Navigator.pop(context) ở đây nữa vì trong Provider làm rồi.
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 100,
+                              vertical: 15,
                             ),
-                            child: provider.isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Create Task',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
                           ),
-                        );
-                      },
-                    ),
+                          child: const Text('Create Task', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
                     const SizedBox(height: 20),
                   ],
                 ),

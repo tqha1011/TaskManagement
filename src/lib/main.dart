@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:task_management_app/features/auth/presentation/view/auth_gate.dart';
+import 'package:task_management_app/features/auth/presentation/view/login_view.dart';
+import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
 import 'package:task_management_app/features/main/view/screens/main_screen.dart';
+import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
 import 'package:task_management_app/features/tasks/viewmodel/task_viewmodel.dart';
 import 'core/theme/app_theme.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -52,8 +55,12 @@ Future<void> main() async {
             ChangeNotifierProvider<TaskViewModel>(
               create: (_) => TaskViewModel(),
             ),
-            // ĐÂY LÀ DÒNG CỨU CÁNH CHO ĐẠI VƯƠNG:
-            ChangeNotifierProvider(create: (_) => CreateTaskProvider()), 
+            ChangeNotifierProvider<CategoryViewModel>(
+              create: (_) => CategoryViewModel(),
+            ),
+            ChangeNotifierProvider<TagViewModel>(
+              create: (_) => TagViewModel(),
+            ),
           ],
       child: const TaskApp()));
 }

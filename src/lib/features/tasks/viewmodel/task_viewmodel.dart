@@ -1,7 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:task_management_app/features/tag/model/tag_model.dart';
+import 'dart:convert'; 
 import 'package:shared_preferences/shared_preferences.dart';
 import '../model/task_model.dart';
+import 'package:task_management_app/features/category/model/category_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class TaskViewModel extends ChangeNotifier {
@@ -14,40 +16,24 @@ class TaskViewModel extends ChangeNotifier {
     notifyListeners();
   }
   final List<TagModel> workTypeTags = [
-    TagModel(id: 'work', name: 'Work', color: const Color(0xFF2196F3)),
-    TagModel(id: 'study', name: 'Study', color: const Color(0xFF9C27B0)),
-    TagModel(id: 'personal', name: 'Personal', color: const Color(0xFF4CAF50)),
-    TagModel(id: 'project', name: 'Project', color: const Color(0xFFFF9800)),
+    const TagModel(id: 1, name: 'Work', colorCode: '#2196F3', profileId: ''),
+    const TagModel(id: 2, name: 'Study', colorCode: '#9C27B0', profileId: ''),
+    const TagModel(id: 3, name: 'Personal', colorCode: '#4CAF50', profileId: ''),
+    const TagModel(id: 4, name: 'Project', colorCode: '#FF9800', profileId: ''),
   ];
 
   final List<TagModel> timeTags = [
-    TagModel(id: 'today', name: 'Today', color: const Color(0xFF00BCD4)),
-    TagModel(id: 'tomorrow', name: 'Tomorrow', color: const Color(0xFF3F51B5)),
-    TagModel(
-      id: 'this_week',
-      name: 'This Week',
-      color: const Color(0xFF009688),
-    ),
-    TagModel(id: 'later', name: 'Later', color: const Color(0xFF607D8B)),
+    const TagModel(id: 5, name: 'Today', colorCode: '#00BCD4', profileId: ''),
+    const TagModel(id: 6, name: 'Tomorrow', colorCode: '#3F51B5', profileId: ''),
+    const TagModel(id: 7, name: 'This Week', colorCode: '#009688', profileId: ''),
+    const TagModel(id: 8, name: 'Later', colorCode: '#607D8B', profileId: ''),
   ];
 
   final List<TagModel> statusTags = [
-    TagModel(id: 'pending', name: 'Pending', color: const Color(0xFFFF9800)),
-    TagModel(
-      id: 'in_progress',
-      name: 'In Progress',
-      color: const Color(0xFF2196F3),
-    ),
-    TagModel(
-      id: 'completed',
-      name: 'Completed',
-      color: const Color(0xFF4CAF50),
-    ),
-    TagModel(
-      id: 'cancelled',
-      name: 'Cancelled',
-      color: const Color(0xFF9E9E9E),
-    ),
+    const TagModel(id: 9, name: 'Pending', colorCode: '#FF9800', profileId: ''),
+    const TagModel(id: 10, name: 'In Progress', colorCode: '#2196F3', profileId: ''),
+    const TagModel(id: 11, name: 'Completed', colorCode: '#4CAF50', profileId: ''),
+    const TagModel(id: 12, name: 'Cancelled', colorCode: '#9E9E9E', profileId: ''),
   ];
 
   // ─── Custom Tags (lưu SharedPreferences) ────────────────
@@ -67,15 +53,7 @@ class TaskViewModel extends ChangeNotifier {
     final raw = prefs.getString(_customTagsKey);
     if (raw != null) {
       final List decoded = jsonDecode(raw);
-      _customTags = decoded
-          .map(
-            (e) => TagModel(
-              id: e['id'],
-              name: e['name'],
-              color: Color(e['color']),
-            ),
-          )
-          .toList();
+      _customTags = decoded.map((e) => TagModel.fromJson(e)).toList();
       notifyListeners();
     }
   }
@@ -103,9 +81,10 @@ class TaskViewModel extends ChangeNotifier {
     }
     _customTags.add(
       TagModel(
-        id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+        id: DateTime.now().millisecondsSinceEpoch, 
         name: name,
-        color: _customTagColors[_customTags.length % _customTagColors.length],
+        colorCode: '#FF9800', 
+        profileId: '',
       ),
     );
     _saveCustomTags();
@@ -123,10 +102,8 @@ class TaskViewModel extends ChangeNotifier {
 
   // ─── State tạo task ─────────────────────────────────────
   Priority _selectedPriority = Priority.medium;
-  final List<TagModel> _selectedTags = [];
 
   Priority get selectedPriority => _selectedPriority;
-  List<TagModel> get selectedTags => List.unmodifiable(_selectedTags);
 
   
 
@@ -135,20 +112,8 @@ class TaskViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleTag(TagModel tag) {
-    if (_selectedTags.any((t) => t.id == tag.id)) {
-      _selectedTags.removeWhere((t) => t.id == tag.id);
-    } else {
-      _selectedTags.add(tag);
-    }
-    notifyListeners();
-  }
-
-  bool isTagSelected(TagModel tag) => _selectedTags.any((t) => t.id == tag.id);
-
   void reset() {
     _selectedPriority = Priority.medium;
-    _selectedTags.clear();
     notifyListeners();
   }
 
@@ -222,7 +187,15 @@ class TaskViewModel extends ChangeNotifier {
             id: item['id'].toString(),
             title: item['title'] ?? 'Task mới',
             description: item['description'] ?? '',
-            category: item['category'] ?? '',
+            
+            // CHÍNH LÀ CHỖ NÀY: Khởi tạo cục CategoryModel đàng hoàng
+            category: CategoryModel(
+              id: 0, // Nhét số 0 vào làm ID ảo
+              name: item['category']?.toString() ?? 'General', // Lấy tên từ database, nếu rỗng thì cho chữ General
+              colorCode: '#5A8DF3', // Lấy màu mặc định
+              profileId: '', // Bỏ trống
+            ),
+            
             // Mấy cái giờ giấc cho mặc định hết đi, chừng nào khỏe code tiếp
             startTime: const TimeOfDay(hour: 8, minute: 0), 
             endTime: const TimeOfDay(hour: 9, minute: 0),
@@ -230,7 +203,7 @@ class TaskViewModel extends ChangeNotifier {
                 ? DateTime.tryParse(item['create_at'].toString()) ?? DateTime.now()
                 : DateTime.now(),
             priority: p,
-          )); 
+          ));
         }
       }
       notifyListeners();
@@ -241,16 +214,19 @@ class TaskViewModel extends ChangeNotifier {
   }
 
 
-  Future<void> updateTask(String taskId, Map<String, dynamic> updates) async {
-    final supabase = Supabase.instance.client;
-    try {
-      await supabase.from('task').update(updates).eq('id', taskId);
-      // Gọi fetch lại để làm mới danh sách màn Home
-      fetchTasks(); 
-    } catch (e) {
-      debugPrint("Lỗi update: $e");
-    }
+  Future<void> updateTask(dynamic taskId, Map<String, dynamic> data) async {
+  final _supabase = Supabase.instance.client;
+  try {
+    await _supabase
+        .from('task')
+        .update(data) // Data ở đây sẽ chứa {'title': '...', 'category_id': ...}
+        .eq('id', taskId);
+    
+    notifyListeners(); // Để màn hình Home load lại dữ liệu mới
+  } catch (e) {
+    rethrow;
   }
+}
 
   Future<void> deleteTask(String taskId) async {
     final supabase = Supabase.instance.client;
@@ -283,7 +259,7 @@ class TaskViewModel extends ChangeNotifier {
     // 3. Lọc theo Tag
     if (_filterTagId != null) {
       result = result
-          .where((t) => t.tags.any((tag) => tag.id == _filterTagId))
+          .where((t) => t.tags.any((tag) => tag.id.toString() == _filterTagId))
           .toList();
     }
 

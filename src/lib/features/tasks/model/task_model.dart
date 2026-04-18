@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:task_management_app/features/category/model/category_model.dart';
+import 'package:task_management_app/features/tag/model/tag_model.dart';
+
 // ─── Priority Enum ───────────────────────────────────────────
 enum Priority { low, medium, high, urgent }
 
@@ -44,21 +47,12 @@ extension PriorityExtension on Priority {
   }
 }
 
-// ─── Tag Model ───────────────────────────────────────────────
-class TagModel {
-  final String id;
-  final String name;
-  final Color color;
-
-  const TagModel({required this.id, required this.name, required this.color});
-}
-
 // ─── Task Model ──────────────────────────────────────────────
 class TaskModel {
   final String id;
   String title;
   String description;
-  String category;
+  CategoryModel category;
   TimeOfDay startTime;
   TimeOfDay endTime;
   DateTime date;
