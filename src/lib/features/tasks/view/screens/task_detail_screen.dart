@@ -64,24 +64,122 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   bool _isTagSelected(TagModel tag) => _currentTags.any((t) => t.id == tag.id);
+  // Hàm hiển thị Popup để gõ Note mới (để bên trong class TaskDetailScreen)
+  void _showAddNoteDialog(BuildContext context, String taskId) {
+    final TextEditingController noteController = TextEditingController();
 
-  void _saveChanges() {
-    widget.task.title = _titleController.text;
-    widget.task.description = _descController.text;
-    widget.task.startTime = _startTime;
-    widget.task.endTime = _endTime;
-    widget.task.category = _currentCategory;
-
-    // Lưu tags mới vào task qua ViewModel
-    context.read<TaskViewModel>().updateTaskTags(widget.task.id, _currentTags);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Task updated successfully!'),
-        backgroundColor: Theme.of(context).colorScheme.tertiary,
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Thêm Note'),
+        content: TextField(
+          controller: noteController,
+          maxLines: 3,
+          decoration: InputDecoration(
+            hintText: 'Nhập nội dung ghi chú...',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (noteController.text.isNotEmpty) {
+                // Gọi ViewModel để lưu Note
+                bool success = await context.read<TaskViewModel>().createNote(taskId, noteController.text);
+                
+                if (success && context.mounted) {
+                  Navigator.pop(context);
+                  // Load lại trang hoặc gọi setState để thấy note mới (tuỳ cách ông build màn hình)
+                  setState(() {}); 
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đã thêm Note!')),
+                  );
+                }
+              }
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
       ),
     );
-    Navigator.pop(context);
+  }
+
+  // Widget hiển thị Danh Sách Note (Ông nhét cái này vào đâu đó trong body của TaskDetailScreen)
+  Widget _buildNotesSection(BuildContext context, String taskId) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Notes', style: Theme.of(context).textTheme.titleLarge),
+            // Nút Dấu Cộng thêm Note
+            IconButton(
+              icon: const Icon(Icons.add_circle, color: Colors.blue, size: 30),
+              onPressed: () => _showAddNoteDialog(context, taskId),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        
+        // Dùng FutureBuilder để gọi API lấy note về
+        FutureBuilder<List<NoteModel>>(
+          future: context.read<TaskViewModel>().getNotesForTask(taskId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Text('Chưa có ghi chú nào.', style: TextStyle(color: Colors.grey));
+            }
+
+            final notes = snapshot.data!;
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(), // Để ListView không cuộn lồng nhau
+              itemCount: notes.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: ListTile(
+                    leading: const Icon(Icons.sticky_note_2, color: Colors.amber),
+                    title: Text(notes[index].content),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+  void _saveChanges() async {
+    final Map<String, dynamic> updates = {
+      'title': _titleController.text.trim(),
+      'category_id': _currentCategory.id, 
+    };
+
+    try {
+      await context.read<TaskViewModel>().updateTask(widget.task.id, updates);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cập nhật thành công!')),
+        );
+        Navigator.pop(context); // Xong thì té về màn Home
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi rồi: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -118,6 +216,40 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+            onPressed: () {
+              // Hiện Dialog xác nhận xóa cho an toàn
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Xóa Task?'),
+                  content: const Text('Bạn có chắc muốn xóa công việc này không?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Hủy'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // Gọi hàm xóa từ Provider/ViewModel
+                        context.read<TaskViewModel>().deleteTask(widget.task.id);
+                        Navigator.pop(ctx); // Tắt Dialog
+                        Navigator.pop(context); // Trở về màn Home
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Đã xóa task thành công!'), backgroundColor: Colors.redAccent),
+                        );
+                      },
+                      child: const Text('Xóa', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 10),
+        ],
       ),
       body: SafeArea(
         child: Hero(
@@ -294,7 +426,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       maxLines: 3,
                     ),
                     const SizedBox(height: 40),
+                    _buildNotesSection(context, widget.task.id.toString()),
 
+                    const SizedBox(height: 40),
                     // Save Button
                     Center(
                       child: ElevatedButton(
