@@ -131,7 +131,7 @@ class TaskCard extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.primary,
-                        borderRadius: const BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5))),
+                        borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5))),
                   ),
                 ),
                 Padding(

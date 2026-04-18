@@ -14,6 +14,8 @@ import 'package:task_management_app/features/tasks/view/screens/create_task_scre
 
 import 'core/theme/theme_provider.dart';
 
+import 'core/theme/theme_provider.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,6 +66,7 @@ Future<void> main() async {
           ],
       child: const TaskApp()));
 }
+
 final supabase = Supabase.instance.client;
 
 class TaskApp extends StatelessWidget {

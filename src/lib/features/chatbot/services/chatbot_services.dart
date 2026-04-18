@@ -41,6 +41,21 @@ class ChatBotAssistantService {
                     description:
                         'Danh sách các thẻ phân loại (ví dụ: ["Học tập", "Gấp", "Backend"]). Gửi mảng rỗng [] nếu không có.',
                   ),
+                  'start_time': Schema(
+                    SchemaType.string,
+                    description:
+                        'Thời gian bắt đầu công việc theo định dạng ISO 8601 (VD: 2026-04-18T15:00:00Z). Nếu người dùng không nói, hãy bỏ qua hoặc để rỗng.',
+                  ),
+                  'due_time': Schema(
+                    SchemaType.string,
+                    description:
+                        'Thời gian kết thúc (deadline) theo định dạng ISO 8601. Nếu không có, bỏ qua.',
+                  ),
+                  'category_name': Schema(
+                    SchemaType.string,
+                    description:
+                        'Phân loại công việc vào 1 trong 4 nhóm: "Cá nhân", "Học tập", "Công việc", hoặc "Giải trí". Nếu không phân loại được, mặc định trả về "Cá nhân".',
+                  ),
                 },
                 requiredProperties: ['title', 'priority', 'tags'],
               ),
@@ -77,26 +92,38 @@ class ChatBotAssistantService {
           final priority = (args['priority'] as num?)?.toInt() ?? 1;
           final rawTags = args['tags'] as List<dynamic>? ?? [];
           final tags = rawTags.map((e) => e.toString()).toList();
+          final startTime = args['start_time'] as String?;
+          final dueTime = args['due_time'] as String?;
 
           final userId = Supabase.instance.client.auth.currentUser?.id;
           if (userId == null) {
             return 'Vui lòng đăng nhập để tạo công việc.';
           }
-
+          final categoryName = args['category_name'] as String? ?? 'Cá nhân';
           final dbResponse = await Supabase.instance.client.rpc(
             'create_task_full',
             params: {
-              'p_title': title,
-              'p_priority': priority,
+              'p_title': args['title'],
+              'p_priority': (args['priority'] as num?)?.toInt() ?? 1,
               'p_profile_id': userId,
-              'p_tag_names': tags,
+              'p_tag_names':
+                  (args['tags'] as List?)?.map((e) => e.toString()).toList() ??
+                  [],
+              'p_category_name': categoryName,
+              'p_start_time': args['start_time'],
+              'p_due_time': args['due_time'],
             },
           );
 
           final isSuccess = dbResponse['success'] == true;
+          if (!isSuccess) {
+            debugPrint("Lỗi từ Supabase: ${dbResponse['error']}");
+          }
           final functionResponse = await _chatSession!.sendMessage(
             Content.functionResponse('create_task_full', {
               'status': isSuccess ? 'Thành công' : 'Thất bại',
+
+              'reason': isSuccess ? '' : dbResponse['error'].toString(),
             }),
           );
           return functionResponse.text ?? 'Đã xử lý xong yêu cầu của bạn!';

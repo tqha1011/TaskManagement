@@ -212,7 +212,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 5),
                   ),
@@ -225,23 +225,23 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                   IconButton(
                     icon: Icon(
                       Icons.arrow_back_ios_new_rounded,
-                      color: theme.colorScheme.onSurface,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   Icon(
                     Icons.menu_rounded,
-                    color: theme.colorScheme.onSurface,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   Icon(
                     Icons.assignment_outlined,
-                    color: theme.colorScheme.onSurface,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ],
               ),
             ),
 
-            // --- Body ---
+            // ─── Body ─────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(25.0),
@@ -250,13 +250,11 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                   children: [
                     Text(
                       'Create New Task',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     const SizedBox(height: 25),
 
-                    // --- Input Name ---
+                    // Task Name
                     CustomInputField(
                       label: 'Task Name',
                       hint: 'Enter task name',
@@ -264,8 +262,11 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // --- Category ---
-                    Text('Select Category', style: theme.textTheme.labelLarge),
+                    // Category
+                    Text(
+                      'Select Category',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
                     const SizedBox(height: 10),
                     SizedBox(
                       child: categories.isEmpty
@@ -482,6 +483,15 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     ),*/
 
                     // --- Input Desc ---
+                    CustomInputField(
+                      label: 'Description',
+                      hint: 'Enter task description',
+                      controller: _descController,
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 25),
+
+                    // Description
                     CustomInputField(
                       label: 'Description',
                       hint: 'Enter task description',

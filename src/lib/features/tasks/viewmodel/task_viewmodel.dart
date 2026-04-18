@@ -15,27 +15,7 @@ class TaskViewModel extends ChangeNotifier {
     _selectedDate = date;
     notifyListeners();
   }
-  final List<TagModel> workTypeTags = [
-    const TagModel(id: 1, name: 'Work', colorCode: '#2196F3', profileId: ''),
-    const TagModel(id: 2, name: 'Study', colorCode: '#9C27B0', profileId: ''),
-    const TagModel(id: 3, name: 'Personal', colorCode: '#4CAF50', profileId: ''),
-    const TagModel(id: 4, name: 'Project', colorCode: '#FF9800', profileId: ''),
-  ];
-
-  final List<TagModel> timeTags = [
-    const TagModel(id: 5, name: 'Today', colorCode: '#00BCD4', profileId: ''),
-    const TagModel(id: 6, name: 'Tomorrow', colorCode: '#3F51B5', profileId: ''),
-    const TagModel(id: 7, name: 'This Week', colorCode: '#009688', profileId: ''),
-    const TagModel(id: 8, name: 'Later', colorCode: '#607D8B', profileId: ''),
-  ];
-
-  final List<TagModel> statusTags = [
-    const TagModel(id: 9, name: 'Pending', colorCode: '#FF9800', profileId: ''),
-    const TagModel(id: 10, name: 'In Progress', colorCode: '#2196F3', profileId: ''),
-    const TagModel(id: 11, name: 'Completed', colorCode: '#4CAF50', profileId: ''),
-    const TagModel(id: 12, name: 'Cancelled', colorCode: '#9E9E9E', profileId: ''),
-  ];
-
+  
   // ─── Custom Tags (lưu SharedPreferences) ────────────────
   List<TagModel> _customTags = [];
   List<TagModel> get customTags => List.unmodifiable(_customTags);
@@ -104,8 +84,6 @@ class TaskViewModel extends ChangeNotifier {
   Priority _selectedPriority = Priority.medium;
 
   Priority get selectedPriority => _selectedPriority;
-
-  
 
   void setPriority(Priority priority) {
     _selectedPriority = priority;
