@@ -1,25 +1,7 @@
-# Task Management App - Life Organizer
+**Bản update từ nhánh `priority_selector_and_tag_system`
 
-## 1. Introduction
-This repository contains the source code for the **Task Management App (Life Organizer)**, developed as a project for the **SE346** course at the University of Information Technology - VNUHCM (UIT).
+**Nâng cấp thêm các tag: Thời gian, Trạng thái và Custom**
 
-Going beyond a traditional to-do list, this application is designed to be a comprehensive personal assistant. It helps users easily organize various life contexts, such as tracking utility bills, managing grocery shopping lists, building daily habits, and handling household chores efficiently.
+Bổ sung/Chỉnh sửa các file sau
+<img width="445" height="108" alt="Screenshot 2026-04-09 194348" src="https://github.com/user-attachments/assets/0c4e93ae-55a6-44ac-92b3-09701afe4795" />
 
-## 2. Authors
-This project is built and maintained by a dedicated team of 4 members:
-* [Trần Quang Hạ](https://github.com/tqha1011) 
-* [Nguyễn Lê Hoàng Hảo](https://github.com/hoanghaoz) 
-* [Nguyễn Anh Kiệt](https://github.com/anhkietbienhoa-crypto) 
-* [Nguyễn Trí Kiệt](https://github.com/Ender-Via)
-
-## 3. Tech Stack
-The application is built with a focus on performance, security, and clean code principles, strictly following the **Feature-Based MVVM** architecture:
-* **Frontend:** Flutter
-* **Backend & Database:** Supabase (PostgreSQL, Auth, Row Level Security)
-* **Code Quality & CI/CD:** GitHub Actions, SonarCloud
-
-## 4. Documentation
-For a deeper dive into our system design and development workflows, please explore the attached documentation:
-* [Flutter App Architecture](documentation/architecture/flutter-architecture.md)
-* [Database Schema & ERD](documentation/architecture/database-schema.md)
-* [Git & Conventional Commits Guidelines](documentation/guidelines/conventional-commit.md)
