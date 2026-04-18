@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'package:task_management_app/features/category/view/widgets/category_choice_chips.dart';
+import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
+import 'package:task_management_app/features/tag/view/widgets/tag_selector.dart';
+import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
+
 import '../../../../core/widgets/custom_input_field.dart';
+import '../../model/task_model.dart';
+import '../../viewmodel/task_viewmodel.dart';
 import '../widgets/task_widgets.dart';
+import '../widgets/priority_selector.dart';
 
 class CreateTaskScreen extends StatefulWidget {
   const CreateTaskScreen({super.key});
@@ -12,30 +20,57 @@ class CreateTaskScreen extends StatefulWidget {
 }
 
 class _CreateTaskScreenState extends State<CreateTaskScreen> {
-  final TextEditingController _nameController = TextEditingController(text: 'Team Meeting');
-  final TextEditingController _descController = TextEditingController(text: 'Discuss all questions about new projects');
+  final TextEditingController _nameController = TextEditingController(
+    text: 'Team Meeting',
+  );
+  final TextEditingController _descController = TextEditingController(
+    text: 'Discuss all questions about new projects',
+  );
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _startTime = const TimeOfDay(hour: 10, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 11, minute: 0);
-  int _selectedCategoryIndex = 0;
+  int? _selectedCategoryId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<CategoryViewModel>().loadCategories();
+      context.read<TagViewModel>().loadTags();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final categoryViewModel = context.watch<CategoryViewModel>();
+    final tagViewModel = context.watch<TagViewModel>();
     String formattedDate = DateFormat('EEEE, d MMMM').format(_selectedDate);
+    final categories = categoryViewModel.categories;
+
+    if (_selectedCategoryId == null && categories.isNotEmpty) {
+      _selectedCategoryId = categories.first.id;
+    }
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
+            // ─── Header ───────────────────────────────────────
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10, offset: const Offset(0, 5))
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
                 ],
               ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -43,96 +78,152 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black),
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Icon(Icons.menu_rounded, color: Colors.black),
-                  const Icon(Icons.assignment_outlined, color: Colors.black),
+                  Icon(
+                    Icons.menu_rounded,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  Icon(
+                    Icons.assignment_outlined,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ],
               ),
             ),
+
+            // ─── Body ─────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(25.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Create New Task', style: Theme.of(context).textTheme.headlineMedium),
+                    Text(
+                      'Create New Task',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
                     const SizedBox(height: 25),
-                    CustomInputField(label: 'Task Name', hint: 'Enter task name', controller: _nameController),
-                    const SizedBox(height: 20),
-                    Text('Select Category', style: Theme.of(context).textTheme.labelLarge),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      height: 40,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: 4,
-                        itemBuilder: (context, index) {
-                          List<String> categories = ['Development', 'Research', 'Design', 'Backend'];
-                          bool isSelected = index == _selectedCategoryIndex;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: ChoiceChip(
-                              label: Text(categories[index]),
-                              selected: isSelected,
-                              onSelected: (selected) => setState(() => _selectedCategoryIndex = selected ? index : 0),
-                              backgroundColor: const Color(0xFFF1F7FD),
-                              selectedColor: AppColors.primaryBlue,
-                              labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.primaryBlue, fontSize: 14),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  side: const BorderSide(color: Color(0xFFF1F7FD), width: 1)),
-                              showCheckmark: false,
-                            ),
-                          );
-                        },
-                      ),
+
+                    // Task Name
+                    CustomInputField(
+                      label: 'Task Name',
+                      hint: 'Enter task name',
+                      controller: _nameController,
                     ),
                     const SizedBox(height: 20),
+
+                    // Category
+                    Text(
+                      'Select Category',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      child: categories.isEmpty
+                          ? Text(
+                              categoryViewModel.isLoading
+                                  ? 'Loading categories...'
+                                  : 'No categories found',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            )
+                          : CategoryChoiceChips(
+                              categories: categories,
+                              selectedCategoryId: _selectedCategoryId,
+                              onSelected: (category) {
+                                setState(() => _selectedCategoryId = category.id);
+                              },
+                            ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ─── PRIORITY SELECTOR (MỚI) ──────────────
+                    const PrioritySelector(),
+                    const SizedBox(height: 20),
+
+                    // ─── TAG SELECTOR (MỚI) ───────────────────
+                    const TagSelector(),
+                    const SizedBox(height: 20),
+
+                    // Date
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Date', style: Theme.of(context).textTheme.labelLarge),
+                            Text(
+                              'Date',
+                              style: Theme.of(context).textTheme.labelLarge,
+                            ),
                             const SizedBox(height: 5),
                             InkWell(
                               onTap: () async {
                                 final DateTime? picked = await showDatePicker(
-                                    context: context, initialDate: _selectedDate,
-                                    firstDate: DateTime(2000), lastDate: DateTime(2100));
-                                if (picked != null) setState(() => _selectedDate = picked);
+                                  context: context,
+                                  initialDate: _selectedDate,
+                                  firstDate: DateTime(2000),
+                                  lastDate: DateTime(2100),
+                                );
+                                if (picked != null) {
+                                  setState(() => _selectedDate = picked);
+                                }
                               },
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(formattedDate, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                  Text(
+                                    formattedDate,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                  ),
                                   const SizedBox(height: 5),
-                                  Container(width: 150, height: 1, color: Colors.black26)
+                                  Container(
+                                    width: 150,
+                                    height: 1,
+                                    color: Theme.of(context).colorScheme.outline,
+                                  )
                                 ],
                               ),
-                            )
+                            ),
                           ],
                         ),
                         Container(
                           padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: AppColors.primaryBlue, borderRadius: BorderRadius.circular(15)),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
                           child: const Icon(Icons.date_range_rounded, color: Colors.white),
                         )
                       ],
                     ),
                     const SizedBox(height: 25),
+
+                    // Time
                     Row(
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Start time', style: Theme.of(context).textTheme.labelLarge),
+                              Text(
+                                'Start time',
+                                style: Theme.of(context).textTheme.labelLarge,
+                              ),
                               const SizedBox(height: 5),
-                              TimePickerWidget(time: _startTime, onChanged: (newTime) => setState(() => _startTime = newTime)),
+                              TimePickerWidget(
+                                time: _startTime,
+                                onChanged: (t) =>
+                                    setState(() => _startTime = t),
+                              ),
                             ],
                           ),
                         ),
@@ -141,27 +232,82 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('End time', style: Theme.of(context).textTheme.labelLarge),
+                              Text(
+                                'End time',
+                                style: Theme.of(context).textTheme.labelLarge,
+                              ),
                               const SizedBox(height: 5),
-                              TimePickerWidget(time: _endTime, onChanged: (newTime) => setState(() => _endTime = newTime)),
+                              TimePickerWidget(
+                                time: _endTime,
+                                onChanged: (t) => setState(() => _endTime = t),
+                              ),
                             ],
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 25),
-                    CustomInputField(label: 'Description', hint: 'Enter task description', controller: _descController, maxLines: 2),
+
+                    // Description
+                    CustomInputField(
+                      label: 'Description',
+                      hint: 'Enter task description',
+                      controller: _descController,
+                      maxLines: 2,
+                    ),
                     const SizedBox(height: 40),
+
+                    // ─── Create Button ────────────────────────
                     Center(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          final viewModel = context.read<TaskViewModel>();
+                          if (categories.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please create a category first.'),
+                              ),
+                            );
+                            return;
+                          }
+
+                          final selectedCategory = categories.firstWhere(
+                            (category) => category.id == _selectedCategoryId,
+                            orElse: () => categories.first,
+                          );
+
+                          final newTask = TaskModel(
+                            id: DateTime.now().millisecondsSinceEpoch
+                                .toString(),
+                            title: _nameController.text,
+                            description: _descController.text,
+                            category: selectedCategory,
+                            startTime: _startTime,
+                            endTime: _endTime,
+                            date: _selectedDate,
+                            priority: viewModel.selectedPriority,
+                            tags: List.from(tagViewModel.selectedTags),
+                          );
+                          viewModel.addTask(newTask);
+                          viewModel.reset();
+                          context.read<TagViewModel>().resetSelection();
+                          Navigator.pop(context);
+                        },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryBlue,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 100,
+                            vertical: 15,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
                         ),
-                        child: const Text('Create Task', style: TextStyle(fontSize: 18)),
+                        child: const Text(
+                          'Create Task',
+                          style: TextStyle(fontSize: 18),
+                        ),
                       ),
                     ),
                   ],

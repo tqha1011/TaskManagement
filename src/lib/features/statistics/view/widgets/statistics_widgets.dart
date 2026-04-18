@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:task_management_app/features/category/model/category_model.dart';
+import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
 import 'package:task_management_app/features/statistics/model/StatisticsModel.dart';
-import '../../../../core/theme/app_colors.dart';
+
 import '../../../tasks/model/task_model.dart';
 import '../../../tasks/view/screens/task_detail_screen.dart';
 
@@ -8,20 +11,40 @@ class DailyProgressCard extends StatelessWidget {
   final int total;
   final int completed;
   final double percentage;
-  const DailyProgressCard({super.key, required this.total, required this.completed, required this.percentage});
+
+  const DailyProgressCard({
+    super.key,
+    required this.total,
+    required this.completed,
+    required this.percentage,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark
+            ? const Color(0xFF1A2945)
+            : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(30),
+        border: isDark
+            ? Border.all(color: const Color(0xFF2A3E62), width: 1)
+            : null,
       ),
       child: Column(
         children: [
-          const Text('Tiến độ hôm nay', style: TextStyle(color: AppColors.grayText, fontSize: 16, fontWeight: FontWeight.w600)),
+          Text(
+            'Tiến độ hôm nay',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 20),
           SizedBox(
             height: 140,
@@ -32,14 +55,31 @@ class DailyProgressCard extends StatelessWidget {
                 CircularProgressIndicator(
                   value: (total > 0) ? percentage / 100 : 0,
                   strokeWidth: 12,
-                  backgroundColor: AppColors.backgroundBlue,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.primary,
+                  ),
                 ),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('$completed/$total', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
-                    Text('Công việc', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                    Text(
+                      '$completed/$total',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      'Công việc',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -49,10 +89,19 @@ class DailyProgressCard extends StatelessWidget {
           RichText(
             textAlign: TextAlign.center,
             text: TextSpan(
-              style: const TextStyle(fontSize: 16, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
               children: [
                 const TextSpan(text: 'Tuyệt vời! Bạn đã hoàn thành '),
-                TextSpan(text: '${percentage.toInt()}%', style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                TextSpan(
+                  text: '${percentage.toInt()}%',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const TextSpan(text: '\nmục tiêu.'),
               ],
             ),
@@ -62,7 +111,6 @@ class DailyProgressCard extends StatelessWidget {
     );
   }
 }
-
 
 class WeeklyChartCard extends StatelessWidget {
   final int selectedIndex;
@@ -82,18 +130,29 @@ class WeeklyChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bool isPositive = growthPercentage >= 0;
-    final Color trendColor = isPositive ? const Color(0xFF2ECC71) : Colors.redAccent;
-    final Color trendBgColor = isPositive ? const Color(0xFFE9F7EF) : const Color(0xFFFFEBEE);
-    final String trendText = "${isPositive ? '+' : ''}$growthPercentage% vs tuần trước";
+    final Color trendColor = isPositive
+        ? const Color(0xFF3DDC84)
+        : Colors.redAccent;
+    final Color trendBgColor = isPositive
+        ? (isDark ? const Color(0xFF173B3D) : const Color(0xFFE9F7EF))
+        : (isDark ? const Color(0xFF402129) : const Color(0xFFFFEBEE));
+    final String trendText =
+        "${isPositive ? '+' : ''}$growthPercentage% vs tuần trước";
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark
+            ? const Color(0xFF1A2945)
+            : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(30),
+        border: isDark
+            ? Border.all(color: const Color(0xFF2A3E62), width: 1)
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,15 +164,42 @@ class WeeklyChartCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Tuần này', style: TextStyle(color: AppColors.grayText, fontSize: 14, fontWeight: FontWeight.w600)),
+                  Text(
+                    'Tuần này',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 5),
-                  Text('$thisWeekTotal Tasks', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+                  Text(
+                    '$thisWeekTotal Tasks',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: trendBgColor, borderRadius: BorderRadius.circular(15)),
-                child: Text(trendText, style: TextStyle(color: trendColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: trendBgColor,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Text(
+                  trendText,
+                  style: TextStyle(
+                    color: trendColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
@@ -122,14 +208,48 @@ class WeeklyChartCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-
-              _buildBar('T2', weeklyHeights.length > 0 ? weeklyHeights[0] : 0.1, 0),
-              _buildBar('T3', weeklyHeights.length > 1 ? weeklyHeights[1] : 0.1, 1),
-              _buildBar('T4', weeklyHeights.length > 2 ? weeklyHeights[2] : 0.1, 2),
-              _buildBar('T5', weeklyHeights.length > 3 ? weeklyHeights[3] : 0.1, 3),
-              _buildBar('T6', weeklyHeights.length > 4 ? weeklyHeights[4] : 0.1, 4),
-              _buildBar('T7', weeklyHeights.length > 5 ? weeklyHeights[5] : 0.1, 5),
-              _buildBar('CN', weeklyHeights.length > 6 ? weeklyHeights[6] : 0.1, 6),
+              _buildBar(
+                context,
+                'T2',
+                weeklyHeights.length > 0 ? weeklyHeights[0] : 0.1,
+                0,
+              ),
+              _buildBar(
+                context,
+                'T3',
+                weeklyHeights.length > 1 ? weeklyHeights[1] : 0.1,
+                1,
+              ),
+              _buildBar(
+                context,
+                'T4',
+                weeklyHeights.length > 2 ? weeklyHeights[2] : 0.1,
+                2,
+              ),
+              _buildBar(
+                context,
+                'T5',
+                weeklyHeights.length > 3 ? weeklyHeights[3] : 0.1,
+                3,
+              ),
+              _buildBar(
+                context,
+                'T6',
+                weeklyHeights.length > 4 ? weeklyHeights[4] : 0.1,
+                4,
+              ),
+              _buildBar(
+                context,
+                'T7',
+                weeklyHeights.length > 5 ? weeklyHeights[5] : 0.1,
+                5,
+              ),
+              _buildBar(
+                context,
+                'CN',
+                weeklyHeights.length > 6 ? weeklyHeights[6] : 0.1,
+                6,
+              ),
             ],
           ),
         ],
@@ -137,7 +257,12 @@ class WeeklyChartCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBar(String label, double heightRatio, int index) {
+  Widget _buildBar(
+    BuildContext context,
+    String label,
+    double heightRatio,
+    int index,
+  ) {
     bool isActive = index == selectedIndex;
     return GestureDetector(
       onTap: () => onDaySelected(index),
@@ -147,14 +272,27 @@ class WeeklyChartCard extends StatelessWidget {
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             width: 35,
-            height: 100 * (heightRatio > 0 ? heightRatio : 0.1), // Tối thiểu 10% để cột không bị "biến mất"
+            height: 100 * (heightRatio > 0 ? heightRatio : 0.1),
             decoration: BoxDecoration(
-              color: isActive ? AppColors.primaryBlue : const Color(0xFFF5F7FA),
+              color: isActive
+                  ? Theme.of(context).colorScheme.primary
+                  : (Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF334764)
+                        : const Color(0xFFF5F7FA)),
               borderRadius: BorderRadius.circular(8),
             ),
           ),
           const SizedBox(height: 10),
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isActive ? AppColors.primaryBlue : AppColors.grayText)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isActive
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
@@ -170,9 +308,22 @@ class CompletedTaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final categoryViewModel = context.watch<CategoryViewModel>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final CategoryModel fallbackCategory = CategoryModel(
+      id: 0,
+      name: 'General',
+      colorCode: '#5A8DF3',
+      profileId: '',
+    );
+    final CategoryModel category = categoryViewModel.categories.isNotEmpty
+        ? categoryViewModel.categories.first
+        : fallbackCategory;
 
     final time = task.updatedAt;
-    final hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
+    final hour = time.hour > 12
+        ? time.hour - 12
+        : (time.hour == 0 ? 12 : time.hour);
     final minute = time.minute.toString().padLeft(2, '0');
     final period = time.hour >= 12 ? 'PM' : 'AM';
     final timeString = 'Hoàn thành lúc $hour:$minute $period';
@@ -185,35 +336,56 @@ class CompletedTaskCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(25),
           onTap: () {
             final mappedTask = TaskModel(
-              id: task.id.toString(), // Convert int to String if your TaskModel uses String IDs
+              id: task.id.toString(),
+              // Convert int to String if your TaskModel uses String IDs
               title: task.title,
-              description: 'Completed task details from Statistics.', // Default filler
-              category: 'Development', // Default filler
-              startTime: TimeOfDay(hour: task.updatedAt.hour, minute: task.updatedAt.minute),
-              endTime: TimeOfDay(hour: task.updatedAt.hour + 1, minute: task.updatedAt.minute), // Add 1 hour just for display
+              description: 'Completed task details from Statistics.',
+              category: category,
+              startTime: TimeOfDay(
+                hour: task.updatedAt.hour,
+                minute: task.updatedAt.minute,
+              ),
+              endTime: TimeOfDay(
+                hour: task.updatedAt.hour + 1,
+                minute: task.updatedAt.minute,
+              ),
+              // Add 1 hour just for display
               date: task.updatedAt,
             );
 
-            Navigator.push(context, PageRouteBuilder(
-              transitionDuration: const Duration(milliseconds: 500),
-              pageBuilder: (_, __, ___) => TaskDetailScreen(task: mappedTask),
-              transitionsBuilder: (_, animation, __, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-            ));
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                transitionDuration: const Duration(milliseconds: 500),
+                pageBuilder: (_, __, ___) => TaskDetailScreen(task: mappedTask),
+                transitionsBuilder: (_, animation, __, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+              ),
+            );
           },
           child: Container(
             margin: const EdgeInsets.only(bottom: 15),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark
+                  ? const Color(0xFF1A2945)
+                  : Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(25),
+              border: isDark
+                  ? Border.all(color: const Color(0xFF2A3E62), width: 1)
+                  : null,
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: const Color(0xFFF1F7FD), borderRadius: BorderRadius.circular(15)),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF23395D)
+                        : const Color(0xFFF1F7FD),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                   child: icon,
                 ),
                 const SizedBox(width: 15),
@@ -221,13 +393,30 @@ class CompletedTaskCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(task.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))),
+                      Text(
+                        task.title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text(timeString, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                      Text(
+                        timeString,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                const Icon(Icons.check_circle, color: Color(0xFF2ECC71), size: 28),
+                const Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF2ECC71),
+                  size: 28,
+                ),
               ],
             ),
           ),
