@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../model/note_model.dart';
 
 class FocusViewModel extends ChangeNotifier {
+  static const double _focusVolumeBoostMultiplier = 1.5;
   // ==========================================
   // 1. STATE FOR NOTES (LOCAL STORAGE & UI)
   // ==========================================
@@ -23,7 +24,6 @@ class FocusViewModel extends ChangeNotifier {
   // Constructor: Load saved notes when the ViewModel is initialized
   FocusViewModel() {
     loadNotesFromDisk();
-    _focusAudioPlayer.setReleaseMode(ReleaseMode.loop);
   }
 
   // --- LOCAL STORAGE LOGIC ---
@@ -140,14 +140,22 @@ class FocusViewModel extends ChangeNotifier {
   bool isVibrationEnabled = true;
   int ringtoneType = 1;
   double focusVolume = 0.35;
-  String focusSoundKey = 'rain_soft';
+  String focusSoundKey = 'rain_summer_cars';
   final AudioPlayer _focusAudioPlayer = AudioPlayer();
 
   static const Map<String, String> focusSoundAssets = {
-    'rain_soft': 'assets/audio/rain_soft.wav',
-    'ocean_breeze': 'assets/audio/ocean_breeze.wav',
-    'brown_focus': 'assets/audio/brown_focus.wav',
+    'rain_summer_cars': 'audio/rain_summer_cars.mp3',
+    'lofi_chill_girl': 'audio/lofi_chill_girl.mp3',
+    'lofi_girl_chill': 'audio/lofi_girl_chill.mp3',
+    'the_mountain_lofi': 'audio/the_mountain_lofi.mp3',
+    'sunset_drive': 'audio/sunset_drive.mp3',
+    'golden_hour': 'audio/golden_hour.mp3',
+    'morning_routine_lofi': 'audio/morning_routine_lofi.mp3',
   };
+  late final List<AudioPlayer> _mixAudioPlayers = List.generate(
+    focusSoundAssets.length,
+    (_) => AudioPlayer(),
+  );
 
   // Timer states
   bool isPomodoroMode = true;
@@ -179,16 +187,43 @@ class FocusViewModel extends ChangeNotifier {
 
   Future<void> _playFocusAudio() async {
     if (!isPomodoroMode) return;
-    final assetPath = focusSoundAssets[focusSoundKey];
-    if (assetPath == null) return;
-    await _focusAudioPlayer.setVolume(focusVolume);
-    await _focusAudioPlayer.play(
-      AssetSource(assetPath.replaceFirst('assets/', '')),
-    );
+    try {
+      final boostedVolume = (focusVolume * _focusVolumeBoostMultiplier).clamp(
+        0.0,
+        1.0,
+      );
+      await _stopFocusAudio();
+
+      if (focusSoundKey == 'mix_all') {
+        final entries = focusSoundAssets.entries.toList();
+        final mixVolume = (boostedVolume / entries.length).clamp(0.0, 1.0);
+        for (int i = 0; i < entries.length; i++) {
+          final player = _mixAudioPlayers[i];
+          await player.setPlayerMode(PlayerMode.mediaPlayer);
+          await player.setReleaseMode(ReleaseMode.loop);
+          await player.setVolume(mixVolume);
+          await player.setSource(AssetSource(entries[i].value));
+          await player.resume();
+        }
+      } else {
+        final assetPath = focusSoundAssets[focusSoundKey];
+        if (assetPath == null) return;
+        await _focusAudioPlayer.setPlayerMode(PlayerMode.mediaPlayer);
+        await _focusAudioPlayer.setReleaseMode(ReleaseMode.loop);
+        await _focusAudioPlayer.setVolume(boostedVolume);
+        await _focusAudioPlayer.setSource(AssetSource(assetPath));
+        await _focusAudioPlayer.resume();
+      }
+    } catch (e) {
+      debugPrint('Không phát được nhạc nền: $e');
+    }
   }
 
   Future<void> _stopFocusAudio() async {
     await _focusAudioPlayer.stop();
+    for (final player in _mixAudioPlayers) {
+      await player.stop();
+    }
   }
 
   // Start, pause, or handle alarm state
@@ -280,7 +315,9 @@ class FocusViewModel extends ChangeNotifier {
     focusVolume = volume.clamp(0.0, 1.0);
     focusSoundKey = focusSoundAssets.containsKey(soundKey)
         ? soundKey
-        : 'rain_soft';
+        : soundKey == 'mix_all'
+        ? 'mix_all'
+        : 'rain_summer_cars';
 
     _timer?.cancel();
     unawaited(_stopFocusAudio());
@@ -297,6 +334,9 @@ class FocusViewModel extends ChangeNotifier {
     stopAlarm(); // Ensure alarm doesn't keep ringing in the background
     _timer?.cancel();
     _focusAudioPlayer.dispose();
+    for (final player in _mixAudioPlayers) {
+      player.dispose();
+    }
     noteController.dispose();
     super.dispose();
   }

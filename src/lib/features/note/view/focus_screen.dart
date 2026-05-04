@@ -155,16 +155,36 @@ class FocusScreen extends StatelessWidget {
                           value: currentSoundKey,
                           items: const [
                             DropdownMenuItem(
-                              value: 'rain_soft',
-                              child: Text('Mưa nhẹ'),
+                              value: 'mix_all',
+                              child: Text('Mix tất cả'),
                             ),
                             DropdownMenuItem(
-                              value: 'ocean_breeze',
-                              child: Text('Gió biển'),
+                              value: 'rain_summer_cars',
+                              child: Text('Rain + ambience'),
                             ),
                             DropdownMenuItem(
-                              value: 'brown_focus',
-                              child: Text('Brown noise'),
+                              value: 'lofi_chill_girl',
+                              child: Text('Lo-fi Chill 1'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'lofi_girl_chill',
+                              child: Text('Lo-fi Chill 2'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'the_mountain_lofi',
+                              child: Text('The Mountain Lo-fi'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'sunset_drive',
+                              child: Text('Sunset Drive'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'golden_hour',
+                              child: Text('Golden Hour'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'morning_routine_lofi',
+                              child: Text('Morning Routine Lo-fi'),
                             ),
                           ],
                           onChanged: (val) {
