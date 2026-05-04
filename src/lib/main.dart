@@ -57,6 +57,9 @@ Future<void> main() async {
             ChangeNotifierProvider<TaskViewModel>(
               create: (_) => TaskViewModel(),
             ),
+            ChangeNotifierProvider<CreateTaskProvider>(
+              create: (_) => CreateTaskProvider(),
+            ),
             ChangeNotifierProvider<CategoryViewModel>(
               create: (_) => CategoryViewModel(),
             ),
