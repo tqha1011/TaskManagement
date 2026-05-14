@@ -90,7 +90,7 @@ class AuthLayoutTemplate extends StatelessWidget {
                           ? _buildCardContainer(context, isCompact)
                           : _buildTransparentContainer(context, isCompact),
                       SizedBox(height: isCompact ? 12 : 24),
-                      if (footerContent != null) footerContent!,
+                      ?footerContent,
                     ],
                   ),
                 ),

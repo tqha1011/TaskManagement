@@ -57,16 +57,11 @@ class UserProfileView extends StatelessWidget {
                     child: Text("Error loading profile"),
                   )
                 : Builder(
-                  builder: (innerContext) {
-                    // Bọc nó lại trong addPostFrameCallback để bảo Flutter: 
-                    // "Vẽ xong cái màn hình này đi đã rồi hẵng thực hiện lệnh này"
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                    builder: (innerContext) {
                       vm.syncThemeWithProfile(innerContext);
-                    });
-                    
-                    return _buildProfileContent(innerContext, vm);
-                  },
-                ),
+                      return _buildProfileContent(innerContext, vm);
+                    },
+                  ),
           );
         },
       ),
@@ -118,7 +113,7 @@ class UserProfileView extends StatelessWidget {
                 onTap: () => vm.toggleNotification(!user.isNotificationEnabled),
                 trailing: Switch(
                   value: user.isNotificationEnabled,
-                  activeColor: Theme.of(context).colorScheme.surface,
+                  activeThumbColor: Theme.of(context).colorScheme.surface,
                   activeTrackColor: Theme.of(context).colorScheme.primary,
                   inactiveThumbColor: Theme.of(
                     context,

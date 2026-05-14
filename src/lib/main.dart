@@ -2,17 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:task_management_app/features/auth/presentation/view/auth_gate.dart';
-import 'package:task_management_app/features/auth/presentation/view/login_view.dart';
 import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
-import 'package:task_management_app/features/main/view/screens/main_screen.dart';
 import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
 import 'package:task_management_app/features/tasks/viewmodel/task_viewmodel.dart';
 import 'core/theme/app_theme.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:task_management_app/features/tasks/view/screens/create_task_screen.dart';
 
 import 'core/theme/theme_provider.dart';
+
 
 
 Future<void> main() async {
@@ -51,6 +49,9 @@ Future<void> main() async {
   runApp(
       MultiProvider(
           providers: [
+            ChangeNotifierProvider(
+              create: (_) => TaskViewModel()..fetchTasks(), 
+            ),
             ChangeNotifierProvider(create: (_) => ThemeProvider()),
             ChangeNotifierProvider<TaskViewModel>(
               create: (_) => TaskViewModel(),
@@ -64,6 +65,7 @@ Future<void> main() async {
           ],
       child: const TaskApp()));
 }
+
 final supabase = Supabase.instance.client;
 
 class TaskApp extends StatelessWidget {

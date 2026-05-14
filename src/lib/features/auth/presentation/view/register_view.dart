@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:task_management_app/features/auth/presentation/view/login_view.dart';
 import '../../../../core/theme/auth_layout_template.dart';
 import '../../../../core/theme/custom_text_field.dart';
 import '../viewmodels/auth_viewmodels.dart';

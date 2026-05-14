@@ -109,8 +109,8 @@ class TaskCard extends StatelessWidget {
             // Hiệu ứng FadeRoute để chuyển cảnh mượt hơn Route mặc định
             Navigator.push(context, PageRouteBuilder(
               transitionDuration: const Duration(milliseconds: 500),
-              pageBuilder: (_, __, ___) => TaskDetailScreen(task: task),
-              transitionsBuilder: (_, animation, __, child) {
+              pageBuilder: (_, _, _) => TaskDetailScreen(task: task),
+              transitionsBuilder: (_, animation, _, child) {
                 return FadeTransition(opacity: animation, child: child);
               },
             ));
@@ -131,7 +131,7 @@ class TaskCard extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.primary,
-                        borderRadius: const BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5))),
+                        borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5))),
                   ),
                 ),
                 Padding(
@@ -148,9 +148,43 @@ class TaskCard extends StatelessWidget {
                             Text(task.title, style: Theme.of(context).textTheme.titleMedium),
                             const SizedBox(height: 3),
                             Text(task.description, style: Theme.of(context).textTheme.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                            if (task.totalSubtasks > 0)
+                              Container(
+                                margin: const EdgeInsets.only(top: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      task.completedSubtasks == task.totalSubtasks 
+                                          ? Icons.check_circle_rounded 
+                                          : Icons.checklist_rounded, 
+                                      size: 14, 
+                                      color: Theme.of(context).colorScheme.primary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${task.completedSubtasks}/${task.totalSubtasks}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Theme.of(context).colorScheme.primary,
+                                        decoration: task.completedSubtasks == task.totalSubtasks 
+                                            ? TextDecoration.lineThrough 
+                                            : null,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                           ],
                         ),
                       ),
+                      
                       const SizedBox(width: 10),
                       
                       // 3. CỤM HIỂN THỊ TRÊN GÓC PHẢI (Priority đè lên Time)
@@ -214,7 +248,7 @@ class TimePickerWidget extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
-              const SizedBox(width: 5),
+              const SizedBox(width: 5), 
               Icon(
                 Icons.keyboard_arrow_down_rounded,
                 color: Theme.of(context).colorScheme.primary,

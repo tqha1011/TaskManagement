@@ -186,8 +186,9 @@ class FocusViewModel extends ChangeNotifier {
 
           // Trigger hardware feedback
           if (isVibrationEnabled) HapticFeedback.heavyImpact();
-          if (ringtoneType == 1) FlutterRingtonePlayer().playAlarm();
-          else if (ringtoneType == 2) FlutterRingtonePlayer().playNotification();
+          if (ringtoneType == 1) {
+            FlutterRingtonePlayer().playAlarm();
+          } else if (ringtoneType == 2) FlutterRingtonePlayer().playNotification();
           else if (ringtoneType == 3) FlutterRingtonePlayer().playRingtone();
         }
         notifyListeners();
