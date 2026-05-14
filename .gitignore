@@ -18,20 +18,31 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+.vscode/*
+*.code-workspace
+# NHƯNG giữ lại các file cấu hình chung để cả team xài chung (Bỏ chặn)
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
-# Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 **/build/
 **/coverage/
+
+# Web-specific & Cache
+.web/
+.dart_tool/web/
+.dart_tool/dartpad/
+
+# FVM (Flutter Version Management) - Rất hay dùng khi làm team
+.fvm/flutter_sdk
 
 # Symbolication related
 app.*.symbols
@@ -43,6 +54,8 @@ app.*.map.json
 **/android/app/debug
 **/android/app/profile
 **/android/app/release
+
+
 .env*
 **/supabase/.temp/
 **/supabase/.branches/
@@ -52,3 +65,7 @@ app.*.map.json
 
 # DevTools config
 devtools_options.yaml
+
+firebase-debug.log
+firebase-debug.*.log
+.firebase/

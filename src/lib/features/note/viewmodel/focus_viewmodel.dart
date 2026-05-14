@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../model/note_model.dart';
 
 class FocusViewModel extends ChangeNotifier {
+  static const double _focusVolumeBoostMultiplier = 1.5;
   // ==========================================
   // 1. STATE FOR NOTES (LOCAL STORAGE & UI)
   // ==========================================
@@ -77,14 +78,18 @@ class FocusViewModel extends ChangeNotifier {
   // Add note (optionally with an image) instantly to the UI and save to disk
   Future<void> addNote() async {
     final text = noteController.text.trim();
-    if (text.isEmpty && selectedImagePath == null) return; // Skip if both text and image are empty
+    if (text.isEmpty && selectedImagePath == null)
+      return; // Skip if both text and image are empty
 
-    notes.insert(0, NoteModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      content: text,
-      pinned: false,
-      imagePath: selectedImagePath, // Store image in model
-    ));
+    notes.insert(
+      0,
+      NoteModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        content: text,
+        pinned: false,
+        imagePath: selectedImagePath, // Store image in model
+      ),
+    );
 
     _sortNotes();
     await saveNotesToDisk(); // Persist data
@@ -105,10 +110,10 @@ class FocusViewModel extends ChangeNotifier {
     final index = notes.indexWhere((n) => n.id == id);
     if (index != -1) {
       notes[index] = NoteModel(
-          id: notes[index].id,
-          content: notes[index].content,
-          pinned: !notes[index].pinned,
-          imagePath: notes[index].imagePath // Keep image when pinning
+        id: notes[index].id,
+        content: notes[index].content,
+        pinned: !notes[index].pinned,
+        imagePath: notes[index].imagePath, // Keep image when pinning
       );
       _sortNotes();
       await saveNotesToDisk(); // Persist data
@@ -134,6 +139,23 @@ class FocusViewModel extends ChangeNotifier {
   // Hardware settings
   bool isVibrationEnabled = true;
   int ringtoneType = 1;
+  double focusVolume = 0.35;
+  String focusSoundKey = 'rain_summer_cars';
+  final AudioPlayer _focusAudioPlayer = AudioPlayer();
+
+  static const Map<String, String> focusSoundAssets = {
+    'rain_summer_cars': 'audio/rain_summer_cars.mp3',
+    'lofi_chill_girl': 'audio/lofi_chill_girl.mp3',
+    'lofi_girl_chill': 'audio/lofi_girl_chill.mp3',
+    'the_mountain_lofi': 'audio/the_mountain_lofi.mp3',
+    'sunset_drive': 'audio/sunset_drive.mp3',
+    'golden_hour': 'audio/golden_hour.mp3',
+    'morning_routine_lofi': 'audio/morning_routine_lofi.mp3',
+  };
+  late final List<AudioPlayer> _mixAudioPlayers = List.generate(
+    focusSoundAssets.length,
+    (_) => AudioPlayer(),
+  );
 
   // Timer states
   bool isPomodoroMode = true;
@@ -151,7 +173,8 @@ class FocusViewModel extends ChangeNotifier {
   }
 
   // Calculate progress for the circular indicator
-  double get progress => totalTime <= 0 ? 0.0 : (timeRemaining / totalTime).clamp(0.0, 1.0);
+  double get progress =>
+      totalTime <= 0 ? 0.0 : (timeRemaining / totalTime).clamp(0.0, 1.0);
 
   // --- TIMER OPERATIONS ---
 
@@ -160,6 +183,47 @@ class FocusViewModel extends ChangeNotifier {
     FlutterRingtonePlayer().stop();
     isRinging = false;
     notifyListeners();
+  }
+
+  Future<void> _playFocusAudio() async {
+    if (!isPomodoroMode) return;
+    try {
+      final boostedVolume = (focusVolume * _focusVolumeBoostMultiplier).clamp(
+        0.0,
+        1.0,
+      );
+      await _stopFocusAudio();
+
+      if (focusSoundKey == 'mix_all') {
+        final entries = focusSoundAssets.entries.toList();
+        final mixVolume = (boostedVolume / entries.length).clamp(0.0, 1.0);
+        for (int i = 0; i < entries.length; i++) {
+          final player = _mixAudioPlayers[i];
+          await player.setPlayerMode(PlayerMode.mediaPlayer);
+          await player.setReleaseMode(ReleaseMode.loop);
+          await player.setVolume(mixVolume);
+          await player.setSource(AssetSource(entries[i].value));
+          await player.resume();
+        }
+      } else {
+        final assetPath = focusSoundAssets[focusSoundKey];
+        if (assetPath == null) return;
+        await _focusAudioPlayer.setPlayerMode(PlayerMode.mediaPlayer);
+        await _focusAudioPlayer.setReleaseMode(ReleaseMode.loop);
+        await _focusAudioPlayer.setVolume(boostedVolume);
+        await _focusAudioPlayer.setSource(AssetSource(assetPath));
+        await _focusAudioPlayer.resume();
+      }
+    } catch (e) {
+      debugPrint('Không phát được nhạc nền: $e');
+    }
+  }
+
+  Future<void> _stopFocusAudio() async {
+    await _focusAudioPlayer.stop();
+    for (final player in _mixAudioPlayers) {
+      await player.stop();
+    }
   }
 
   // Start, pause, or handle alarm state
@@ -173,8 +237,10 @@ class FocusViewModel extends ChangeNotifier {
     if (isRunning) {
       _timer?.cancel();
       isRunning = false;
+      unawaited(_stopFocusAudio());
     } else {
       isRunning = true;
+      unawaited(_playFocusAudio());
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (timeRemaining > 0) {
           timeRemaining--;
@@ -183,13 +249,16 @@ class FocusViewModel extends ChangeNotifier {
           _timer?.cancel();
           isRunning = false;
           isRinging = true; // Set flag to change UI button state
+          unawaited(_stopFocusAudio());
 
           // Trigger hardware feedback
           if (isVibrationEnabled) HapticFeedback.heavyImpact();
-          if (ringtoneType == 1) {
+          if (ringtoneType == 1)
             FlutterRingtonePlayer().playAlarm();
-          } else if (ringtoneType == 2) FlutterRingtonePlayer().playNotification();
-          else if (ringtoneType == 3) FlutterRingtonePlayer().playRingtone();
+          else if (ringtoneType == 2)
+            FlutterRingtonePlayer().playNotification();
+          else if (ringtoneType == 3)
+            FlutterRingtonePlayer().playRingtone();
         }
         notifyListeners();
       });
@@ -201,6 +270,7 @@ class FocusViewModel extends ChangeNotifier {
   void resetTimer() {
     stopAlarm(); // Stop alarm if resetting
     _timer?.cancel();
+    unawaited(_stopFocusAudio());
     isRunning = false;
     timeRemaining = totalTime;
     notifyListeners();
@@ -210,6 +280,7 @@ class FocusViewModel extends ChangeNotifier {
   void setMode(bool isPomodoro) {
     stopAlarm(); // Stop alarm if switching modes
     _timer?.cancel();
+    unawaited(_stopFocusAudio());
     isRunning = false;
     isPomodoroMode = isPomodoro;
     totalTime = isPomodoro ? pomodoroTime : shortBreakTime;
@@ -221,9 +292,18 @@ class FocusViewModel extends ChangeNotifier {
   void skipTimer() => setMode(!isPomodoroMode);
 
   // Update preferences from the settings dialog
-  void updateSettings({required int newPomodoroMinutes, required int newBreakMinutes, required bool vibrate, required int ringtone}) {
+  void updateSettings({
+    required int newPomodoroMinutes,
+    required int newBreakMinutes,
+    required bool vibrate,
+    required int ringtone,
+    required double volume,
+    required String soundKey,
+  }) {
     if (newPomodoroMinutes <= 0 || newBreakMinutes <= 0) {
-      debugPrint('Lỗi: Thời gian cài đặt phải lớn hơn 0 phút. Đã tự động set về 1.');
+      debugPrint(
+        'Lỗi: Thời gian cài đặt phải lớn hơn 0 phút. Đã tự động set về 1.',
+      );
       newPomodoroMinutes = newPomodoroMinutes <= 0 ? 1 : newPomodoroMinutes;
       newBreakMinutes = newBreakMinutes <= 0 ? 1 : newBreakMinutes;
     }
@@ -232,8 +312,15 @@ class FocusViewModel extends ChangeNotifier {
     shortBreakTime = newBreakMinutes * 60;
     isVibrationEnabled = vibrate;
     ringtoneType = ringtone;
+    focusVolume = volume.clamp(0.0, 1.0);
+    focusSoundKey = focusSoundAssets.containsKey(soundKey)
+        ? soundKey
+        : soundKey == 'mix_all'
+        ? 'mix_all'
+        : 'rain_summer_cars';
 
     _timer?.cancel();
+    unawaited(_stopFocusAudio());
     isRunning = false;
     totalTime = isPomodoroMode ? pomodoroTime : shortBreakTime;
     timeRemaining = totalTime;
@@ -246,6 +333,10 @@ class FocusViewModel extends ChangeNotifier {
   void dispose() {
     stopAlarm(); // Ensure alarm doesn't keep ringing in the background
     _timer?.cancel();
+    _focusAudioPlayer.dispose();
+    for (final player in _mixAudioPlayers) {
+      player.dispose();
+    }
     noteController.dispose();
     super.dispose();
   }

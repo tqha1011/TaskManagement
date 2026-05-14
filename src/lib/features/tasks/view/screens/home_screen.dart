@@ -2,22 +2,53 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/notification_time_picker.dart';
 import '../../model/task_model.dart';
 import '../../viewmodel/task_viewmodel.dart';
 import '../widgets/task_widgets.dart';
 import 'create_task_screen.dart';
 import 'package:task_management_app/features/category/model/category_model.dart';
 
-// ==========================================
-// 1. STATE MANAGEMENT LOGIC (Đã comment theo ý bạn)
-// ==========================================
-/*class TaskProvider extends ChangeNotifier { ... }*/
-
-// ==========================================
-// 2. UI SCREEN 
-// ==========================================
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
+  bool _filterExpanded = false;
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _toggleFilter() {
+    setState(() => _filterExpanded = !_filterExpanded);
+    if (_filterExpanded) {
+      _animController.forward();
+    } else {
+      _animController.reverse();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +56,6 @@ class HomeScreen extends StatelessWidget {
     final viewModel = context.watch<TaskViewModel>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Nhóm task theo priority
     Map<Priority, List<TaskModel>> grouped = {};
     for (var priority in Priority.values.reversed) {
       final tasks = viewModel.tasks
@@ -52,7 +82,64 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ─── Header ───────────────────────────────────
-                _buildAppBar(context, isDark),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Icon(
+                        Icons.menu_rounded,
+                        color: isDark
+                            ? Theme.of(context).colorScheme.surface
+                            : Colors.black,
+                      ),
+                      Row(
+                        children: [
+                          // ─── Nút chuông mở Notification Picker ───
+                          GestureDetector(
+                            onTap: () => showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => const NotificationTimePicker(),
+                            ),
+                            child: Icon(
+                              Icons.notifications_none_rounded,
+                              color: isDark
+                                  ? Theme.of(context).colorScheme.surface
+                                  : Colors.black,
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          const CircleAvatar(
+                            radius: 20,
+                            backgroundImage: NetworkImage(
+                              'https://i.pravatar.cc/150?u=user1',
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          IconButton(
+                            icon: Icon(
+                              Icons.add_rounded,
+                              color: isDark
+                                  ? Theme.of(context).colorScheme.surface
+                                  : Colors.black,
+                            ),
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const CreateTaskScreen(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
 
                 // ─── Date Card ────────────────────────────────
                 Container(
@@ -63,7 +150,8 @@ class HomeScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30),
                     border: isDark
                         ? Border.all(
-                            color: Theme.of(context).colorScheme.outline)
+                            color: Theme.of(context).colorScheme.outline,
+                          )
                         : null,
                   ),
                   child: Padding(
@@ -79,15 +167,16 @@ class HomeScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Today',
-                                style:
-                                    Theme.of(context).textTheme.titleMedium),
+                            Text(
+                              'Today',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                             Text(
                               formattedDate,
                               style: TextStyle(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                                 fontSize: 14,
                               ),
                             ),
@@ -128,69 +217,74 @@ class HomeScreen extends StatelessWidget {
                 // ─── Filter Bar ───────────────────────────────
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Sort button
-                      GestureDetector(
-                        onTap: () => viewModel.toggleSortByPriority(),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: viewModel.sortByPriority
-                                ? AppColors.primaryBlue
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: AppColors.primaryBlue,
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(children: [
-                            Icon(
-                              Icons.sort,
-                              size: 16,
-                              color: viewModel.sortByPriority
-                                  ? Colors.white
-                                  : AppColors.primaryBlue,
-                            ),
-                          ]),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-
-                      // Filter theo priority
-                      Expanded(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              // Chip "All"
-                              _FilterChip(
-                                label: 'All',
-                                isSelected: viewModel.filterPriority == null,
-                                color: AppColors.primaryBlue,
-                                onTap: () =>
-                                    viewModel.setFilterPriority(null),
+                      Row(
+                        children: [
+                          // Nút Filter
+                          GestureDetector(
+                            onTap: _toggleFilter,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 7,
                               ),
-                              const SizedBox(width: 8),
-                              // Chip cho từng priority
-                              ...Priority.values.map(
-                                (p) => Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: _FilterChip(
-                                    label: p.label,
-                                    isSelected: viewModel.filterPriority == p,
-                                    color: p.color,
-                                    onTap: () =>
-                                        viewModel.setFilterPriority(p),
-                                  ),
+                              decoration: BoxDecoration(
+                                color: _filterExpanded
+                                    ? AppColors.primaryBlue
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: AppColors.primaryBlue,
+                                  width: 1,
                                 ),
                               ),
-                            ],
+                              child: Icon(
+                                Icons.sort,
+                                size: 16,
+                                color: _filterExpanded
+                                    ? Colors.white
+                                    : AppColors.primaryBlue,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // Chip "All" luôn hiển thị
+                          _FilterChip(
+                            label: 'All',
+                            isSelected: viewModel.filterPriority == null,
+                            color: AppColors.primaryBlue,
+                            onTap: () => viewModel.setFilterPriority(null),
+                          ),
+                        ],
+                      ),
+
+                      // Các chip priority — hiện khi mở filter
+                      FadeTransition(
+                        opacity: _fadeAnim,
+                        child: SizeTransition(
+                          sizeFactor: _fadeAnim,
+                          axisAlignment: -1,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: Priority.values
+                                  .map(
+                                    (p) => _FilterChip(
+                                      label: p.label,
+                                      isSelected: viewModel.filterPriority == p,
+                                      color: p.color,
+                                      onTap: () =>
+                                          viewModel.setFilterPriority(p),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
                           ),
                         ),
                       ),
@@ -199,7 +293,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
 
-                // ─── Task List nhóm theo Priority ─────────────
+                // ─── Task List ────────────────────────────────
                 Expanded(
                   child: grouped.isEmpty
                       ? _buildEmptyState() // Đã thêm '_' để gọi đúng hàm
@@ -211,7 +305,6 @@ class HomeScreen extends StatelessWidget {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Header nhóm
                                 Padding(
                                   padding: const EdgeInsets.only(
                                     bottom: 10,
@@ -252,8 +345,6 @@ class HomeScreen extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-
-                                // Danh sách task trong nhóm
                                 ...tasks.map(
                                   (task) => TaskCard(
                                     task: task,
