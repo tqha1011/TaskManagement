@@ -94,8 +94,9 @@ class CreateTaskProvider extends ChangeNotifier {
       // 1. Map Priority String to ID (1: Urgent, 2: High, 3: Medium, 4: Low)
       int priorityId = 3; 
       final String priorityStr = priority.toString().toLowerCase();
-      if (priorityStr.contains('urgent')) priorityId = 1;
-      else if (priorityStr.contains('high')) priorityId = 2;
+      if (priorityStr.contains('urgent')) {
+        priorityId = 1;
+      } else if (priorityStr.contains('high')) priorityId = 2;
       else if (priorityStr.contains('medium')) priorityId = 3;
       else if (priorityStr.contains('low')) priorityId = 4;
 

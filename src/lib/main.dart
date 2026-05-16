@@ -11,12 +11,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:task_management_app/features/tasks/view/screens/create_task_screen.dart';
 import 'core/theme/theme_provider.dart';
+import 'package:task_management_app/features/tasks/service/notif_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: ".env");
 
+  await NotifService().initNotification();
   String supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
   String supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
 

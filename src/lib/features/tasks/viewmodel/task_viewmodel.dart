@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../model/task_model.dart';
 import 'package:task_management_app/features/category/model/category_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:task_management_app/features/tasks/service/notif_service.dart';
 
 class TaskViewModel extends ChangeNotifier {
 
@@ -158,8 +159,9 @@ Future<void> fetchTasks() async {
       for (var item in data) {
         // Xử lý Priority
         Priority p = Priority.medium;
-        if (item['priority'] == 1) p = Priority.urgent;
-        else if (item['priority'] == 2) p = Priority.high;
+        if (item['priority'] == 1) {
+          p = Priority.urgent;
+        } else if (item['priority'] == 2) p = Priority.high;
         else if (item['priority'] == 4) p = Priority.low;
 
         // Xử lý Giờ giấc thực tế từ DB
@@ -197,6 +199,27 @@ Future<void> fetchTasks() async {
           totalSubtasks: total,
           completedSubtasks: completed,
         ));
+
+        final int taskIdInt = item['id']; // ID từ Supabase thường là int
+        final String taskTitle = item['title'] ?? 'Task mới';
+
+        // 1. Hẹn giờ nhắc trước 1 ngày
+        await NotifService().scheduleTaskNotification(
+          taskId: taskIdInt * 2, // Nhân đôi để tránh trùng ID thông báo với cái 1 tiếng
+          taskTitle: taskTitle,
+          taskStartTime: startTimeDt,
+          remindBefore: const Duration(days: 1),
+          notificationMessage: 'Task "$taskTitle" sẽ bắt đầu sau 1 ngày',
+        );
+
+        // 2. Hẹn giờ nhắc trước 1 tiếng
+        await NotifService().scheduleTaskNotification(
+          taskId: taskIdInt * 2 + 1, // Tạo ID độc nhất
+          taskTitle: taskTitle,
+          taskStartTime: startTimeDt,
+          remindBefore: const Duration(hours: 1),
+          notificationMessage: 'Task "$taskTitle" sẽ bắt đầu sau 1 tiếng',
+        );
       }
       notifyListeners();
       

@@ -7,7 +7,7 @@ import '../../model/task_model.dart';
 import '../../viewmodel/task_viewmodel.dart';
 import '../widgets/task_widgets.dart';
 import 'create_task_screen.dart';
-import 'package:task_management_app/features/category/model/category_model.dart';
+import 'package:task_management_app/features/tasks/service/notif_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    _checkPermission();
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -33,6 +34,13 @@ class _HomeScreenState extends State<HomeScreen>
       parent: _animController,
       curve: Curves.easeInOut,
     );
+  }
+
+  Future<void> _checkPermission() async {
+    bool isGranted = await NotifService().requestNotificationPermission();
+    if (!isGranted) {
+      print("User từ chối nhận thông báo rồi bro ơi!");
+    }
   }
 
   @override
