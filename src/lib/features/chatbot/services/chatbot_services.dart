@@ -7,6 +7,7 @@ class ChatBotAssistantService {
   final String _apiKey = (dotenv.env['GEMINI_API_KEY'] ?? '').trim();
   GenerativeModel? _model;
   ChatSession? _chatSession;
+  final now = DateTime.now();
 
   ChatBotAssistantService() {
     if (_apiKey.isEmpty) {
@@ -44,12 +45,12 @@ class ChatBotAssistantService {
                   'start_time': Schema(
                     SchemaType.string,
                     description:
-                        'Thời gian bắt đầu công việc theo định dạng ISO 8601 (VD: 2026-04-18T15:00:00Z). Nếu người dùng không nói, hãy bỏ qua hoặc để rỗng.',
+                        'Thời gian bắt đầu công việc theo định dạng ISO 8601 (VD: 2026-04-18T15:00:00+07:00). Nếu người dùng không nói, bắt buộc hỏi lại thời gian bắt đầu.',
                   ),
                   'due_time': Schema(
                     SchemaType.string,
                     description:
-                        'Thời gian kết thúc (deadline) theo định dạng ISO 8601. Nếu không có, bỏ qua.',
+                        'Thời gian kết thúc (deadline) theo định dạng ISO 8601 (VD: 2026-04-18T15:00:00+07:00). Nếu không có, hãy hỏi lại thời gian kết thúc. Nếu người dùng xác nhận không cần đặt thời gian kết thúc, hãy để trống hoặc bỏ qua.',
                   ),
                   'category_name': Schema(
                     SchemaType.string,
@@ -60,11 +61,39 @@ class ChatBotAssistantService {
                 requiredProperties: ['title', 'priority', 'tags'],
               ),
             ),
+
+            FunctionDeclaration(
+              'update_task_time',
+              'Dời lịch hoặc thay đổi thời gian bắt đầu của một công việc. LUẬT BẮT BUỘC: Nếu người dùng yêu cầu dời lịch nhưng CHƯA đề cập đến "thời gian kết thúc" (hạn chót), bạn KHÔNG ĐƯỢC gọi hàm này ngay. Hãy trả lời bằng văn bản để hỏi xem họ có muốn đặt thời gian kết thúc không. Chỉ gọi hàm này sau khi người dùng đã xác nhận thời gian kết thúc hoặc họ nói rõ là "không cần".',
+              Schema(
+                SchemaType.object,
+                properties: {
+                  'task_keyword': Schema(
+                    SchemaType.string,
+                    description: 'Từ khóa ngắn gọn về công việc cần dời.',
+                  ),
+                  'new_start_time': Schema(
+                    SchemaType.string,
+                    description: 'Thời gian bắt đầu mới theo định dạng ISO 8601 (VD: 2026-05-18T19:00:00+07:00).',
+                  ),
+                  'new_due_time': Schema(
+                    SchemaType.string,
+                    description: 'Thời gian kết thúc mới (ISO 8601). Nếu người dùng xác nhận KHÔNG CẦN, hãy để trống hoặc bỏ qua.',
+                  ),
+                },
+                requiredProperties: ['task_keyword', 'new_start_time'],
+              ),
+            ),
           ],
         ),
       ],
       systemInstruction: Content.system(
         'Bạn là một chuyên gia quản lý thời gian và trợ lý năng suất cho ứng dụng Task Management. '
+        'Hôm nay là ngày ${now.day}/${now.month}/${now.year},'
+        'giờ hiện tại là ${now.hour}:${now.minute}.'
+        'BẮT BUỘC: Khi tính toán thời gian (start_time, due_time), phải tạo chuỗi ISO 8601'
+        'theo múi giờ Việt Nam (UTC+07:00), KHÔNG dùng đuôi Z.'
+        'Ví dụ: 8h sáng mai phải trả về dạng "2026-05-18T08:00:00+07:00". '
         'Nhiệm vụ của bạn là đưa ra lời khuyên ngắn gọn (dưới 100 chữ), thực tế để giúp người dùng '
         'hoàn thành công việc. Trả lời bằng tiếng Việt thân thiện, nhiệt tình. '
         'Từ chối mọi câu hỏi không liên quan đến công việc hoặc quản lý thời gian.',
@@ -127,6 +156,36 @@ class ChatBotAssistantService {
             }),
           );
           return functionResponse.text ?? 'Đã xử lý xong yêu cầu của bạn!';
+        }
+        else if (functionCall.name == 'update_task_time') {
+          final args = functionCall.args;
+          final keyword = args['task_keyword'] as String;
+          final newStartTime = args['new_start_time'] as String;
+          final newDueTime = args['new_due_time'] as String?;
+
+          final userId = Supabase.instance.client.auth.currentUser?.id;
+          if (userId == null) return 'Vui lòng đăng nhập để thao tác.';
+
+          final dbResponse = await Supabase.instance.client.rpc(
+            'update_task_time_bot',
+            params: {
+              'p_profile_id': userId,
+              'p_keyword': keyword,
+              'p_new_start_time': newStartTime,
+              'p_new_due_time': newDueTime,
+            },
+          );
+          final isSuccess = dbResponse['success'] == true;
+          if (!isSuccess) {
+            debugPrint("Lỗi từ Supabase khi update_task_time: ${dbResponse['error']}");
+          }
+          final functionResponse = await _chatSession!.sendMessage(
+            Content.functionResponse('update_task_time', {
+              'status': isSuccess ? 'Thành công' : 'Thất bại',
+              'reason': isSuccess ? '' : dbResponse['error'].toString(),
+            }),
+          );
+          return functionResponse.text ?? 'Đã dời lịch theo yêu cầu của bạn!';
         }
       }
       return response.text ?? 'Xin lỗi, trợ lý đang bận xíu. Thử lại sau nhé!';
