@@ -10,7 +10,7 @@ class NotificationService {
   NotificationService._internal();
 
   final FlutterLocalNotificationsPlugin _plugin =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
 
   static const _hourKey = 'notif_hour';
   static const _minuteKey = 'notif_minute';
@@ -27,7 +27,7 @@ class NotificationService {
     );
 
     await _plugin.initialize(
-      const InitializationSettings(android: android, iOS: ios),
+      settings: const InitializationSettings(android: android, iOS: ios),
     );
   }
 
@@ -49,7 +49,7 @@ class NotificationService {
     await prefs.setInt(_hourKey, time.hour);
     await prefs.setInt(_minuteKey, time.minute);
 
-    await _plugin.cancel(_notifId);
+    await _plugin.cancel(id: _notifId);
 
     final now = tz.TZDateTime.now(tz.local);
     var scheduled = tz.TZDateTime(
@@ -73,11 +73,11 @@ class NotificationService {
     );
 
     await _plugin.zonedSchedule(
-      _notifId,
-      '📋 Tổng quan công việc hôm nay',
-      body,
-      scheduled,
-      const NotificationDetails(
+      id: _notifId,
+      title: '📋 Tổng quan công việc hôm nay',
+      body: body,
+      scheduledDate: scheduled,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           'daily_task_channel',
           'Daily Task Summary',
@@ -93,14 +93,12 @@ class NotificationService {
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
   }
 
   Future<void> cancelNotification() async {
-    await _plugin.cancel(_notifId);
+    await _plugin.cancel(id: _notifId);
   }
 
   String _buildNotificationBody(int low, int medium, int high, int urgent) {
