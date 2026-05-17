@@ -469,19 +469,32 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     final provider = context.watch<CreateTaskProvider>();
     return Center(
       child: ElevatedButton(
-        onPressed: provider.isLoading ? null : () async {
-          await provider.submitTask(
-            context,
-            taskName: _nameController.text,
-            priority: context.read<TaskViewModel>().selectedPriority,
-            tags: List.from(context.read<TagViewModel>().selectedTags),
+        onPressed: provider.isLoading ? null : () { 
+          final taskVM = context.read<TaskViewModel>();
+          final tagVM = context.read<TagViewModel>();
+          final taskName = _nameController.text;
+          final selectedPriority = taskVM.selectedPriority;
+          final selectedTags = List.from(tagVM.selectedTags);
+
+          
+          Navigator.pop(context);
+
+          
+          provider.submitTask(
+            context, 
+            taskName: taskName,
+            priority: selectedPriority,
+            tags: selectedTags,
             categoryId: _selectedCategoryId,
-          );
-          if (mounted) {
-            context.read<TaskViewModel>().fetchTasks();
-            context.read<TaskViewModel>().reset();
-            context.read<TagViewModel>().resetSelection();
-          }
+          ).then((_) {
+            
+            taskVM.fetchTasks();
+            taskVM.reset();
+            tagVM.resetSelection();
+            debugPrint("Task created");
+          }).catchError((error) {
+            debugPrint("Lỗi: $error");
+          });
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
