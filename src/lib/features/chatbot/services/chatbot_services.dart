@@ -3,6 +3,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class ChatBotResponse {
+  final String text;
+  final bool didMutateTasks;
+
+  const ChatBotResponse({required this.text, this.didMutateTasks = false});
+}
+
 class ChatBotAssistantService {
   final String _apiKey = (dotenv.env['GEMINI_API_KEY'] ?? '').trim();
   GenerativeModel? _model;
@@ -103,9 +110,11 @@ class ChatBotAssistantService {
     _chatSession = _model!.startChat();
   }
 
-  Future<String> sendMessage(String userMessage) async {
+  Future<ChatBotResponse> sendMessage(String userMessage) async {
     if (_chatSession == null) {
-      return 'Chatbot chưa được cấu hình API key. Vui lòng kiểm tra file .env.';
+      return const ChatBotResponse(
+        text: 'Chatbot chưa được cấu hình API key. Vui lòng kiểm tra file .env.',
+      );
     }
 
     try {
@@ -117,30 +126,36 @@ class ChatBotAssistantService {
         final functionCall = response.functionCalls.first;
         if (functionCall.name == 'create_task_full') {
           final args = functionCall.args;
-          final title = args['title'] as String;
-          final priority = (args['priority'] as num?)?.toInt() ?? 1;
-          final rawTags = args['tags'] as List<dynamic>? ?? [];
-          final tags = rawTags.map((e) => e.toString()).toList();
-          final startTime = args['start_time'] as String?;
-          final dueTime = args['due_time'] as String?;
+          final title = (args['title'] as String?)?.trim();
+          final startTime = (args['start_time'] as String?)?.trim();
+          final dueTime = (args['due_time'] as String?)?.trim();
+
+          if (title == null || title.isEmpty) {
+            return const ChatBotResponse(text: 'Bạn muốn đặt tên công việc là gì?');
+          }
+          if (startTime == null || startTime.isEmpty) {
+            return const ChatBotResponse(text: 'Bạn muốn bắt đầu công việc lúc nào?');
+          }
 
           final userId = Supabase.instance.client.auth.currentUser?.id;
           if (userId == null) {
-            return 'Vui lòng đăng nhập để tạo công việc.';
+            return const ChatBotResponse(text: 'Vui lòng đăng nhập để tạo công việc.');
           }
           final categoryName = args['category_name'] as String? ?? 'Cá nhân';
           final dbResponse = await Supabase.instance.client.rpc(
             'create_task_full',
             params: {
-              'p_title': args['title'],
+              'p_title': title,
               'p_priority': (args['priority'] as num?)?.toInt() ?? 1,
               'p_profile_id': userId,
               'p_tag_names':
                   (args['tags'] as List?)?.map((e) => e.toString()).toList() ??
                   [],
               'p_category_name': categoryName,
-              'p_start_time': args['start_time'],
-              'p_due_time': args['due_time'],
+              'p_start_time': startTime,
+              'p_due_time': (dueTime == null || dueTime.isEmpty)
+                  ? null
+                  : dueTime,
             },
           );
 
@@ -155,16 +170,30 @@ class ChatBotAssistantService {
               'reason': isSuccess ? '' : dbResponse['error'].toString(),
             }),
           );
-          return functionResponse.text ?? 'Đã xử lý xong yêu cầu của bạn!';
+          return ChatBotResponse(
+            text: functionResponse.text ?? 'Đã xử lý xong yêu cầu của bạn!',
+            didMutateTasks: isSuccess,
+          );
         }
         else if (functionCall.name == 'update_task_time') {
           final args = functionCall.args;
-          final keyword = args['task_keyword'] as String;
-          final newStartTime = args['new_start_time'] as String;
-          final newDueTime = args['new_due_time'] as String?;
+          final keyword = (args['task_keyword'] as String?)?.trim();
+          final newStartTime = (args['new_start_time'] as String?)?.trim();
+          final newDueTime = (args['new_due_time'] as String?)?.trim();
+
+          if (keyword == null || keyword.isEmpty) {
+            return const ChatBotResponse(
+              text: 'Bạn muốn dời công việc nào? Hãy cho mình một từ khóa ngắn gọn.',
+            );
+          }
+          if (newStartTime == null || newStartTime.isEmpty) {
+            return const ChatBotResponse(text: 'Bạn muốn dời sang thời gian bắt đầu nào?');
+          }
 
           final userId = Supabase.instance.client.auth.currentUser?.id;
-          if (userId == null) return 'Vui lòng đăng nhập để thao tác.';
+          if (userId == null) {
+            return const ChatBotResponse(text: 'Vui lòng đăng nhập để thao tác.');
+          }
 
           final dbResponse = await Supabase.instance.client.rpc(
             'update_task_time_bot',
@@ -172,7 +201,9 @@ class ChatBotAssistantService {
               'p_profile_id': userId,
               'p_keyword': keyword,
               'p_new_start_time': newStartTime,
-              'p_new_due_time': newDueTime,
+              'p_new_due_time': (newDueTime == null || newDueTime.isEmpty)
+                  ? null
+                  : newDueTime,
             },
           );
           final isSuccess = dbResponse['success'] == true;
@@ -185,18 +216,23 @@ class ChatBotAssistantService {
               'reason': isSuccess ? '' : dbResponse['error'].toString(),
             }),
           );
-          return functionResponse.text ?? 'Đã dời lịch theo yêu cầu của bạn!';
+          return ChatBotResponse(
+            text: functionResponse.text ?? 'Đã dời lịch theo yêu cầu của bạn!',
+            didMutateTasks: isSuccess,
+          );
         }
       }
-      return response.text ?? 'Xin lỗi, trợ lý đang bận xíu. Thử lại sau nhé!';
+      return ChatBotResponse(
+        text: response.text ?? 'Xin lỗi, trợ lý đang bận xíu. Thử lại sau nhé!',
+      );
     } catch (e) {
       final errorString = e.toString();
       if (errorString.contains('503')) {
-        return 'Bạn đợi vài phút rồi chat lại nhé!';
+        return const ChatBotResponse(text: 'Bạn đợi vài phút rồi chat lại nhé!');
       } else if (errorString.contains('429')) {
-        return 'Bạn chat nhanh quá! Vui lòng chờ chút';
+        return const ChatBotResponse(text: 'Bạn chat nhanh quá! Vui lòng chờ chút');
       }
-      return 'Lỗi kết nối AI: $e';
+      return ChatBotResponse(text: 'Lỗi kết nối AI: $e');
     }
   }
 }

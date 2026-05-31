@@ -26,6 +26,7 @@ BEGIN
   UPDATE task
   SET start_time = p_new_start_time,
       due_time = p_new_due_time,
+
       template_id = NULL
   WHERE id = v_task_id;
 

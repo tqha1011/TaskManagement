@@ -102,6 +102,14 @@ class TaskViewModel extends ChangeNotifier {
   final List<TaskModel> _tasks = [];
   List<TaskModel> get tasks => _getFilteredAndSorted();
 
+  TaskModel? getTaskById(String taskId) {
+    try {
+      return _tasks.firstWhere((task) => task.id == taskId);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Priority? _filterPriority;
   String? _filterTagId;
   bool _sortByPriority = false;
@@ -140,7 +148,21 @@ class TaskViewModel extends ChangeNotifier {
 
   // Cập nhật tag cho task đã tạo (dùng ở Task Detail)
 
-Future<void> fetchTasks() async {
+  DateTime? _parseDbDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) {
+      final normalized = value.contains('T') ? value : value.replaceFirst(' ', 'T');
+      return DateTime.tryParse(normalized);
+    }
+    return null;
+  }
+
+  DateTime _normalizeLocal(DateTime dateTime) {
+    return dateTime.isUtc ? dateTime.toLocal() : dateTime;
+  }
+
+  Future<void> fetchTasks() async {
     final supabase = Supabase.instance.client;
     final user = supabase.auth.currentUser;
     
@@ -165,14 +187,18 @@ Future<void> fetchTasks() async {
         else if (item['priority'] == 4) p = Priority.low;
 
         // Xử lý Giờ giấc thực tế từ DB
-        DateTime startTimeDt = item['start_time'] != null 
-            ? DateTime.tryParse(item['start_time'].toString())?.toLocal() ?? DateTime.now()
-            : DateTime.now();
-            
-        DateTime dueTimeDt = item['due_time'] != null 
-            ? DateTime.tryParse(item['due_time'].toString())?.toLocal() ?? startTimeDt.add(const Duration(hours: 1))
-            : startTimeDt.add(const Duration(hours: 1));
+        final rawStart = _parseDbDateTime(item['start_time']);
+        final rawDue = _parseDbDateTime(item['due_time']);
+        final rawCreated = _parseDbDateTime(item['create_at']);
 
+        final DateTime startTimeDt = _normalizeLocal(
+          rawStart ?? rawDue ?? rawCreated ?? DateTime.now(),
+        );
+        final DateTime dueTimeDt = _normalizeLocal(
+          rawDue ?? startTimeDt.add(const Duration(hours: 1)),
+        );
+
+        final bool isCompleted = (item['status'] ?? 0) == 1;
         int total = 0;
         int completed = 0;
         if (item['subtask'] != null) {
@@ -198,6 +224,7 @@ Future<void> fetchTasks() async {
           priority: p,
           totalSubtasks: total,
           completedSubtasks: completed,
+          isCompleted: isCompleted,
         ));
 
         final int taskIdInt = item['id']; // ID từ Supabase thường là int
@@ -266,6 +293,9 @@ Future<void> fetchTasks() async {
              t.date.month == _selectedDate.month &&
              t.date.year == _selectedDate.year;
     }).toList();
+
+    // 2. Ẩn task đã hoàn thành khỏi danh sách chính
+    result = result.where((t) => !t.isCompleted).toList();
 
     // 2. Lọc theo Priority (Logic so sánh rất gọn vì dùng thẳng enum)
     if (_filterPriority != null) {

@@ -5,6 +5,7 @@ import 'package:task_management_app/features/auth/presentation/view/auth_gate.da
 import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
 import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
 import 'package:task_management_app/features/tasks/viewmodel/task_viewmodel.dart';
+import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/notification_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -61,6 +62,9 @@ Future<void> main() async {
           create: (_) => CategoryViewModel(),
         ),
         ChangeNotifierProvider<TagViewModel>(create: (_) => TagViewModel()),
+        ChangeNotifierProvider<StatisticsViewmodel>(
+          create: (_) => StatisticsViewmodel(),
+        ),
       ],
       child: const TaskApp(),
     ),

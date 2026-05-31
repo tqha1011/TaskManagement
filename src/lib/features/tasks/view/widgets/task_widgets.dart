@@ -38,20 +38,18 @@ class DateBox extends StatelessWidget {
   Widget build(BuildContext context) {
     String day = DateFormat('d').format(date);
     String weekday = DateFormat('E').format(date).toUpperCase();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
 
     return Container(
       width: 55,
       margin: const EdgeInsets.only(right: 15),
       decoration: BoxDecoration(
         color: isSelected
-            ? Theme.of(context).colorScheme.primary
-            : Theme.of(context).colorScheme.surface,
+            ? theme.colorScheme.primary
+            : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark
-              ? Theme.of(context).colorScheme.outline
-              : Colors.grey.shade300,
+          color: theme.colorScheme.outline,
           width: 1,
         ),
       ),
@@ -63,17 +61,75 @@ class DateBox extends StatelessWidget {
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: isSelected
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onSurface)),
+                      ? theme.colorScheme.onPrimary
+                      : theme.colorScheme.onSurface)),
           const SizedBox(height: 5),
           Text(weekday,
               style: TextStyle(
                   fontSize: 12,
                   color: isSelected
-                      ? Theme.of(context).colorScheme.secondary
-                      : Theme.of(context).colorScheme.onSurfaceVariant)),
+                      ? theme.colorScheme.onPrimary
+                      : theme.colorScheme.onSurfaceVariant)),
         ],
       ),
+    );
+  }
+}
+
+// --- Animated wrapper to slide out completed tasks quickly ---
+class AnimatedTaskCard extends StatefulWidget {
+  final TaskModel task;
+  final Widget leading;
+  final Widget? trailing;
+  final Future<void> Function() onQuickComplete;
+
+  const AnimatedTaskCard({
+    super.key,
+    required this.task,
+    required this.leading,
+    required this.onQuickComplete,
+    this.trailing,
+  });
+
+  @override
+  State<AnimatedTaskCard> createState() => _AnimatedTaskCardState();
+}
+
+class _AnimatedTaskCardState extends State<AnimatedTaskCard> {
+  bool _isRemoving = false;
+
+  Future<void> _handleQuickComplete() async {
+    if (_isRemoving) return;
+    setState(() => _isRemoving = true);
+    // Let the exit animation finish before updating the data source.
+    await Future.delayed(const Duration(milliseconds: 240));
+    await widget.onQuickComplete();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 240),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (child, animation) {
+        final slide = Tween<Offset>(begin: const Offset(0.15, 0), end: Offset.zero)
+            .animate(animation);
+        return SizeTransition(
+          sizeFactor: animation,
+          axisAlignment: -1,
+          child: SlideTransition(position: slide, child: child),
+        );
+      },
+      child: _isRemoving
+          ? const SizedBox.shrink(key: ValueKey('task_removed'))
+          : TaskCard(
+              key: ValueKey('task_${widget.task.id}'),
+              task: widget.task,
+              leading: widget.leading,
+              trailing: widget.trailing,
+              onQuickComplete: _handleQuickComplete,
+            ),
     );
   }
 }
@@ -82,13 +138,15 @@ class DateBox extends StatelessWidget {
 class TaskCard extends StatelessWidget {
   final TaskModel task;
   final Widget leading;
-  final Widget? trailing; // 1. Thêm biến trailing để nhận nhãn Priority
+  final Widget? trailing;
+  final VoidCallback? onQuickComplete;
 
   const TaskCard({
     super.key,
     required this.task,
     required this.leading,
-    this.trailing, // 2. Bổ sung vào constructor
+    this.trailing,
+    this.onQuickComplete,
   });
 
   @override
@@ -98,13 +156,14 @@ class TaskCard extends StatelessWidget {
     final hour = task.startTime.hourOfPeriod == 0 ? 12 : task.startTime.hourOfPeriod;
     final minute = task.startTime.minute.toString().padLeft(2, '0');
     final timeString = '$hour:$minute $period';
+    final isCompleted = task.isCompleted;
 
     return Hero(
       tag: 'task_card_${task.id}', // Tag nối thẻ từ màn Home sang màn Detail
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
-          borderRadius: BorderRadius.circular(25),
+          borderRadius: BorderRadius.circular(20),
           onTap: () {
             // Hiệu ứng FadeRoute để chuyển cảnh mượt hơn Route mặc định
             Navigator.push(context, PageRouteBuilder(
@@ -116,93 +175,129 @@ class TaskCard extends StatelessWidget {
             ));
           },
           child: Container(
-            margin: const EdgeInsets.only(bottom: 20),
+            margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(25),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 5))
+                BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 4))
               ],
             ),
             child: Stack(
               children: [
                 Positioned(
-                  left: 0, top: 25, bottom: 25, width: 4,
+                  left: 0, top: 18, bottom: 18, width: 3,
                   child: Container(
                     decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.primary,
-                        borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5))),
+                        borderRadius: BorderRadius.only(topRight: Radius.circular(4), bottomRight: Radius.circular(4))),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       leading,
-                      const SizedBox(width: 15),
-                      // Phần tiêu đề và mô tả
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(task.title, style: Theme.of(context).textTheme.titleMedium),
-                            const SizedBox(height: 3),
-                            Text(task.description, style: Theme.of(context).textTheme.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
-                            if (task.totalSubtasks > 0)
-                              Container(
-                                margin: const EdgeInsets.only(top: 8),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      task.completedSubtasks == task.totalSubtasks 
-                                          ? Icons.check_circle_rounded 
-                                          : Icons.checklist_rounded, 
-                                      size: 14, 
-                                      color: Theme.of(context).colorScheme.primary,
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    task.title,
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      decoration: isCompleted ? TextDecoration.lineThrough : null,
+                                      color: isCompleted
+                                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                                          : Theme.of(context).colorScheme.onSurface,
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${task.completedSubtasks}/${task.totalSubtasks}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Theme.of(context).colorScheme.primary,
-                                        decoration: task.completedSubtasks == task.totalSubtasks 
-                                            ? TextDecoration.lineThrough 
-                                            : null,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (task.totalSubtasks > 0) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(
+                                        color: Theme.of(context).colorScheme.outline,
                                       ),
                                     ),
-                                  ],
-                                ),
+                                    child: Text(
+                                      '${task.completedSubtasks}/${task.totalSubtasks}',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        height: 1,
+                                        fontWeight: FontWeight.w600,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      ),
+                                      textHeightBehavior: const TextHeightBehavior(
+                                        applyHeightToFirstAscent: false,
+                                        applyHeightToLastDescent: false,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              task.description,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                decoration: isCompleted ? TextDecoration.lineThrough : null,
+                                color: isCompleted
+                                    ? Theme.of(context).colorScheme.onSurfaceVariant
+                                    : Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ],
                         ),
                       ),
-                      
                       const SizedBox(width: 10),
-                      
-                      // 3. CỤM HIỂN THỊ TRÊN GÓC PHẢI (Priority đè lên Time)
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
+                          if (!isCompleted && onQuickComplete != null) ...[
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: const Icon(Icons.circle_outlined),
+                              color: Theme.of(context).colorScheme.primary,
+                              tooltip: 'Mark completed',
+                              onPressed: onQuickComplete,
+                            ),
+                            const SizedBox(height: 2),
+                          ],
                           if (trailing != null) ...[
-                            trailing!, // Hiển thị nhãn Priority ở đây
-                            const SizedBox(height: 8), // Cách cái giờ ra một tí
+                            trailing!,
+                            const SizedBox(height: 6),
                           ],
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.secondary,
-                              borderRadius: BorderRadius.circular(10),
+                              color: Theme.of(context).colorScheme.secondaryContainer,
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Text(timeString, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                            child: Text(
+                              timeString,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                                fontSize: 11,
+                                decoration: isCompleted ? TextDecoration.lineThrough : null,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -217,6 +312,7 @@ class TaskCard extends StatelessWidget {
     );
   }
 }
+
 // --- Widget chọn giờ (TimePickerWidget) ---
 class TimePickerWidget extends StatelessWidget {
   final TimeOfDay time;

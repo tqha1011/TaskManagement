@@ -351,6 +351,7 @@ class CompletedTaskCard extends StatelessWidget {
               ),
               // Add 1 hour just for display
               date: task.updatedAt,
+              isCompleted: true,
             );
 
             Navigator.push(

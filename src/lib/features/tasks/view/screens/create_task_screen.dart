@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:task_management_app/features/category/model/category_model.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../model/task_model.dart';
 import '../../viewmodel/task_viewmodel.dart';
@@ -15,6 +14,7 @@ import 'package:task_management_app/features/category/view/widgets/category_choi
 import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
 import 'package:task_management_app/features/tag/view/widgets/tag_selector.dart';
 import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
+import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
 
 // ============================================================================
 // 1. STATE MANAGEMENT (PROVIDER)
@@ -299,9 +299,12 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded), onPressed: () => Navigator.pop(context)),
-          const Icon(Icons.menu_rounded),
-          const Icon(Icons.assignment_outlined),
+          IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: theme.colorScheme.onSurface),
+            onPressed: () => Navigator.pop(context),
+          ),
+          Icon(Icons.menu_rounded, color: theme.colorScheme.onSurface),
+          Icon(Icons.assignment_outlined, color: theme.colorScheme.onSurface),
         ],
       ),
     );
@@ -398,8 +401,11 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   Widget _buildIconBox(IconData icon, ThemeData theme, {bool small = false}) {
     return Container(
       padding: EdgeInsets.all(small ? 10 : 12),
-      decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(small ? 12 : 15)),
-      child: Icon(icon, color: Colors.white, size: small ? 20 : 24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary,
+        borderRadius: BorderRadius.circular(small ? 12 : 15),
+      ),
+      child: Icon(icon, color: theme.colorScheme.onPrimary, size: small ? 20 : 24),
     );
   }
 
@@ -424,18 +430,18 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
             if (provider.isRepeating)
               Row(
                 children: [
-                  // Nút chọn Daily
                   _buildOptionBtn(
                     label: 'Hàng ngày (30 ngày)',
                     isSelected: provider.repeatType == 'daily',
                     onTap: () => provider.setRepeatType('daily'),
+                    theme: theme,
                   ),
                   const SizedBox(width: 10),
-                  // Nút chọn Weekly
                   _buildOptionBtn(
                     label: 'Hàng tuần (4 tuần)',
                     isSelected: provider.repeatType == 'weekly',
                     onTap: () => provider.setRepeatType('weekly'),
+                    theme: theme,
                   ),
                 ],
               ),
@@ -445,19 +451,31 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     );
   }
 
-  // Widget phụ cho nút bấm Daily/Weekly
-  Widget _buildOptionBtn({required String label, required bool isSelected, required VoidCallback onTap}) {
+  Widget _buildOptionBtn({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required ThemeData theme,
+  }) {
+    final background = isSelected
+        ? theme.colorScheme.primary
+        : theme.colorScheme.surfaceContainerHighest;
+    final foreground = isSelected
+        ? theme.colorScheme.onPrimary
+        : theme.colorScheme.onSurface;
+
     return Expanded(
       child: InkWell(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.blue : Colors.grey[200], // Highlight nếu được chọn
+            color: background,
             borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: theme.colorScheme.outline),
           ),
           child: Center(
-            child: Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.black)),
+            child: Text(label, style: TextStyle(color: foreground)),
           ),
         ),
       ),
@@ -472,6 +490,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         onPressed: provider.isLoading ? null : () { 
           final taskVM = context.read<TaskViewModel>();
           final tagVM = context.read<TagViewModel>();
+          final statsVM = context.read<StatisticsViewmodel>();
+          final userId = Supabase.instance.client.auth.currentUser?.id;
           final taskName = _nameController.text;
           final selectedPriority = taskVM.selectedPriority;
           final selectedTags = List.from(tagVM.selectedTags);
@@ -489,6 +509,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
           ).then((_) {
             
             taskVM.fetchTasks();
+            if (userId != null) {
+              statsVM.getStatisticsData(userId);
+            }
             taskVM.reset();
             tagVM.resetSelection();
             debugPrint("Task created");
