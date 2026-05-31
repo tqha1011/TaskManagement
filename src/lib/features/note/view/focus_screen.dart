@@ -188,8 +188,9 @@ class FocusScreen extends StatelessWidget {
                             ),
                           ],
                           onChanged: (val) {
-                            if (val != null)
+                            if (val != null) {
                               setStateDialog(() => currentSoundKey = val);
+                            }
                           },
                         ),
                       ),
@@ -269,8 +270,9 @@ class FocusScreen extends StatelessWidget {
                             ),
                           ],
                           onChanged: (val) {
-                            if (val != null)
+                            if (val != null) {
                               setStateDialog(() => currentRingtone = val);
+                            }
                           },
                         ),
                       ),

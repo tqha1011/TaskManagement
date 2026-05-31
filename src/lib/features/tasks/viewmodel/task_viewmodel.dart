@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../model/task_model.dart';
 import 'package:task_management_app/features/category/model/category_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:task_management_app/features/tasks/service/notif_service.dart';
 
 class TaskViewModel extends ChangeNotifier {
 
@@ -52,10 +53,12 @@ class TaskViewModel extends ChangeNotifier {
   String? addCustomTag(String name) {
     name = name.trim();
     if (name.isEmpty) return 'Tên tag không được để trống';
-    if (name.length > _maxCustomTagLength)
+    if (name.length > _maxCustomTagLength) {
       return 'Tối đa $_maxCustomTagLength ký tự';
-    if (_customTags.length >= _maxCustomTags)
+    }
+    if (_customTags.length >= _maxCustomTags) {
       return 'Tối đa $_maxCustomTags tag custom';
+    }
     if (_customTags.any((t) => t.name.toLowerCase() == name.toLowerCase())) {
       return 'Tag đã tồn tại';
     }
@@ -137,52 +140,86 @@ class TaskViewModel extends ChangeNotifier {
 
   // Cập nhật tag cho task đã tạo (dùng ở Task Detail)
 
-  Future<void> fetchTasks() async {
+Future<void> fetchTasks() async {
     final supabase = Supabase.instance.client;
     final user = supabase.auth.currentUser;
     
     if (user == null) return; 
 
     try {
+
       final data = await supabase
           .from('task')
-          .select('*')
+          .select('*, subtask(*)') 
           .eq('profile_id', user.id) 
           .order('create_at', ascending: true);
       
-      if (data != null) {
-        _tasks.clear(); 
-        
-        for (var item in data) {
-          // 1. Chuyển đổi Priority trực tiếp
-          Priority p = Priority.medium;
-          if (item['priority'] == 1) p = Priority.urgent;
-          else if (item['priority'] == 2) p = Priority.high;
-          else if (item['priority'] == 4) p = Priority.low;
+      _tasks.clear(); 
+      
+      for (var item in data) {
+        // Xử lý Priority
+        Priority p = Priority.medium;
+        if (item['priority'] == 1) {
+          p = Priority.urgent;
+        } else if (item['priority'] == 2) p = Priority.high;
+        else if (item['priority'] == 4) p = Priority.low;
 
-          // 2. Nhét data thẳng vào TaskModel luôn, đách cần fromJson nữa
-          _tasks.add(TaskModel(
-            id: item['id'].toString(),
-            title: item['title'] ?? 'Task mới',
-            description: item['description'] ?? '',
+        // Xử lý Giờ giấc thực tế từ DB
+        DateTime startTimeDt = item['start_time'] != null 
+            ? DateTime.tryParse(item['start_time'].toString())?.toLocal() ?? DateTime.now()
+            : DateTime.now();
             
-            // CHÍNH LÀ CHỖ NÀY: Khởi tạo cục CategoryModel đàng hoàng
-            category: CategoryModel(
-              id: 0, // Nhét số 0 vào làm ID ảo
-              name: item['category']?.toString() ?? 'General', // Lấy tên từ database, nếu rỗng thì cho chữ General
-              colorCode: '#5A8DF3', // Lấy màu mặc định
-              profileId: '', // Bỏ trống
-            ),
-            
-            // Mấy cái giờ giấc cho mặc định hết đi, chừng nào khỏe code tiếp
-            startTime: const TimeOfDay(hour: 8, minute: 0), 
-            endTime: const TimeOfDay(hour: 9, minute: 0),
-            date: item['create_at'] != null 
-                ? DateTime.tryParse(item['create_at'].toString()) ?? DateTime.now()
-                : DateTime.now(),
-            priority: p,
-          ));
+        DateTime dueTimeDt = item['due_time'] != null 
+            ? DateTime.tryParse(item['due_time'].toString())?.toLocal() ?? startTimeDt.add(const Duration(hours: 1))
+            : startTimeDt.add(const Duration(hours: 1));
+
+        int total = 0;
+        int completed = 0;
+        if (item['subtask'] != null) {
+          final List<dynamic> subtaskList = item['subtask'];
+          total = subtaskList.length;
+          completed = subtaskList.where((s) => s['status'] == 1).length;
         }
+
+        _tasks.add(TaskModel(
+          id: item['id'].toString(),
+          title: item['title'] ?? 'Task mới',
+          description: item['description'] ?? '',
+          templateId: item['template_id'],
+          category: CategoryModel(
+            id: item['category_id'] ?? 0, 
+            name: 'Category', 
+            colorCode: '#5A8DF3', 
+            profileId: item['profile_id'] ?? '', 
+          ),
+          startTime: TimeOfDay(hour: startTimeDt.hour, minute: startTimeDt.minute), 
+          endTime: TimeOfDay(hour: dueTimeDt.hour, minute: dueTimeDt.minute),
+          date: startTimeDt, 
+          priority: p,
+          totalSubtasks: total,
+          completedSubtasks: completed,
+        ));
+
+        final int taskIdInt = item['id']; // ID từ Supabase thường là int
+        final String taskTitle = item['title'] ?? 'Task mới';
+
+        // 1. Hẹn giờ nhắc trước 1 ngày
+        await NotifService().scheduleTaskNotification(
+          taskId: taskIdInt * 2, // Nhân đôi để tránh trùng ID thông báo với cái 1 tiếng
+          taskTitle: taskTitle,
+          taskStartTime: startTimeDt,
+          remindBefore: const Duration(days: 1),
+          notificationMessage: 'Task "$taskTitle" sẽ bắt đầu sau 1 ngày',
+        );
+
+        // 2. Hẹn giờ nhắc trước 1 tiếng
+        await NotifService().scheduleTaskNotification(
+          taskId: taskIdInt * 2 + 1, // Tạo ID độc nhất
+          taskTitle: taskTitle,
+          taskStartTime: startTimeDt,
+          remindBefore: const Duration(hours: 1),
+          notificationMessage: 'Task "$taskTitle" sẽ bắt đầu sau 1 tiếng',
+        );
       }
       notifyListeners();
       
@@ -191,20 +228,21 @@ class TaskViewModel extends ChangeNotifier {
     }
   }
 
-
   Future<void> updateTask(dynamic taskId, Map<String, dynamic> data) async {
-  final _supabase = Supabase.instance.client;
-  try {
-    await _supabase
-        .from('task')
-        .update(data) // Data ở đây sẽ chứa {'title': '...', 'category_id': ...}
-        .eq('id', taskId);
-    
-    notifyListeners(); // Để màn hình Home load lại dữ liệu mới
-  } catch (e) {
-    rethrow;
+    final supabase = Supabase.instance.client;
+    try {
+      await supabase
+          .from('task')
+          .update(data) 
+          .eq('id', taskId);
+      
+      await fetchTasks(); 
+      
+    } catch (e) {
+      debugPrint("Lỗi update task: $e");
+      rethrow;
+    }
   }
-}
 
   Future<void> deleteTask(String taskId) async {
     final supabase = Supabase.instance.client;
@@ -289,4 +327,116 @@ class TaskViewModel extends ChangeNotifier {
       return false;
     }
   }
+
+  // 1. Lấy danh sách Subtask của một Task
+  Future<List<dynamic>> getSubtasksForTask(String taskId) async {
+    final supabase = Supabase.instance.client;
+    try {
+      final data = await supabase
+          .from('subtask')
+          .select()
+          .eq('task_id', int.parse(taskId)) // DB ông lưu int8 nên parse sang int cho chắc
+          .order('created_at', ascending: true);
+      return data;
+    } catch (e) {
+      debugPrint("Lỗi lấy danh sách subtask: $e");
+      return [];
+    }
+  }
+
+  // 2. Thêm Subtask mới
+  Future<bool> addSubtask(String taskId, String content) async {
+    final supabase = Supabase.instance.client;
+    try {
+      await supabase.from('subtask').insert({
+        'task_id': int.parse(taskId),
+        'content': content,
+        'status': 0, // Mặc định là 0 (chưa hoàn thành)
+      });
+      return true;
+    } catch (e) {
+      debugPrint("Lỗi thêm subtask: $e");
+      return false;
+    }
+  }
+
+  // 3. Cập nhật trạng thái Subtask (Check / Uncheck)
+  Future<bool> updateSubtaskStatus(String subtaskId, int newStatus) async {
+    final supabase = Supabase.instance.client;
+    try {
+      await supabase
+          .from('subtask')
+          .update({'status': newStatus})
+          .eq('id', int.parse(subtaskId));
+      return true;
+    } catch (e) {
+      debugPrint("Lỗi cập nhật trạng thái subtask: $e");
+      return false;
+    }
+  }
+
+  // 4. Xóa Subtask
+  Future<bool> deleteSubtask(String subtaskId) async {
+    final supabase = Supabase.instance.client;
+    try {
+      await supabase
+          .from('subtask')
+          .delete()
+          .eq('id', int.parse(subtaskId));
+      return true;
+    } catch (e) {
+      debugPrint("Lỗi xóa subtask: $e");
+      return false;
+    }
+  }
+
+  Future<void> updateTaskSeries(int templateId, Map<String, dynamic> updates) async {
+  final supabase = Supabase.instance.client;
+  try {
+    
+    final Map<String, dynamic> seriesData = {
+      'title': updates['title'],
+      'category_id': updates['category_id'],
+      'priority': updates['priority'],
+    };
+
+    
+    await supabase
+        .from('task')
+        .update(seriesData)
+        .eq('template_id', templateId);
+
+    
+    await supabase
+        .from('task_template')
+        .update(seriesData)
+        .eq('id', templateId);
+
+    await fetchTasks(); // Load lại data cho toàn app
+  } catch (e) {
+    debugPrint("Lỗi update chuỗi task: $e");
+    rethrow;
+  }
+}
+
+
+Future<void> deleteTaskSeries(int templateId) async {
+  final supabase = Supabase.instance.client;
+  try {
+   
+    
+   
+    await supabase.from('task').delete().eq('template_id', templateId);
+    
+   
+    await supabase.from('task_template').delete().eq('id', templateId);
+    
+    await fetchTasks();
+  } catch (e) {
+    debugPrint("Lỗi xóa chuỗi task: $e");
+    rethrow;
+  }
+}
+
+  
 }

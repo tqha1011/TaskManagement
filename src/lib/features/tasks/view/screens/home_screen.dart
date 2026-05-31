@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/notification_time_picker.dart';
 import '../../model/task_model.dart';
 import '../../viewmodel/task_viewmodel.dart';
 import '../widgets/task_widgets.dart';
 import 'create_task_screen.dart';
+import 'package:task_management_app/features/tasks/service/notif_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    _checkPermission();
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -32,6 +34,13 @@ class _HomeScreenState extends State<HomeScreen>
       parent: _animController,
       curve: Curves.easeInOut,
     );
+  }
+
+  Future<void> _checkPermission() async {
+    bool isGranted = await NotifService().requestNotificationPermission();
+    if (!isGranted) {
+      print("User từ chối nhận thông báo rồi bro ơi!");
+    }
   }
 
   @override
@@ -191,9 +200,18 @@ class _HomeScreenState extends State<HomeScreen>
                               DateTime date = DateTime.now().add(
                                 Duration(days: index),
                               );
-                              return DateBox(
-                                date: date,
-                                isSelected: index == 0,
+                              return GestureDetector(
+                                onTap: () {
+                                  // Khi bấm vào thì gọi hàm setDate để báo cho ViewModel biết
+                                  viewModel.setDate(date);
+                                },
+                                child: DateBox(
+                                  date: date,
+                                  // Kiểm tra xem ngày của ô này có khớp với ngày đang được chọn trong ViewModel không
+                                  isSelected: date.day == viewModel.selectedDate.day &&
+                                              date.month == viewModel.selectedDate.month &&
+                                              date.year == viewModel.selectedDate.year,
+                                ),
                               );
                             },
                           ),
@@ -286,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen>
                 // ─── Task List ────────────────────────────────
                 Expanded(
                   child: grouped.isEmpty
-                      ? _buildEmptyState()
+                      ? _buildEmptyState() // Đã thêm '_' để gọi đúng hàm
                       : ListView(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           children: grouped.entries.map((entry) {
@@ -360,8 +378,48 @@ class _HomeScreenState extends State<HomeScreen>
                           }).toList(),
                         ),
                 ),
-              ],
-            ),
+              ], // Đóng children của Column
+            ), // Đóng Column
+          ), // Đóng SafeArea
+        ], // Đóng children của Stack
+      ), // Đóng Stack
+    ); // Đóng Scaffold
+  } // Đóng hàm build
+
+  // --- Widget nhỏ tách ra cho sạch code ---
+
+  Widget _buildAppBar(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Icon(Icons.menu_rounded, color: Colors.black),
+          Row(
+            children: [
+              const Icon(Icons.notifications_none_rounded, color: Colors.black),
+              const SizedBox(width: 15),
+              const CircleAvatar(
+                radius: 20,
+                backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=user1'),
+              ),
+              const SizedBox(width: 10),
+              IconButton(
+                icon: const Icon(Icons.add_rounded, color: Colors.black),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      // Bọc cái ChangeNotifierProvider ở ngay cửa ngõ để cấp Wi-Fi cho màn hình mới
+                      builder: (ctx) => ChangeNotifierProvider(
+                        create: (_) => CreateTaskProvider(), // Lưu ý cần import CreateTaskProvider nếu chưa có
+                        child: const CreateTaskScreen(),
+                      ),
+                    ),
+                  ).then((_) => context.read<TaskViewModel>().fetchTasks());
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -381,6 +439,7 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  // Đã thêm dấu "_" vào trước tên hàm
   Widget _buildEmptyState() {
     return const Center(
       child: Column(
@@ -408,6 +467,7 @@ class _HomeScreenState extends State<HomeScreen>
 }
 
 // ─── Filter Chip Widget ──────────────────────────────────────
+// Đã xóa chữ 'void' trước StatelessWidget
 class _FilterChip extends StatelessWidget {
   final String label;
   final bool isSelected;

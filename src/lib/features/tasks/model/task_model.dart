@@ -58,6 +58,9 @@ class TaskModel {
   DateTime date;
   Priority priority;
   List<TagModel> tags;
+  final int totalSubtasks;
+  final int completedSubtasks;
+  final int? templateId;
 
   TaskModel({
     required this.id,
@@ -67,9 +70,65 @@ class TaskModel {
     required this.startTime,
     required this.endTime,
     required this.date,
+    this.totalSubtasks = 0,
+    this.completedSubtasks = 0,
     this.priority = Priority.medium,
     this.tags = const [],
+    this.templateId,
   });
+
+  factory TaskModel.fromMap(Map<String, dynamic> map) {
+
+    DateTime startDate = map['start_time'] != null 
+        ? DateTime.parse(map['start_time']).toLocal() 
+        : DateTime.now();
+    DateTime dueDate = map['due_time'] != null 
+        ? DateTime.parse(map['due_time']).toLocal() 
+        : DateTime.now();
+
+    return TaskModel(
+      id: map['id'].toString(),
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      templateId: map['template_id'], 
+
+
+      category: CategoryModel(
+        id: map['category']['id'] ?? 0,
+        name: map['category']['name'] ?? 'No Name',
+        colorCode: map['category']['colorCode'] ?? '0xFF9E9E9E',
+        profileId: map['category']['profileId'] ?? '',          
+      ),
+
+
+      tags: (map['task_tags'] as List? ?? []).map((t) {
+        final tagData = t['tags'];
+        return TagModel(
+          id: tagData['id'],
+          name: tagData['name'] ?? '',
+          colorCode: tagData['color'] ?? '0xFFFFFFFF', 
+          profileId: tagData['profile_id'],
+        );
+      }).toList(),
+
+      date: startDate,
+      startTime: TimeOfDay.fromDateTime(startDate),
+      endTime: TimeOfDay.fromDateTime(dueDate),
+      priority: _parsePriority(map['priority']),
+      totalSubtasks: map['total_subtasks'] ?? 0,
+      completedSubtasks: map['completed_subtasks'] ?? 0,
+    );
+  }
+
+  static Priority _parsePriority(int? p) {
+    switch (p) {
+      case 1: return Priority.urgent;
+      case 2: return Priority.high;
+      case 3: return Priority.medium;
+      case 4: return Priority.low;
+      default: return Priority.medium;
+    }
+  }
 }
 
 class NoteModel {

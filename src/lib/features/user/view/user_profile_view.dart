@@ -113,7 +113,7 @@ class UserProfileView extends StatelessWidget {
                 onTap: () => vm.toggleNotification(!user.isNotificationEnabled),
                 trailing: Switch(
                   value: user.isNotificationEnabled,
-                  activeColor: Theme.of(context).colorScheme.surface,
+                  activeThumbColor: Theme.of(context).colorScheme.surface,
                   activeTrackColor: Theme.of(context).colorScheme.primary,
                   inactiveThumbColor: Theme.of(
                     context,

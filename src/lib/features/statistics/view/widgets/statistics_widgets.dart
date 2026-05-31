@@ -211,7 +211,7 @@ class WeeklyChartCard extends StatelessWidget {
               _buildBar(
                 context,
                 'T2',
-                weeklyHeights.length > 0 ? weeklyHeights[0] : 0.1,
+                weeklyHeights.isNotEmpty ? weeklyHeights[0] : 0.1,
                 0,
               ),
               _buildBar(
@@ -357,8 +357,8 @@ class CompletedTaskCard extends StatelessWidget {
               context,
               PageRouteBuilder(
                 transitionDuration: const Duration(milliseconds: 500),
-                pageBuilder: (_, __, ___) => TaskDetailScreen(task: mappedTask),
-                transitionsBuilder: (_, animation, __, child) {
+                pageBuilder: (_, _, _) => TaskDetailScreen(task: mappedTask),
+                transitionsBuilder: (_, animation, _, child) {
                   return FadeTransition(opacity: animation, child: child);
                 },
               ),

@@ -2,52 +2,55 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:task_management_app/features/category/model/category_model.dart';
 
-// --- Adjust these import paths to match your project structure ---
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../model/task_model.dart';
 import '../../viewmodel/task_viewmodel.dart';
-import '../widgets/priority_selector.dart'; // Import 2 cục UI ở trên vào
-//import '../widgets/tag_selector.dart';
+import '../widgets/priority_selector.dart';
+import '../widgets/task_widgets.dart';
+
 import 'package:task_management_app/features/category/view/widgets/category_choice_chips.dart';
 import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
 import 'package:task_management_app/features/tag/view/widgets/tag_selector.dart';
 import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
 
-import '../../../../core/widgets/custom_input_field.dart';
-import '../../model/task_model.dart';
-import '../../viewmodel/task_viewmodel.dart';
-import '../widgets/task_widgets.dart';
-import '../widgets/priority_selector.dart';
-
 // ============================================================================
-// 1. STATE MANAGEMENT (PROVIDER) - Xử lý logic Supabase
+// 1. STATE MANAGEMENT (PROVIDER)
 // ============================================================================
 
 class CreateTaskProvider extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
 
   // --- UI State Variables ---
-  String _selectedCategory = "Development";
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _startTime = const TimeOfDay(hour: 10, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 11, minute: 0);
+  bool _isRepeating = false;
+  String _repeatType = 'daily';
+
+  bool get isRepeating => _isRepeating;
+  String get repeatType => _repeatType;
   bool _isLoading = false;
 
+  void setRepeating(bool value) {
+    _isRepeating = value;
+    notifyListeners();
+  }
+
+  void setRepeatType(String value) {
+    _repeatType = value;
+    notifyListeners();
+  }
+
   // --- Getters ---
-  String get selectedCategory => _selectedCategory;
   DateTime get selectedDate => _selectedDate;
   TimeOfDay get startTime => _startTime;
   TimeOfDay get endTime => _endTime;
   bool get isLoading => _isLoading;
 
-  // --- Setters (Triggers UI Rebuild) ---
-  void setCategory(String value) {
-    _selectedCategory = value;
-    notifyListeners();
-  }
-
+  // --- Setters ---
   void setDate(DateTime value) {
     _selectedDate = value;
     notifyListeners();
@@ -64,96 +67,133 @@ class CreateTaskProvider extends ChangeNotifier {
   }
 
   Future<void> submitTask(
-  BuildContext context, {
-  required String taskName,
-  required String description,
-  required dynamic priority,
-  required List<dynamic> tags,
-  required int? categoryId, // Thêm tham số ID từ UI truyền vào
-}) async {
-  if (taskName.trim().isEmpty) {
-    _showSnackBar(context, "Task name is required.");
-    return;
-  }
-
-  // Check xem có chọn Category chưa
-  if (categoryId == null) {
-    _showSnackBar(context, "Please select a category.");
-    return;
-  }
-
-  final user = _supabase.auth.currentUser;
-  if (user == null) {
-    _showSnackBar(context, "Session not found. Please re-authenticate.");
-    return;
-  }
-
-  _isLoading = true;
-  notifyListeners();
-
-  try {
-    // 1. Xử lý Priority ID
-    int priorityId = 3; // Mặc định Medium
-    final String priorityStr = priority.toString().toLowerCase();
-
-    if (priorityStr.contains('urgent')) {
-      priorityId = 1;
-    } else if (priorityStr.contains('high')) {
-      priorityId = 2;
-    } else if (priorityStr.contains('medium')) {
-      priorityId = 3;
-    } else if (priorityStr.contains('low')) {
-      priorityId = 4;
+    BuildContext context, {
+    required String taskName,
+    required dynamic priority,
+    required List<dynamic> tags,
+    required int? categoryId,
+  }) async {
+    // Basic validation
+    if (taskName.trim().isEmpty) {
+      _showSnackBar(context, "Task name is required.");
+      return;
     }
 
-    // 2. Xử lý thời gian
-    final scheduledDateTime = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _startTime.hour,
-      _startTime.minute,
-    );
-
-    // 3. Insert vào Supabase
-    await _supabase.from('task').insert({
-      'title': taskName.trim(),
-      //'description': description.trim(), // Tui mở comment cái này ra cho ông luôn
-      'status': 0,
-      'priority': priorityId,
-      'profile_id': user.id,
-      'category_id': categoryId, // Dùng ID thực tế từ UI
-      'create_at': scheduledDateTime.toIso8601String(),
-    });
-
-    if (context.mounted) {
-      _showSnackBar(context, "Task created successfully.");
-      // Chỉ để pop ở đây, bên ngoài UI ông xoá cái pop kia đi nhé
-      Navigator.pop(context); 
+    if (categoryId == null) {
+      _showSnackBar(context, "Please select a category.");
+      return;
     }
-  } catch (e) {
-    debugPrint("Data Persistence Error: $e");
-    if (context.mounted) {
-      _showSnackBar(context, "Database synchronization failed: $e");
-    }
-  } finally {
-    _isLoading = false;
+
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+
+    _isLoading = true;
     notifyListeners();
+
+    try {
+      // 1. Map Priority String to ID (1: Urgent, 2: High, 3: Medium, 4: Low)
+      int priorityId = 3; 
+      final String priorityStr = priority.toString().toLowerCase();
+      if (priorityStr.contains('urgent')) {
+        priorityId = 1;
+      } else if (priorityStr.contains('high')) priorityId = 2;
+      else if (priorityStr.contains('medium')) priorityId = 3;
+      else if (priorityStr.contains('low')) priorityId = 4;
+
+      // 2. Format Start and Due timestamps from Date + Time pickers
+      // FIX: Add .toUtc() before .toIso8601String() to prevent timezone shifts
+      final startTimeDb = DateTime(
+        _selectedDate.year, _selectedDate.month, _selectedDate.day,
+        _startTime.hour, _startTime.minute,
+      ).toUtc().toIso8601String();
+
+      final dueTimeDb = DateTime(
+        _selectedDate.year, _selectedDate.month, _selectedDate.day,
+        _endTime.hour, _endTime.minute,
+      ).toUtc().toIso8601String();
+
+      final DateTime baseStart = DateTime(
+        _selectedDate.year, _selectedDate.month, _selectedDate.day,
+        _startTime.hour, _startTime.minute,
+      );
+      final DateTime baseDue = DateTime(
+        _selectedDate.year, _selectedDate.month, _selectedDate.day,
+        _endTime.hour, _endTime.minute,
+      );
+
+      int? createdTemplateID;
+      if(_isRepeating){
+          final templateResponse = await _supabase.from('task_template').insert({
+          'title': taskName.trim(),
+          'repeat_type': _repeatType, // 'daily' hoặc 'weekly'
+          'category_id': categoryId,
+          'priority': priorityId,
+          'profile_id': user.id,
+          'start_time': startTimeDb,
+          'is_active': true,
+        }).select('id').single();
+        
+        createdTemplateID = templateResponse['id'];
+      }
+      int totalTasks = 1;
+      if(_isRepeating){
+        totalTasks = (_repeatType == 'daily') ? 30 : 4;
+      }
+      // 3. INSERT into 'task' table and retrieve the new ID
+      for (int i = 0; i < totalTasks; i++) {
+      Duration offset = Duration.zero;
+      if (_isRepeating) {
+        offset = (_repeatType == 'daily') 
+            ? Duration(days: i) 
+            : Duration(days: i * 7);
+      }
+
+      // 2. Cộng offset vào mốc thời gian gốc
+      final String currentStart = baseStart.add(offset).toUtc().toIso8601String();
+      final String currentDue = baseDue.add(offset).toUtc().toIso8601String();
+
+      // 3. Bắn dữ liệu vào bảng 'task' (Task con)
+      final taskResponse = await _supabase.from('task').insert({
+        'title': taskName.trim(),
+        'priority': priorityId,
+        'profile_id': user.id,
+        'category_id': categoryId,
+        'template_id': createdTemplateID, 
+        'start_time': currentStart,
+        'due_time': currentDue,
+        'status': 0, 
+      }).select('id').single();
+
+
+      if (tags.isNotEmpty) {
+        final int newTaskId = taskResponse['id'];
+        final tagLinks = tags.map((tag) => {
+          'task_id': newTaskId,
+          'tag_id': tag.id, 
+        }).toList();
+        await _supabase.from('task_tags').insert(tagLinks);
+      }
+    }
+    } catch (e) {
+      debugPrint("Execution Error: $e");
+      if (context.mounted) {
+        _showSnackBar(context, "Failed to create task: $e");
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
-}
 
   void _showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 }
 
 // ============================================================================
-// 2. USER INTERFACE (UI) - Màn hình tạo Task
+// 2. USER INTERFACE (UI)
 // ============================================================================
 
 class CreateTaskScreen extends StatefulWidget {
@@ -164,14 +204,7 @@ class CreateTaskScreen extends StatefulWidget {
 }
 
 class _CreateTaskScreenState extends State<CreateTaskScreen> {
-  final TextEditingController _nameController = TextEditingController(
-    text: 'Team Meeting',
-  );
-  final TextEditingController _descController = TextEditingController(
-    text: 'Discuss all questions about new projects',
-  );
-  
-
+  final TextEditingController _nameController = TextEditingController(text: 'Team Meeting');
   int? _selectedCategoryId;
 
   @override
@@ -187,12 +220,10 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final categoryViewModel = context.watch<CategoryViewModel>();
-    final tagViewModel = context.watch<TagViewModel>();
-    String formattedDate = DateFormat('EEEE, d MMMM').format(context.read<CreateTaskProvider>().selectedDate);
     final categories = categoryViewModel.categories;
 
+    // Set default category if none selected
     if (_selectedCategoryId == null && categories.isNotEmpty) {
       _selectedCategoryId = categories.first.id;
     }
@@ -202,339 +233,48 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // --- Custom Header ---
-            Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Icon(
-                    Icons.menu_rounded,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  Icon(
-                    Icons.assignment_outlined,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ],
-              ),
-            ),
-
-            // ─── Body ─────────────────────────────────────────
+            // --- Header Section ---
+            _buildHeader(context, theme),
+            
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(25.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Create New Task',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
+                    Text('Create New Task', style: theme.textTheme.headlineMedium),
                     const SizedBox(height: 25),
-
-                    // Task Name
-                    CustomInputField(
-                      label: 'Task Name',
-                      hint: 'Enter task name',
-                      controller: _nameController,
-                    ),
+                    
+                    // Task Name Input
+                    CustomInputField(label: 'Task Name', hint: 'Enter task name', controller: _nameController),
                     const SizedBox(height: 20),
-
-                    // Category
-                    Text(
-                      'Select Category',
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
+                    
+                    // Category Selection
+                    Text('Select Category', style: theme.textTheme.labelLarge),
                     const SizedBox(height: 10),
-                    SizedBox(
-                      child: categories.isEmpty
-                          ? Text(
-                              categoryViewModel.isLoading
-                                  ? 'Loading categories...'
-                                  : 'No categories found',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            )
-                          : CategoryChoiceChips(
-                              categories: categories,
-                              selectedCategoryId: _selectedCategoryId,
-                              onSelected: (category) {
-                                setState(() => _selectedCategoryId = category.id);
-                              },
-                            ),
-                    ),
+                    _buildCategorySection(categoryViewModel, categories, theme),
                     const SizedBox(height: 20),
 
-                    // --- Gọi 2 Widget ông đã code ---
+                    // Priority and Tag Selectors (Existing Widgets)
                     const PrioritySelector(),
                     const SizedBox(height: 20),
                     const TagSelector(),
                     const SizedBox(height: 20),
 
-                    // --- Date ---
-                    Consumer<CreateTaskProvider>(
-                      builder: (context, provider, child) {
-                        final formattedDate = DateFormat('EEEE, d MMMM')
-                            .format(provider.selectedDate);
-                            
-                        return InkWell(
-                          onTap: () async {
-                            final DateTime? picked = await showDatePicker(
-                              context: context,
-                              initialDate: provider.selectedDate,
-                              firstDate: DateTime.now(), 
-                              lastDate: DateTime(2100),
-                            );
-                            if (picked != null) {
-                              provider.setDate(picked);
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(15),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 5.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Date', style: theme.textTheme.labelLarge),
-                                    const SizedBox(height: 5),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          formattedDate,
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: theme.colorScheme.onSurface,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 5),
-                                        Container(
-                                          width: 150,
-                                          height: 1,
-                                          color: theme.colorScheme.outline,
-                                        )
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary,
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  child: const Icon(
-                                    Icons.date_range_rounded,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                    // Date Picker Widget
+                    _buildDatePicker(context, theme),
                     const SizedBox(height: 25),
 
-                    //Clock
-                    /*Row(
-                      children: [
-                        // --- Start Time ---
-                        Expanded(
-                          child: Consumer<CreateTaskProvider>(
-                            builder: (context, provider, child) {
-                              final formattedStartTime = provider.startTime.format(context);
-                              return InkWell(
-                                onTap: () async {
-                                  final TimeOfDay? picked = await showTimePicker(
-                                    context: context,
-                                    initialTime: provider.startTime,
-                                  );
-                                  if (picked != null) {
-                                    provider.setStartTime(picked);
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(15),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 5.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('Start Time', style: theme.textTheme.labelLarge),
-                                            const SizedBox(height: 5),
-                                            Text(
-                                              formattedStartTime,
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: theme.colorScheme.onSurface,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 5),
-                                            Container(height: 1, color: theme.colorScheme.outline),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: theme.colorScheme.primary,
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: const Icon(Icons.access_time_rounded, color: Colors.white, size: 20),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        
-                        const SizedBox(width: 20), // Khoảng cách giữa 2 cục thời gian
-                        
-                        // --- End Time ---
-                        Expanded(
-                          child: Consumer<CreateTaskProvider>(
-                            builder: (context, provider, child) {
-                              final formattedEndTime = provider.endTime.format(context);
-                              return InkWell(
-                                onTap: () async {
-                                  final TimeOfDay? picked = await showTimePicker(
-                                    context: context,
-                                    initialTime: provider.endTime,
-                                  );
-                                  if (picked != null) {
-                                    provider.setEndTime(picked);
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(15),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 5.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('End Time', style: theme.textTheme.labelLarge),
-                                            const SizedBox(height: 5),
-                                            Text(
-                                              formattedEndTime,
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: theme.colorScheme.onSurface,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 5),
-                                            Container(height: 1, color: theme.colorScheme.outline),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: theme.colorScheme.primary,
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: const Icon(Icons.access_time_filled_rounded, color: Colors.white, size: 20),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),*/
-
-                    // --- Input Desc ---
-                    CustomInputField(
-                      label: 'Description',
-                      hint: 'Enter task description',
-                      controller: _descController,
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 25),
-
-                    // Description
-                    CustomInputField(
-                      label: 'Description',
-                      hint: 'Enter task description',
-                      controller: _descController,
-                      maxLines: 2,
-                    ),
+                    // Time Pickers (Start & End Time)
+                    _buildTimePickers(context, theme),
                     const SizedBox(height: 40),
 
-                    // ─── Create Button ────────────────────────
-                    Center(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            // Kiểm tra loading để tránh user bấm liên tọi
-                            if (context.read<CreateTaskProvider>().isLoading) return;
+                    _buildRepeatingSection(context, theme), 
 
-                            await context.read<CreateTaskProvider>().submitTask(
-                              context,
-                              taskName: _nameController.text,
-                              description: _descController.text,
-                              priority: context.read<TaskViewModel>().selectedPriority,
-                              tags: List.from(context.read<TagViewModel>().selectedTags),
-                              categoryId: _selectedCategoryId, // Truyền cái biến state ở UI vào đây
-                            );
+                    const SizedBox(height: 40),
 
-                            // Sau khi tạo xong, reset mấy cái linh tinh
-                            if (mounted) {
-                              context.read<TaskViewModel>().reset();
-                              context.read<TagViewModel>().resetSelection();
-                            }
-                            
-                            // KHÔNG dùng Navigator.pop(context) ở đây nữa vì trong Provider làm rồi.
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 100,
-                              vertical: 15,
-                            ),
-                          ),
-                          child: const Text('Create Task', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
+                    // Submit Button
+                    _buildSubmitButton(context, theme),
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -542,6 +282,228 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // --- Sub-Widgets for Cleaner Code ---
+
+  Widget _buildHeader(BuildContext context, ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded), onPressed: () => Navigator.pop(context)),
+          const Icon(Icons.menu_rounded),
+          const Icon(Icons.assignment_outlined),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategorySection(CategoryViewModel vm, List<CategoryModel> categories, ThemeData theme) {
+    if (categories.isEmpty) {
+      return Text(vm.isLoading ? 'Loading...' : 'No categories', style: theme.textTheme.bodyMedium);
+    }
+    return CategoryChoiceChips(
+      categories: categories,
+      selectedCategoryId: _selectedCategoryId,
+      onSelected: (cat) => setState(() => _selectedCategoryId = cat.id),
+    );
+  }
+
+  Widget _buildDatePicker(BuildContext context, ThemeData theme) {
+    return Consumer<CreateTaskProvider>(
+      builder: (context, provider, _) {
+        final dateStr = DateFormat('EEEE, d MMMM').format(provider.selectedDate);
+        return InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: provider.selectedDate,
+              firstDate: DateTime.now(),
+              lastDate: DateTime(2100),
+            );
+            if (picked != null) provider.setDate(picked);
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Date', style: theme.textTheme.labelLarge),
+                  Text(dateStr, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 5),
+                  Container(width: 150, height: 1, color: theme.colorScheme.outline),
+                ],
+              ),
+              _buildIconBox(Icons.date_range_rounded, theme),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTimePickers(BuildContext context, ThemeData theme) {
+    return Consumer<CreateTaskProvider>(
+      builder: (context, provider, _) {
+        return Row(
+          children: [
+            _buildTimeItem('Start Time', provider.startTime, theme, (t) => provider.setStartTime(t!)),
+            const SizedBox(width: 20),
+            _buildTimeItem('End Time', provider.endTime, theme, (t) => provider.setEndTime(t!)),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildTimeItem(String label, TimeOfDay time, ThemeData theme, Function(TimeOfDay?) onPick) {
+    return Expanded(
+      child: InkWell(
+        onTap: () async {
+          final picked = await showTimePicker(context: context, initialTime: time);
+          onPick(picked);
+        },
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: theme.textTheme.labelLarge),
+                  Text(time.format(context), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 5),
+                  Container(height: 1, color: theme.colorScheme.outline),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            _buildIconBox(Icons.access_time_rounded, theme, small: true),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIconBox(IconData icon, ThemeData theme, {bool small = false}) {
+    return Container(
+      padding: EdgeInsets.all(small ? 10 : 12),
+      decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(small ? 12 : 15)),
+      child: Icon(icon, color: Colors.white, size: small ? 20 : 24),
+    );
+  }
+
+  Widget _buildRepeatingSection(BuildContext context, ThemeData theme) {
+    return Consumer<CreateTaskProvider>(
+      builder: (context, provider, _) {
+        return Column(
+          children: [
+            // 1. DÒNG NÚT GẠT (SWITCH)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Lặp lại công việc này?', style: theme.textTheme.titleMedium),
+                Switch(
+                  value: provider.isRepeating,
+                  onChanged: (val) => provider.setRepeating(val), // Cập nhật state
+                ),
+              ],
+            ),
+            
+            // 2. HIỆN TÙY CHỌN (Chỉ hiện khi Switch đang bật)
+            if (provider.isRepeating)
+              Row(
+                children: [
+                  // Nút chọn Daily
+                  _buildOptionBtn(
+                    label: 'Hàng ngày (30 ngày)',
+                    isSelected: provider.repeatType == 'daily',
+                    onTap: () => provider.setRepeatType('daily'),
+                  ),
+                  const SizedBox(width: 10),
+                  // Nút chọn Weekly
+                  _buildOptionBtn(
+                    label: 'Hàng tuần (4 tuần)',
+                    isSelected: provider.repeatType == 'weekly',
+                    onTap: () => provider.setRepeatType('weekly'),
+                  ),
+                ],
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Widget phụ cho nút bấm Daily/Weekly
+  Widget _buildOptionBtn({required String label, required bool isSelected, required VoidCallback onTap}) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.blue : Colors.grey[200], // Highlight nếu được chọn
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.black)),
+          ),
+        ),
+      ),
+    );
+  }
+  
+
+  Widget _buildSubmitButton(BuildContext context, ThemeData theme) {
+    final provider = context.watch<CreateTaskProvider>();
+    return Center(
+      child: ElevatedButton(
+        onPressed: provider.isLoading ? null : () { 
+          final taskVM = context.read<TaskViewModel>();
+          final tagVM = context.read<TagViewModel>();
+          final taskName = _nameController.text;
+          final selectedPriority = taskVM.selectedPriority;
+          final selectedTags = List.from(tagVM.selectedTags);
+
+          
+          Navigator.pop(context);
+
+          
+          provider.submitTask(
+            context, 
+            taskName: taskName,
+            priority: selectedPriority,
+            tags: selectedTags,
+            categoryId: _selectedCategoryId,
+          ).then((_) {
+            
+            taskVM.fetchTasks();
+            taskVM.reset();
+            tagVM.resetSelection();
+            debugPrint("Task created");
+          }).catchError((error) {
+            debugPrint("Lỗi: $error");
+          });
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),
+        ),
+        child: provider.isLoading
+            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : const Text('Create Task', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       ),
     );
   }
