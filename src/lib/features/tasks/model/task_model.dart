@@ -61,6 +61,7 @@ class TaskModel {
   final int totalSubtasks;
   final int completedSubtasks;
   final int? templateId;
+  bool isCompleted;
 
   TaskModel({
     required this.id,
@@ -75,6 +76,7 @@ class TaskModel {
     this.priority = Priority.medium,
     this.tags = const [],
     this.templateId,
+    this.isCompleted = false,
   });
 
   factory TaskModel.fromMap(Map<String, dynamic> map) {
@@ -117,6 +119,7 @@ class TaskModel {
       priority: _parsePriority(map['priority']),
       totalSubtasks: map['total_subtasks'] ?? 0,
       completedSubtasks: map['completed_subtasks'] ?? 0,
+      isCompleted: (map['status'] ?? 0) == 1,
     );
   }
 

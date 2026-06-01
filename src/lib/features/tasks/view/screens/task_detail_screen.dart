@@ -7,6 +7,8 @@ import 'package:task_management_app/features/category/view/widgets/category_choi
 import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
 import 'package:task_management_app/features/tag/model/tag_model.dart';
 import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
 
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../model/task_model.dart';
@@ -25,13 +27,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   late TextEditingController _titleController;
   late TimeOfDay _startTime;
   late TimeOfDay _endTime; // Theo DB của ông thì nó tương ứng với due_time
+  late DateTime _taskDate;
   late CategoryModel _currentCategory;
   late List<TagModel> _currentTags;
   final TextEditingController _subtaskController = TextEditingController();
   late Future<List<dynamic>> _subtasksFuture;
-  
-  // Thêm biến này để fix lỗi hiệu năng gọi API liên tục của FutureBuilder
-  late Future<List<dynamic>> _notesFuture; // Sửa lại List<NoteModel> nếu ông có Model riêng
+  late Future<List<dynamic>> _notesFuture;
+  late bool _isCompleted;
 
   @override
   void initState() {
@@ -39,18 +41,65 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     _titleController = TextEditingController(text: widget.task.title);
     _startTime = widget.task.startTime;
     _endTime = widget.task.endTime;
+    _taskDate = widget.task.date;
     _currentCategory = widget.task.category;
     _currentTags = List.from(widget.task.tags);
+    _isCompleted = widget.task.isCompleted;
     _subtasksFuture = context.read<TaskViewModel>().getSubtasksForTask(widget.task.id.toString());
-
-    // Gọi API lấy Note lần đầu tiên
     _notesFuture = context.read<TaskViewModel>().getNotesForTask(widget.task.id.toString());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      await _refreshTaskFromStore();
       context.read<CategoryViewModel>().loadCategories();
       context.read<TagViewModel>().loadTags();
     });
+  }
+
+  Future<void> _refreshTaskFromStore() async {
+    final taskVM = context.read<TaskViewModel>();
+    await taskVM.fetchTasks();
+    final latest = taskVM.getTaskById(widget.task.id.toString());
+    if (latest == null) return;
+
+    bool needsUpdate = false;
+    if (_titleController.text != latest.title) {
+      _titleController.text = latest.title;
+    }
+    if (_startTime != latest.startTime) {
+      _startTime = latest.startTime;
+      needsUpdate = true;
+    }
+    if (_endTime != latest.endTime) {
+      _endTime = latest.endTime;
+      needsUpdate = true;
+    }
+    if (_taskDate != latest.date) {
+      _taskDate = latest.date;
+      needsUpdate = true;
+    }
+    if (_isCompleted != latest.isCompleted) {
+      _isCompleted = latest.isCompleted;
+      needsUpdate = true;
+    }
+    if (latest.category.id != _currentCategory.id) {
+      _currentCategory = latest.category;
+      needsUpdate = true;
+    }
+    if (latest.tags.isNotEmpty && latest.tags != _currentTags) {
+      _currentTags = List.from(latest.tags);
+      needsUpdate = true;
+    }
+
+    if (needsUpdate && mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _refreshStatistics() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+    await context.read<StatisticsViewmodel>().getStatisticsData(userId);
   }
 
   @override
@@ -122,30 +171,30 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   // Widget hiển thị Danh Sách Note
   Widget _buildNotesSection(BuildContext context, String taskId) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Notes', style: Theme.of(context).textTheme.titleLarge),
+            Text('Notes', style: theme.textTheme.titleLarge),
             IconButton(
-              icon: const Icon(Icons.add_circle, color: Colors.blue, size: 30),
+              icon: Icon(Icons.add_circle, color: theme.colorScheme.primary, size: 30),
               onPressed: () => _showAddNoteDialog(context, taskId),
             ),
           ],
         ),
         const SizedBox(height: 10),
-        
-        // Truyền _notesFuture vào đây thay vì gọi thẳng API
-        FutureBuilder<List<dynamic>>( // Ép kiểu lại thành List<NoteModel> theo ý ông nhé
+
+        FutureBuilder<List<dynamic>>(
           future: _notesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Text('Chưa có ghi chú nào.', style: TextStyle(color: Colors.grey));
+              return Text('Chưa có ghi chú nào.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant));
             }
 
             final notes = snapshot.data!;
@@ -157,8 +206,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 10),
                   child: ListTile(
-                    leading: const Icon(Icons.sticky_note_2, color: Colors.amber),
-                    title: Text(notes[index].content), // Đảm bảo model note có field content
+                    leading: Icon(Icons.sticky_note_2, color: theme.colorScheme.tertiary),
+                    title: Text(notes[index].content),
                   ),
                 );
               },
@@ -169,13 +218,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
   Widget _buildSubtasksSection(BuildContext context, String taskId) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Subtasks', style: Theme.of(context).textTheme.titleLarge),
+        Text('Subtasks', style: theme.textTheme.titleLarge),
         const SizedBox(height: 10),
         
-        // Ô nhập thêm Subtask nhanh
         Row(
           children: [
             Expanded(
@@ -190,14 +239,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.add_circle, color: Colors.blue, size: 30),
+              icon: Icon(Icons.add_circle, color: theme.colorScheme.primary, size: 30),
               onPressed: () => _handleAddSubtask(taskId),
             ),
           ],
         ),
         const SizedBox(height: 15),
 
-        // Danh sách Subtask từ DB
         FutureBuilder<List<dynamic>>(
           future: _subtasksFuture,
           builder: (context, snapshot) {
@@ -205,7 +253,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               return const Center(child: CircularProgressIndicator());
             }
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Text('Chưa có subtask nào.', style: TextStyle(color: Colors.grey));
+              return Text('Chưa có subtask nào.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant));
             }
 
             final subtasks = snapshot.data!;
@@ -220,10 +268,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
-                    color: isDone ? Colors.blue.withValues(alpha: 0.1) : Theme.of(context).colorScheme.surface,
+                    color: isDone
+                        ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                        : theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isDone ? Colors.blue : Colors.grey.withValues(alpha: 0.3),
+                      color: isDone
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.outline.withValues(alpha: 0.7),
                     ),
                   ),
                   child: ListTile(
@@ -240,19 +292,21 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       },
                       child: Icon(
                         isDone ? Icons.check_circle : Icons.radio_button_unchecked,
-                        color: isDone ? Colors.blue : Colors.grey,
+                        color: isDone
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant,
                         size: 28,
                       ),
                     ),
                     title: Text(
                       subtask['content'],
                       style: TextStyle(
-                        color: isDone ? Colors.blue : Theme.of(context).colorScheme.onSurface,
+                        color: isDone ? theme.colorScheme.primary : theme.colorScheme.onSurface,
                         decoration: isDone ? TextDecoration.lineThrough : null,
                       ),
                     ),
                     trailing: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.redAccent, size: 20),
+                      icon: Icon(Icons.close, color: theme.colorScheme.error, size: 20),
                       onPressed: () async {
                         await context.read<TaskViewModel>().deleteSubtask(subtask['id'].toString());
                         setState(() {
@@ -330,12 +384,23 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
+  Future<void> _toggleCompleted(bool value) async {
+    setState(() {
+      _isCompleted = value;
+    });
+    await context.read<TaskViewModel>().updateTask(
+      widget.task.id.toString(),
+      {'status': value ? 1 : 0},
+    );
+    await _refreshStatistics();
+  }
+
   @override
   Widget build(BuildContext context) {
     final categoryViewModel = context.watch<CategoryViewModel>();
     final tagViewModel = context.watch<TagViewModel>();
-    String formattedDate = DateFormat('EEEE, d MMMM').format(widget.task.date);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    String formattedDate = DateFormat('EEEE, d MMMM').format(_taskDate);
+    final theme = Theme.of(context);
 
     final categories = categoryViewModel.categories;
     final tags = tagViewModel.tags;
@@ -345,29 +410,28 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+      backgroundColor: theme.colorScheme.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: Theme.of(context).colorScheme.onSurface,
+            color: theme.colorScheme.onSurface,
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Task Details',
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
+            color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
         actions: [
-          // TRONG APPBAR ACTIONS
           IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+            icon: Icon(Icons.delete_outline_rounded, color: theme.colorScheme.error),
             onPressed: () {
               final taskVM = context.read<TaskViewModel>();
               
@@ -387,7 +451,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         if (ctx.mounted) Navigator.pop(ctx);
                         if (context.mounted) Navigator.pop(context);
                       },
-                      child: const Text('Xóa task này', style: TextStyle(color: Colors.orange)),
+                      child: Text('Xóa task này', style: TextStyle(color: theme.colorScheme.tertiary)),
                     ),
 
                     if (widget.task.templateId != null)
@@ -397,7 +461,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           if (ctx.mounted) Navigator.pop(ctx);
                           if (context.mounted) Navigator.pop(context);
                         },
-                        child: const Text('Xóa toàn bộ chuỗi', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          'Xóa toàn bộ chuỗi',
+                          style: TextStyle(color: theme.colorScheme.error, fontWeight: FontWeight.bold),
+                        ),
                       ),
                   ],
                 ),
@@ -415,11 +482,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             child: Container(
               margin: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
+                color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(30),
-                border: isDark
-                    ? Border.all(color: Theme.of(context).colorScheme.outline)
-                    : null,
+                border: Border.all(color: theme.colorScheme.outline),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -439,8 +504,19 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       hint: '',
                       controller: _titleController,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 10),
 
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Hoàn thành', style: theme.textTheme.titleMedium),
+                        Switch(
+                          value: _isCompleted,
+                          onChanged: _toggleCompleted,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
                     // Category
                     Text(
                       'Category',
@@ -585,7 +661,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       child: ElevatedButton(
                         onPressed: _saveChanges,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor: theme.colorScheme.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 50,

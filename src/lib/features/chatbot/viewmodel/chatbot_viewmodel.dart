@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../model/chatmessage_model.dart';
 import '../services/chatbot_services.dart';
+import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
+import 'package:task_management_app/features/tasks/viewmodel/task_viewmodel.dart';
 
 class ChatBotViewModel extends ChangeNotifier {
   static const String _historyKey = 'chatbot_history_v1';
@@ -10,8 +13,12 @@ class ChatBotViewModel extends ChangeNotifier {
 
   final _aiService = ChatBotAssistantService();
   final List<ChatMessageModel> _messages = [];
+  final TaskViewModel? _taskViewModel;
+  final StatisticsViewmodel? _statisticsViewmodel;
 
-  ChatBotViewModel() {
+  ChatBotViewModel({TaskViewModel? taskViewModel, StatisticsViewmodel? statisticsViewmodel})
+      : _taskViewModel = taskViewModel,
+        _statisticsViewmodel = statisticsViewmodel {
     _loadHistory();
   }
 
@@ -71,6 +78,15 @@ class ChatBotViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> _refreshAfterMutation() async {
+    await _taskViewModel?.fetchTasks();
+
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId != null) {
+      await _statisticsViewmodel?.getStatisticsData(userId);
+    }
+  }
+
   Future<void> sendMessage(String text) async {
     final normalizedText = text.trim();
     if (normalizedText.isEmpty) return;
@@ -82,7 +98,11 @@ class ChatBotViewModel extends ChangeNotifier {
 
     final response = await _aiService.sendMessage(normalizedText);
 
-    _messages.add(ChatMessageModel(text: response, isUser: false));
+    if (response.didMutateTasks) {
+      await _refreshAfterMutation();
+    }
+
+    _messages.add(ChatMessageModel(text: response.text, isUser: false));
     _isLoading = false;
     await _saveHistory();
     notifyListeners();

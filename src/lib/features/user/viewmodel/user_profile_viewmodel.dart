@@ -13,7 +13,7 @@ class UserProfileViewModel extends ChangeNotifier {
   final bool useMockData;
   String? _lastAppliedAppearance;
 
-  UserProfileViewModel({this.useMockData = true});
+  UserProfileViewModel({this.useMockData = false});
 
   UserProfileModel? _user;
   UserProfileModel? get user => _user;

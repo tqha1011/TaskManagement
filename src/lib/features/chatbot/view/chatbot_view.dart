@@ -7,6 +7,8 @@ import 'package:task_management_app/features/chatbot/view/widgets/message_tile.d
 import 'package:task_management_app/features/chatbot/view/widgets/typing_indicator.dart';
 
 import '../viewmodel/chatbot_viewmodel.dart';
+import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
+import 'package:task_management_app/features/tasks/viewmodel/task_viewmodel.dart';
 
 class ChatBotView extends StatelessWidget {
   const ChatBotView({super.key, this.userAvatarUrl});
@@ -16,7 +18,10 @@ class ChatBotView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ChatBotViewModel(),
+      create: (context) => ChatBotViewModel(
+        taskViewModel: context.read<TaskViewModel>(),
+        statisticsViewmodel: context.read<StatisticsViewmodel>(),
+      ),
       child: _ChatBotViewBody(userAvatarUrl: userAvatarUrl),
     );
   }
