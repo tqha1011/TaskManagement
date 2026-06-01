@@ -40,30 +40,32 @@ class UserProfileView extends StatelessWidget {
           ),
         ],
       ),
-      body: Consumer<UserProfileViewModel>(
-        builder: (context, vm, child) {
-          return AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: vm.isLoading
-                ? Center(
-                    key: const ValueKey('loading'),
-                    child: CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.primary,
+      body: SafeArea(
+        child: Consumer<UserProfileViewModel>(
+          builder: (context, vm, child) {
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: vm.isLoading
+                  ? Center(
+                      key: const ValueKey('loading'),
+                      child: CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    )
+                  : vm.user == null
+                  ? const Center(
+                      key: ValueKey('error'),
+                      child: Text("Error loading profile"),
+                    )
+                  : Builder(
+                      builder: (innerContext) {
+                        vm.syncThemeWithProfile(innerContext);
+                        return _buildProfileContent(innerContext, vm);
+                      },
                     ),
-                  )
-                : vm.user == null
-                ? const Center(
-                    key: ValueKey('error'),
-                    child: Text("Error loading profile"),
-                  )
-                : Builder(
-                    builder: (innerContext) {
-                      vm.syncThemeWithProfile(innerContext);
-                      return _buildProfileContent(innerContext, vm);
-                    },
-                  ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -72,7 +74,9 @@ class UserProfileView extends StatelessWidget {
     final user = vm.user!;
     return SingleChildScrollView(
       key: const ValueKey('content'),
-      physics: const BouncingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
       child: Column(
         children: [

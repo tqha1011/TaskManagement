@@ -24,7 +24,15 @@ class _NotificationTimePickerState extends State<NotificationTimePicker> {
 
   Future<void> _loadSavedTime() async {
     final saved = await _service.getSavedTime();
-    setState(() => _selectedTime = saved);
+    final enabled = await _service.getNotificationEnabled();
+    if (!mounted) return;
+    setState(() {
+      _selectedTime = saved;
+      _isEnabled = enabled;
+    });
+    if (enabled) {
+      await _service.registerDailyTask(saved);
+    }
   }
 
   Future<void> _pickTime() async {
@@ -34,30 +42,22 @@ class _NotificationTimePickerState extends State<NotificationTimePicker> {
     );
     if (picked != null) {
       setState(() => _selectedTime = picked);
-      if (_isEnabled) _scheduleNotification();
+      if (_isEnabled) {
+        await _service.updateNotificationSettings(
+          isEnabled: true,
+          time: _selectedTime,
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Đã đặt thông báo lúc ${_selectedTime.format(context)} mỗi ngày',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     }
-  }
-
-  void _scheduleNotification() {
-    final viewModel = context.read<TaskViewModel>();
-    final tasks = viewModel.tasks;
-
-    _service.scheduleDailyNotification(
-      time: _selectedTime,
-      lowCount: tasks.where((t) => t.priority == Priority.low).length,
-      mediumCount: tasks.where((t) => t.priority == Priority.medium).length,
-      highCount: tasks.where((t) => t.priority == Priority.high).length,
-      urgentCount: tasks.where((t) => t.priority == Priority.urgent).length,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Đã đặt thông báo lúc ${_selectedTime.format(context)} mỗi ngày',
-        ),
-        backgroundColor: Colors.green,
-      ),
-    );
   }
 
   @override
@@ -109,12 +109,23 @@ class _NotificationTimePickerState extends State<NotificationTimePicker> {
               ),
               Switch(
                 value: _isEnabled,
-                onChanged: (val) {
+                onChanged: (val) async {
                   setState(() => _isEnabled = val);
+                  await _service.updateNotificationSettings(
+                    isEnabled: val,
+                    time: _selectedTime,
+                  );
+                  if (!context.mounted) return;
                   if (val) {
-                    _scheduleNotification();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Đã đặt thông báo lúc ${_selectedTime.format(context)} mỗi ngày',
+                        ),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
                   } else {
-                    _service.cancelNotification();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Đã tắt thông báo'),

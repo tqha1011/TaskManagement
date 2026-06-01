@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart'; // Import thêm Provider
 
+import '../../../core/services/notification_service.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../auth/presentation/view/auth_gate.dart';
 import '../model/user_profile_model.dart';
@@ -11,6 +12,7 @@ class UserProfileViewModel extends ChangeNotifier {
   final UserService _userService = UserService();
   final _supabase = Supabase.instance.client;
   final bool useMockData;
+  final NotificationService _notificationService = NotificationService();
   String? _lastAppliedAppearance;
 
   UserProfileViewModel({this.useMockData = false});
@@ -33,6 +35,12 @@ class UserProfileViewModel extends ChangeNotifier {
       } else {
         _user = await _userService.fetchUserProfile();
       }
+
+      final isEnabled = await _notificationService.getNotificationEnabled();
+      if (_user != null) {
+        _user!.isNotificationEnabled = isEnabled;
+      }
+
       _lastAppliedAppearance = null;
     } catch (e) {
       debugPrint("Error loading profile: $e");
@@ -73,11 +81,11 @@ class UserProfileViewModel extends ChangeNotifier {
   }
 
   /// Toggle notification preference
-  void toggleNotification(bool value) {
-    if (_user != null) {
-      _user!.isNotificationEnabled = value;
-      notifyListeners();
-    }
+  Future<void> toggleNotification(bool value) async {
+    if (_user == null) return;
+    _user!.isNotificationEnabled = value;
+    notifyListeners();
+    await _notificationService.updateNotificationSettings(isEnabled: value);
   }
 
   void updateAppearance(BuildContext context, String newAppearance) {

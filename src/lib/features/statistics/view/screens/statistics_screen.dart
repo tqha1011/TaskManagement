@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodel/statistics_viewmodel.dart';
 import '../widgets/statistics_widgets.dart';
+import 'package:task_management_app/features/chatbot/view/widgets/user_avatar.dart';
+import 'package:task_management_app/features/user/viewmodel/user_profile_viewmodel.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -36,6 +38,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final profileVm = context.watch<UserProfileViewModel>();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -82,11 +85,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       children: [
                         Row(
                           children: [
-                            const CircleAvatar(
-                              radius: 22,
-                              backgroundImage: NetworkImage(
-                                'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-                              ),
+                            UserAvatar(
+                              size: 44,
+                              avatarUrl: profileVm.user?.avatarUrl,
                             ),
                             const SizedBox(width: 15),
                             Text(

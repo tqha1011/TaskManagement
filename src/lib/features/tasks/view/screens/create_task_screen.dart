@@ -14,12 +14,10 @@ import 'package:task_management_app/features/category/view/widgets/category_choi
 import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
 import 'package:task_management_app/features/tag/view/widgets/tag_selector.dart';
 import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
-import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
 
 // ============================================================================
 // 1. STATE MANAGEMENT (PROVIDER)
 // ============================================================================
-
 class CreateTaskProvider extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
 
@@ -58,6 +56,11 @@ class CreateTaskProvider extends ChangeNotifier {
 
   void setStartTime(TimeOfDay value) {
     _startTime = value;
+    final endMinutes = _endTime.hour * 60 + _endTime.minute;
+    final startMinutes = _startTime.hour * 60 + _startTime.minute;
+    if (endMinutes <= startMinutes) {
+      _endTime = _addDurationToTime(_startTime, const Duration(hours: 1));
+    }
     notifyListeners();
   }
 
@@ -66,7 +69,22 @@ class CreateTaskProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> submitTask(
+  void resetDefaults() {
+    _selectedDate = DateTime.now();
+    _startTime = TimeOfDay.now();
+    _endTime = _addDurationToTime(_startTime, const Duration(hours: 1));
+    _isRepeating = false;
+    _repeatType = 'daily';
+    notifyListeners();
+  }
+
+  TimeOfDay _addDurationToTime(TimeOfDay base, Duration offset) {
+    final totalMinutes = base.hour * 60 + base.minute + offset.inMinutes;
+    final normalized = totalMinutes % (24 * 60);
+    return TimeOfDay(hour: normalized ~/ 60, minute: normalized % 60);
+  }
+
+  Future<bool> submitTask(
     BuildContext context, {
     required String taskName,
     required dynamic priority,
@@ -76,16 +94,16 @@ class CreateTaskProvider extends ChangeNotifier {
     // Basic validation
     if (taskName.trim().isEmpty) {
       _showSnackBar(context, "Task name is required.");
-      return;
+      return false;
     }
 
     if (categoryId == null) {
       _showSnackBar(context, "Please select a category.");
-      return;
+      return false;
     }
 
     final user = _supabase.auth.currentUser;
-    if (user == null) return;
+    if (user == null) return false;
 
     _isLoading = true;
     notifyListeners();
@@ -179,10 +197,13 @@ class CreateTaskProvider extends ChangeNotifier {
       if (context.mounted) {
         _showSnackBar(context, "Failed to create task: $e");
       }
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+
+    return true;
   }
 
   void _showSnackBar(BuildContext context, String message) {
@@ -195,7 +216,6 @@ class CreateTaskProvider extends ChangeNotifier {
 // ============================================================================
 // 2. USER INTERFACE (UI)
 // ============================================================================
-
 class CreateTaskScreen extends StatefulWidget {
   const CreateTaskScreen({super.key});
 
@@ -212,6 +232,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      context.read<CreateTaskProvider>().resetDefaults();
       context.read<CategoryViewModel>().loadCategories();
       context.read<TagViewModel>().loadTags();
     });
@@ -487,38 +508,29 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     final provider = context.watch<CreateTaskProvider>();
     return Center(
       child: ElevatedButton(
-        onPressed: provider.isLoading ? null : () { 
-          final taskVM = context.read<TaskViewModel>();
-          final tagVM = context.read<TagViewModel>();
-          final statsVM = context.read<StatisticsViewmodel>();
-          final userId = Supabase.instance.client.auth.currentUser?.id;
-          final taskName = _nameController.text;
-          final selectedPriority = taskVM.selectedPriority;
-          final selectedTags = List.from(tagVM.selectedTags);
+        onPressed: provider.isLoading
+            ? null
+            : () async {
+                final taskVM = context.read<TaskViewModel>();
+                final tagVM = context.read<TagViewModel>();
+                final taskName = _nameController.text;
+                final selectedPriority = taskVM.selectedPriority;
+                final selectedTags = List.from(tagVM.selectedTags);
 
-          
-          Navigator.pop(context);
+                final success = await provider.submitTask(
+                  context,
+                  taskName: taskName,
+                  priority: selectedPriority,
+                  tags: selectedTags,
+                  categoryId: _selectedCategoryId,
+                );
 
-          
-          provider.submitTask(
-            context, 
-            taskName: taskName,
-            priority: selectedPriority,
-            tags: selectedTags,
-            categoryId: _selectedCategoryId,
-          ).then((_) {
-            
-            taskVM.fetchTasks();
-            if (userId != null) {
-              statsVM.getStatisticsData(userId);
-            }
-            taskVM.reset();
-            tagVM.resetSelection();
-            debugPrint("Task created");
-          }).catchError((error) {
-            debugPrint("Lỗi: $error");
-          });
-        },
+                if (!success || !context.mounted) return;
+
+                taskVM.reset();
+                tagVM.resetSelection();
+                Navigator.pop(context, provider.selectedDate);
+              },
         style: ElevatedButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: Colors.white,

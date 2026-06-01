@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class UserProfileModel {
   final String id;
   final String name;
@@ -28,13 +30,29 @@ class UserProfileModel {
     }
 
     Map<DateTime, int> parseHeatmap = {};
-    if (json['heatmapData'] != null) {
-      final Map<String, dynamic> rawHeatmap = json['heatmapData'];
-      rawHeatmap.forEach((dateString, count) {
+    final rawHeatmapValue = json['heatmapData'] ?? json['heatmap_data'];
+    Map<dynamic, dynamic>? rawHeatmap;
+    if (rawHeatmapValue is Map) {
+      rawHeatmap = rawHeatmapValue;
+    } else if (rawHeatmapValue is String && rawHeatmapValue.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawHeatmapValue);
+        if (decoded is Map) {
+          rawHeatmap = decoded;
+        }
+      } catch (_) {
+        // Ignore malformed JSON heatmap.
+      }
+    }
+
+    if (rawHeatmap != null) {
+      rawHeatmap.forEach((dateKey, count) {
+        final dateString = dateKey?.toString();
+        if (dateString == null || dateString.isEmpty) return;
         try {
           parseHeatmap[DateTime.parse(dateString)] = parseInt(count);
-        } catch (e) {
-          // skip error
+        } catch (_) {
+          // Skip invalid date keys.
         }
       });
     }

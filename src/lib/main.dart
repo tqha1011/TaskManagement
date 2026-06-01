@@ -6,6 +6,7 @@ import 'package:task_management_app/features/category/viewmodel/category_viewmod
 import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
 import 'package:task_management_app/features/tasks/viewmodel/task_viewmodel.dart';
 import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
+import 'package:task_management_app/features/user/viewmodel/user_profile_viewmodel.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/notification_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -64,6 +65,9 @@ Future<void> main() async {
         ChangeNotifierProvider<TagViewModel>(create: (_) => TagViewModel()),
         ChangeNotifierProvider<StatisticsViewmodel>(
           create: (_) => StatisticsViewmodel(),
+        ),
+        ChangeNotifierProvider<UserProfileViewModel>(
+          create: (_) => UserProfileViewModel(useMockData: false),
         ),
       ],
       child: const TaskApp(),

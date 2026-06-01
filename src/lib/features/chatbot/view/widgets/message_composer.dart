@@ -6,11 +6,15 @@ class MessageComposer extends StatelessWidget {
     required this.controller,
     required this.onSend,
     required this.isSending,
+    required this.onMicPressed,
+    required this.isListening,
   });
 
   final TextEditingController controller;
   final VoidCallback onSend;
   final bool isSending;
+  final VoidCallback onMicPressed;
+  final bool isListening;
 
   @override
   Widget build(BuildContext context) {
@@ -58,8 +62,11 @@ class MessageComposer extends StatelessWidget {
             IconButton(
               constraints: const BoxConstraints.tightFor(width: 40, height: 40),
               padding: EdgeInsets.zero,
-              onPressed: () {},
-              icon: Icon(Icons.mic, color: scheme.onSurfaceVariant),
+              onPressed: isSending ? null : onMicPressed,
+              icon: Icon(
+                isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
+                color: isListening ? scheme.primary : scheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(width: 6),
             SizedBox(
@@ -89,4 +96,3 @@ class MessageComposer extends StatelessWidget {
     );
   }
 }
-
