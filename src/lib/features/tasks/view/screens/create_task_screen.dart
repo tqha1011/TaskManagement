@@ -19,7 +19,6 @@ import 'package:task_management_app/features/statistics/viewmodel/statistics_vie
 // ============================================================================
 // 1. STATE MANAGEMENT (PROVIDER)
 // ============================================================================
-
 class CreateTaskProvider extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
 
@@ -58,6 +57,11 @@ class CreateTaskProvider extends ChangeNotifier {
 
   void setStartTime(TimeOfDay value) {
     _startTime = value;
+    final endMinutes = _endTime.hour * 60 + _endTime.minute;
+    final startMinutes = _startTime.hour * 60 + _startTime.minute;
+    if (endMinutes <= startMinutes) {
+      _endTime = _addDurationToTime(_startTime, const Duration(hours: 1));
+    }
     notifyListeners();
   }
 
@@ -66,7 +70,22 @@ class CreateTaskProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> submitTask(
+  void resetDefaults() {
+    _selectedDate = DateTime.now();
+    _startTime = TimeOfDay.now();
+    _endTime = _addDurationToTime(_startTime, const Duration(hours: 1));
+    _isRepeating = false;
+    _repeatType = 'daily';
+    notifyListeners();
+  }
+
+  TimeOfDay _addDurationToTime(TimeOfDay base, Duration offset) {
+    final totalMinutes = base.hour * 60 + base.minute + offset.inMinutes;
+    final normalized = totalMinutes % (24 * 60);
+    return TimeOfDay(hour: normalized ~/ 60, minute: normalized % 60);
+  }
+
+  Future<bool> submitTask(
     BuildContext context, {
     required String taskName,
     required dynamic priority,
@@ -76,112 +95,178 @@ class CreateTaskProvider extends ChangeNotifier {
     // Basic validation
     if (taskName.trim().isEmpty) {
       _showSnackBar(context, "Task name is required.");
-      return;
+      return false;
     }
 
     if (categoryId == null) {
       _showSnackBar(context, "Please select a category.");
-      return;
+      return false;
     }
 
     final user = _supabase.auth.currentUser;
-    if (user == null) return;
+    if (user == null) return false;
 
     _isLoading = true;
     notifyListeners();
 
     try {
-      // 1. Map Priority String to ID (1: Urgent, 2: High, 3: Medium, 4: Low)
-      int priorityId = 3; 
+      // 1. Map Priority String to ID
+      int priorityId = 3;
       final String priorityStr = priority.toString().toLowerCase();
       if (priorityStr.contains('urgent')) {
         priorityId = 1;
-      } else if (priorityStr.contains('high')) priorityId = 2;
-      else if (priorityStr.contains('medium')) priorityId = 3;
+      } else if (priorityStr.contains('high'))
+        priorityId = 2;
+      else if (priorityStr.contains('medium'))
+        priorityId = 3;
       else if (priorityStr.contains('low')) priorityId = 4;
 
-      // 2. Format Start and Due timestamps from Date + Time pickers
-      // FIX: Add .toUtc() before .toIso8601String() to prevent timezone shifts
+      // 2. Format Start and Due timestamps
       final startTimeDb = DateTime(
-        _selectedDate.year, _selectedDate.month, _selectedDate.day,
-        _startTime.hour, _startTime.minute,
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _startTime.hour,
+        _startTime.minute,
       ).toUtc().toIso8601String();
 
       final dueTimeDb = DateTime(
-        _selectedDate.year, _selectedDate.month, _selectedDate.day,
-        _endTime.hour, _endTime.minute,
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _endTime.hour,
+        _endTime.minute,
       ).toUtc().toIso8601String();
 
       final DateTime baseStart = DateTime(
-        _selectedDate.year, _selectedDate.month, _selectedDate.day,
-        _startTime.hour, _startTime.minute,
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _startTime.hour,
+        _startTime.minute,
       );
       final DateTime baseDue = DateTime(
-        _selectedDate.year, _selectedDate.month, _selectedDate.day,
-        _endTime.hour, _endTime.minute,
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _endTime.hour,
+        _endTime.minute,
       );
 
       int? createdTemplateID;
-      if(_isRepeating){
-          final templateResponse = await _supabase.from('task_template').insert({
+      if (_isRepeating) {
+        final templateResponse = await _supabase.from('task_template').insert({
           'title': taskName.trim(),
-          'repeat_type': _repeatType, // 'daily' hoặc 'weekly'
+          'repeat_type': _repeatType,
           'category_id': categoryId,
           'priority': priorityId,
           'profile_id': user.id,
           'start_time': startTimeDb,
           'is_active': true,
         }).select('id').single();
-        
+
         createdTemplateID = templateResponse['id'];
       }
-      int totalTasks = 1;
-      if(_isRepeating){
-        totalTasks = (_repeatType == 'daily') ? 30 : 4;
-      }
-      // 3. INSERT into 'task' table and retrieve the new ID
-      for (int i = 0; i < totalTasks; i++) {
-      Duration offset = Duration.zero;
-      if (_isRepeating) {
-        offset = (_repeatType == 'daily') 
-            ? Duration(days: i) 
-            : Duration(days: i * 7);
-      }
 
-      // 2. Cộng offset vào mốc thời gian gốc
-      final String currentStart = baseStart.add(offset).toUtc().toIso8601String();
-      final String currentDue = baseDue.add(offset).toUtc().toIso8601String();
-
-      // 3. Bắn dữ liệu vào bảng 'task' (Task con)
-      final taskResponse = await _supabase.from('task').insert({
+      // --- CRITICAL FIX: Await the first task insertion directly ---
+      final firstTaskResponse = await _supabase.from('task').insert({
         'title': taskName.trim(),
         'priority': priorityId,
         'profile_id': user.id,
         'category_id': categoryId,
-        'template_id': createdTemplateID, 
-        'start_time': currentStart,
-        'due_time': currentDue,
-        'status': 0, 
+        'template_id': createdTemplateID,
+        'start_time': startTimeDb,
+        'due_time': dueTimeDb,
+        'status': 0,
       }).select('id').single();
 
-
+      // Insert tags for the first task
       if (tags.isNotEmpty) {
-        final int newTaskId = taskResponse['id'];
-        final tagLinks = tags.map((tag) => {
-          'task_id': newTaskId,
-          'tag_id': tag.id, 
-        }).toList();
+        final int firstTaskId = firstTaskResponse['id'];
+        final tagLinks = tags
+            .map((tag) => {
+                  'task_id': firstTaskId,
+                  'tag_id': tag.id,
+                })
+            .toList();
         await _supabase.from('task_tags').insert(tagLinks);
       }
-    }
+
+      // --- Handle Remaining Tasks in Background ---
+      if (_isRepeating) {
+        int totalTasks = (_repeatType == 'daily') ? 30 : 4;
+        _createRemainingTasksInBackground(
+          totalTasks: totalTasks,
+          repeatType: _repeatType,
+          baseStart: baseStart,
+          baseDue: baseDue,
+          taskName: taskName,
+          priorityId: priorityId,
+          user: user,
+          categoryId: categoryId,
+          createdTemplateID: createdTemplateID,
+          tags: tags,
+        );
+      }
     } catch (e) {
       debugPrint("Execution Error: $e");
       if (context.mounted) {
         _showSnackBar(context, "Failed to create task: $e");
       }
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+
+    return true;
+  }
+
+  Future<void> _createRemainingTasksInBackground({
+    required int totalTasks,
+    required String repeatType,
+    required DateTime baseStart,
+    required DateTime baseDue,
+    required String taskName,
+    required int priorityId,
+    required User user,
+    required int? categoryId,
+    required int? createdTemplateID,
+    required List<dynamic> tags,
+  }) async {
+    try {
+      // Start from i = 1 because i = 0 was handled in submitTask
+      for (int i = 1; i < totalTasks; i++) {
+        Duration offset = (repeatType == 'daily') ? Duration(days: i) : Duration(days: i * 7);
+
+        final String currentStart = baseStart.add(offset).toUtc().toIso8601String();
+        final String currentDue = baseDue.add(offset).toUtc().toIso8601String();
+
+        final taskResponse = await _supabase.from('task').insert({
+          'title': taskName.trim(),
+          'priority': priorityId,
+          'profile_id': user.id,
+          'category_id': categoryId,
+          'template_id': createdTemplateID,
+          'start_time': currentStart,
+          'due_time': currentDue,
+          'status': 0,
+        }).select('id').single();
+
+        if (tags.isNotEmpty) {
+          final int newTaskId = taskResponse['id'];
+          final tagLinks = tags
+              .map((tag) => {
+                    'task_id': newTaskId,
+                    'tag_id': tag.id,
+                  })
+              .toList();
+          await _supabase.from('task_tags').insert(tagLinks);
+        }
+      }
+      debugPrint("Background remaining tasks creation completed.");
+    } catch (e) {
+      debugPrint("Background Task Creation Error: $e");
     }
   }
 
@@ -195,7 +280,6 @@ class CreateTaskProvider extends ChangeNotifier {
 // ============================================================================
 // 2. USER INTERFACE (UI)
 // ============================================================================
-
 class CreateTaskScreen extends StatefulWidget {
   const CreateTaskScreen({super.key});
 
@@ -212,6 +296,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      context.read<CreateTaskProvider>().resetDefaults();
       context.read<CategoryViewModel>().loadCategories();
       context.read<TagViewModel>().loadTags();
     });
@@ -487,38 +572,29 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     final provider = context.watch<CreateTaskProvider>();
     return Center(
       child: ElevatedButton(
-        onPressed: provider.isLoading ? null : () { 
-          final taskVM = context.read<TaskViewModel>();
-          final tagVM = context.read<TagViewModel>();
-          final statsVM = context.read<StatisticsViewmodel>();
-          final userId = Supabase.instance.client.auth.currentUser?.id;
-          final taskName = _nameController.text;
-          final selectedPriority = taskVM.selectedPriority;
-          final selectedTags = List.from(tagVM.selectedTags);
+        onPressed: provider.isLoading
+            ? null
+            : () async {
+                final taskVM = context.read<TaskViewModel>();
+                final tagVM = context.read<TagViewModel>();
+                final taskName = _nameController.text;
+                final selectedPriority = taskVM.selectedPriority;
+                final selectedTags = List.from(tagVM.selectedTags);
 
-          
-          Navigator.pop(context);
+                final success = await provider.submitTask(
+                  context,
+                  taskName: taskName,
+                  priority: selectedPriority,
+                  tags: selectedTags,
+                  categoryId: _selectedCategoryId,
+                );
 
-          
-          provider.submitTask(
-            context, 
-            taskName: taskName,
-            priority: selectedPriority,
-            tags: selectedTags,
-            categoryId: _selectedCategoryId,
-          ).then((_) {
-            
-            taskVM.fetchTasks();
-            if (userId != null) {
-              statsVM.getStatisticsData(userId);
-            }
-            taskVM.reset();
-            tagVM.resetSelection();
-            debugPrint("Task created");
-          }).catchError((error) {
-            debugPrint("Lỗi: $error");
-          });
-        },
+                if (!success || !context.mounted) return;
+
+                taskVM.reset();
+                tagVM.resetSelection();
+                Navigator.pop(context, provider.selectedDate);
+              },
         style: ElevatedButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: Colors.white,

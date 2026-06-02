@@ -34,10 +34,7 @@ class _MainScreenState extends State<MainScreen> {
       child: const FocusScreen(),
     ),
     const StatisticsScreen(),
-    ChangeNotifierProvider(
-      create: (_) => UserProfileViewModel(useMockData: false)..loadProfile(),
-      child: const UserProfileView(),
-    ),
+    const UserProfileView(),
     const SettingsScreen(),
   ];
 
@@ -49,6 +46,7 @@ class _MainScreenState extends State<MainScreen> {
       context.read<CategoryViewModel>().loadCategories();
       context.read<TagViewModel>().loadTags();
       context.read<TaskViewModel>().fetchTasks();
+      context.read<UserProfileViewModel>().loadProfile();
     });
   }
 
@@ -66,6 +64,14 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // --- SYNC THEME WITH PROFILE ON LOAD ---
+    final userVm = context.watch<UserProfileViewModel>();
+    if (!userVm.isLoading && userVm.user != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        userVm.syncThemeWithProfile(context);
+      });
+    }
 
     return Scaffold(
       extendBody: true,

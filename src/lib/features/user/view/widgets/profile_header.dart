@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../model/user_profile_model.dart';
+import '../../viewmodel/user_profile_viewmodel.dart';
 
 class ProfileHeader extends StatelessWidget {
   final UserProfileModel user;
@@ -68,9 +70,7 @@ class ProfileHeader extends StatelessWidget {
               ),
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: () {
-                  // TODO: Handle Edit Profile action
-                },
+                onTap: () => context.read<UserProfileViewModel>().updateAvatar(context),
                 child: Padding(
                   padding: EdgeInsets.all(8.0),
                   child: Icon(

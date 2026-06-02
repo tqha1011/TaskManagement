@@ -9,6 +9,8 @@ import 'create_task_screen.dart';
 import 'package:task_management_app/features/tasks/service/notif_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
+import 'package:task_management_app/features/chatbot/view/widgets/user_avatar.dart';
+import 'package:task_management_app/features/user/viewmodel/user_profile_viewmodel.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,6 +41,47 @@ class _HomeScreenState extends State<HomeScreen> {
     await context.read<StatisticsViewmodel>().getStatisticsData(userId);
   }
 
+  Future<void> _openCreateTask(BuildContext context) async {
+    final createdDate = await Navigator.push<DateTime>(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateTaskScreen()),
+    );
+
+    if (!mounted) return;
+
+    if (createdDate != null) {
+      context.read<TaskViewModel>().setDate(createdDate);
+      await context.read<TaskViewModel>().fetchTasks();
+      await _refreshStatistics();
+      _showSuccessToast(context);
+    }
+  }
+
+  void _showSuccessToast(BuildContext context) {
+    final theme = Theme.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        backgroundColor: theme.colorScheme.surface,
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: theme.colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Đã tạo task thành công',
+                style: TextStyle(color: theme.colorScheme.onSurface),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -52,6 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     String formattedDate = DateFormat('EEEE, d MMMM').format(DateTime.now());
     final viewModel = context.watch<TaskViewModel>();
+    final profileVm = context.watch<UserProfileViewModel>();
     final theme = Theme.of(context);
 
     Map<Priority, List<TaskModel>> grouped = {};
@@ -106,11 +150,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           const SizedBox(width: 15),
-                          const CircleAvatar(
-                            radius: 20,
-                            backgroundImage: NetworkImage(
-                              'https://i.pravatar.cc/150?u=user1',
-                            ),
+                          UserAvatar(
+                            size: 40,
+                            avatarUrl: profileVm.user?.avatarUrl,
                           ),
                           const SizedBox(width: 10),
                           IconButton(
@@ -118,12 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               Icons.add_rounded,
                               color: theme.colorScheme.onPrimary,
                             ),
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const CreateTaskScreen(),
-                              ),
-                            ),
+                            onPressed: () => _openCreateTask(context),
                           ),
                         ],
                       ),
@@ -415,25 +452,14 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const Icon(Icons.notifications_none_rounded, color: Colors.black),
               const SizedBox(width: 15),
-              const CircleAvatar(
-                radius: 20,
-                backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=user1'),
+              UserAvatar(
+                size: 40,
+                avatarUrl: context.watch<UserProfileViewModel>().user?.avatarUrl,
               ),
               const SizedBox(width: 10),
               IconButton(
                 icon: const Icon(Icons.add_rounded, color: Colors.black),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      // Bọc cái ChangeNotifierProvider ở ngay cửa ngõ để cấp Wi-Fi cho màn hình mới
-                      builder: (ctx) => ChangeNotifierProvider(
-                        create: (_) => CreateTaskProvider(), // Lưu ý cần import CreateTaskProvider nếu chưa có
-                        child: const CreateTaskScreen(),
-                      ),
-                    ),
-                  ).then((_) => context.read<TaskViewModel>().fetchTasks());
-                },
+                onPressed: () => _openCreateTask(context),
               ),
             ],
           ),

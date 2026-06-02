@@ -5,6 +5,7 @@ import 'package:task_management_app/features/chatbot/view/widgets/day_separator.
 import 'package:task_management_app/features/chatbot/view/widgets/message_composer.dart';
 import 'package:task_management_app/features/chatbot/view/widgets/message_tile.dart';
 import 'package:task_management_app/features/chatbot/view/widgets/typing_indicator.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../viewmodel/chatbot_viewmodel.dart';
 import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
@@ -39,6 +40,68 @@ class _ChatBotViewBody extends StatefulWidget {
 class _ChatBotViewBodyState extends State<_ChatBotViewBody> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _speechAvailable = false;
+  bool _isListening = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initSpeech();
+  }
+
+  Future<void> _initSpeech() async {
+    final available = await _speech.initialize(
+      onStatus: _handleSpeechStatus,
+      onError: (error) {
+        if (!mounted) return;
+        setState(() => _isListening = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Mic error: ${error.errorMsg}')),
+        );
+      },
+    );
+    if (!mounted) return;
+    setState(() => _speechAvailable = available);
+  }
+
+  void _handleSpeechStatus(String status) {
+    if (!mounted) return;
+    if (status == 'done' || status == 'notListening') {
+      setState(() => _isListening = false);
+    }
+  }
+
+  Future<void> _toggleListening() async {
+    if (!_speechAvailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mic chưa sẵn sàng')),
+      );
+      return;
+    }
+
+    if (_isListening) {
+      await _speech.stop();
+      if (!mounted) return;
+      setState(() => _isListening = false);
+      return;
+    }
+
+    final listening = await _speech.listen(
+      onResult: (result) {
+        if (!mounted) return;
+        setState(() {
+          _controller.text = result.recognizedWords;
+          _controller.selection = TextSelection.fromPosition(
+            TextPosition(offset: _controller.text.length),
+          );
+        });
+      },
+    );
+
+    if (!mounted) return;
+    setState(() => _isListening = listening);
+  }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -54,6 +117,7 @@ class _ChatBotViewBodyState extends State<_ChatBotViewBody> {
 
   @override
   void dispose() {
+    _speech.stop();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -62,6 +126,13 @@ class _ChatBotViewBodyState extends State<_ChatBotViewBody> {
   Future<void> _sendMessage(ChatBotViewModel viewModel) async {
     final text = _controller.text.trim();
     if (text.isEmpty || viewModel.isLoading) return;
+
+    if (_isListening) {
+      await _speech.stop();
+      if (mounted) {
+        setState(() => _isListening = false);
+      }
+    }
 
     _controller.clear();
     _scrollToBottom();
@@ -126,6 +197,8 @@ class _ChatBotViewBodyState extends State<_ChatBotViewBody> {
                 return MessageComposer(
                   controller: _controller,
                   isSending: viewModel.isLoading,
+                  isListening: _isListening,
+                  onMicPressed: _toggleListening,
                   onSend: () => _sendMessage(viewModel),
                 );
               },

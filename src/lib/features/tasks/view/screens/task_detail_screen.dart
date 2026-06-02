@@ -385,14 +385,30 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   Future<void> _toggleCompleted(bool value) async {
+    final bool originalValue = !value;
     setState(() {
       _isCompleted = value;
     });
-    await context.read<TaskViewModel>().updateTask(
-      widget.task.id.toString(),
-      {'status': value ? 1 : 0},
-    );
-    await _refreshStatistics();
+
+    try {
+      await context.read<TaskViewModel>().updateTask(
+            widget.task.id.toString(),
+            {'status': value ? 1 : 0},
+          );
+      await _refreshStatistics();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCompleted = originalValue;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi cập nhật trạng thái: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   @override

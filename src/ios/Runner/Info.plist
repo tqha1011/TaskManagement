@@ -41,6 +41,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Cho phep truy cap micro de nhap giong noi.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Cho phep ung dung nhan dien giong noi cua ban de nhap tin nhan.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
