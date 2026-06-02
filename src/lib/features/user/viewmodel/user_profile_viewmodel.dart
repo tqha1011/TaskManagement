@@ -8,8 +8,11 @@ import '../../auth/presentation/view/auth_gate.dart';
 import '../model/user_profile_model.dart';
 import '../service/user_service.dart';
 
+import '../service/profile_update_service.dart';
+
 class UserProfileViewModel extends ChangeNotifier {
   final UserService _userService = UserService();
+  final ProfileUpdateService _profileUpdateService = ProfileUpdateService();
   final _supabase = Supabase.instance.client;
   final bool useMockData;
   final NotificationService _notificationService = NotificationService();
@@ -36,11 +39,11 @@ class UserProfileViewModel extends ChangeNotifier {
         _user = await _userService.fetchUserProfile();
       }
 
-      final isEnabled = await _notificationService.getNotificationEnabled();
       if (_user != null) {
+        final isEnabled = await _notificationService.getNotificationEnabled();
         _user!.isNotificationEnabled = isEnabled;
       }
-
+      
       _lastAppliedAppearance = null;
     } catch (e) {
       debugPrint("Error loading profile: $e");
@@ -88,16 +91,126 @@ class UserProfileViewModel extends ChangeNotifier {
     await _notificationService.updateNotificationSettings(isEnabled: value);
   }
 
-  void updateAppearance(BuildContext context, String newAppearance) {
-    if (_user != null) {
+  Future<void> updateAvatar(BuildContext context) async {
+    final newUrl = await _profileUpdateService.uploadAndSaveAvatar();
+    if (newUrl != null) {
+      await loadProfile();
+      if (context.mounted) {
+        _showModernSnackBar(
+          context,
+          'Cập nhật ảnh đại diện thành công!',
+          Icons.check_circle_rounded,
+          Theme.of(context).colorScheme.primary,
+        );
+      }
+    } else {
+      if (context.mounted) {
+        _showModernSnackBar(
+          context,
+          'Cập nhật ảnh đại diện thất bại.',
+          Icons.error_outline_rounded,
+          Theme.of(context).colorScheme.error,
+        );
+      }
+    }
+  }
+
+  Future<void> updateUsername(String newName) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
+
+      await _supabase.from('profile').update({'username': newName}).eq('id', user.id);
+      await loadProfile();
+    } catch (e) {
+      debugPrint("Error updating username: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> updatePassword(String oldPassword, String newPassword) async {
+    try {
+      // Supabase handle password update via updateUser
+      await _supabase.auth.updateUser(UserAttributes(password: newPassword));
+    } catch (e) {
+      debugPrint("Error updating password: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> updateAppearance(BuildContext context, String newAppearance) async {
+    if (_user == null) return;
+
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
+
+      // 1. Update DB
+      await _supabase
+          .from('profile')
+          .update({'appearance': newAppearance})
+          .eq('id', user.id);
+
+      // 2. Update Local State
       _user!.appearance = newAppearance;
       _lastAppliedAppearance = newAppearance;
       notifyListeners();
 
+      // 3. Update Theme Provider
       if (context.mounted) {
         context.read<ThemeProvider>().updateTheme(newAppearance);
+        _showModernSnackBar(
+          context,
+          'Đã đổi sang giao diện $newAppearance',
+          Icons.palette_rounded,
+          Theme.of(context).colorScheme.primary,
+        );
+      }
+    } catch (e) {
+      debugPrint("Error updating appearance: $e");
+      if (context.mounted) {
+        _showModernSnackBar(
+          context,
+          'Lỗi khi đổi giao diện: $e',
+          Icons.error_outline_rounded,
+          Theme.of(context).colorScheme.error,
+        );
       }
     }
+  }
+
+  void _showModernSnackBar(
+    BuildContext context,
+    String message,
+    IconData icon,
+    Color color,
+  ) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(20),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        duration: const Duration(seconds: 3),
+        content: Row(
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void syncThemeWithProfile(BuildContext context) {

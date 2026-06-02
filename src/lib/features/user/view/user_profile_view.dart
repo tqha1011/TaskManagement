@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_heatmap_calendar/flutter_heatmap_calendar.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/widgets/notification_time_picker.dart';
+import 'screens/update_password_screen.dart';
 import '../viewmodel/user_profile_viewmodel.dart';
 import 'widgets/logout_button.dart';
 import 'widgets/profile_header.dart';
@@ -107,6 +109,39 @@ class UserProfileView extends StatelessWidget {
           const SizedBox(height: 32),
 
           SettingsSection(
+            title: 'Account Settings',
+            children: [
+              SettingsListTile(
+                icon: Icons.person_outline,
+                title: 'Username',
+                trailing: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                onTap: () => _showUpdateUsernameModal(context, vm),
+              ),
+              Divider(height: 1, indent: 64, endIndent: 24, color: Theme.of(context).colorScheme.outline),
+              SettingsListTile(
+                icon: Icons.lock_outline,
+                title: 'Change Password',
+                trailing: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) => const UpdatePasswordScreen(),
+                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                        return SlideTransition(
+                          position: animation.drive(Tween(begin: const Offset(1, 0), end: Offset.zero).chain(CurveTween(curve: Curves.ease))),
+                          child: child,
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          SettingsSection(
             title: 'Preferences',
             children: [
               SettingsListTile(
@@ -114,7 +149,12 @@ class UserProfileView extends StatelessWidget {
                 title: 'Notifications',
                 iconBgColor: Theme.of(context).colorScheme.outline,
                 iconColor: Theme.of(context).colorScheme.onSurfaceVariant,
-                onTap: () => vm.toggleNotification(!user.isNotificationEnabled),
+                onTap: () => showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => const NotificationTimePicker(),
+                ),
                 trailing: Switch(
                   value: user.isNotificationEnabled,
                   activeThumbColor: Theme.of(context).colorScheme.surface,
@@ -245,6 +285,74 @@ class UserProfileView extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  void _showUpdateUsernameModal(BuildContext context, UserProfileViewModel vm) {
+    final controller = TextEditingController(text: vm.user?.name);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 24,
+          right: 24,
+          top: 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Đổi Username',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'Username mới',
+                border: OutlineInputBorder(),
+              ),
+              autofocus: true,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  try {
+                    await vm.updateUsername(controller.text);
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Đã cập nhật username thành công!'), behavior: SnackBarBehavior.floating),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Lỗi: $e'), behavior: SnackBarBehavior.floating),
+                      );
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Xác nhận'),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
     );
   }
 }

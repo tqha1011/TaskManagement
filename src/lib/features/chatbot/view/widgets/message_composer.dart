@@ -59,14 +59,11 @@ class MessageComposer extends StatelessWidget {
                 ),
               ),
             ),
-            IconButton(
-              constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-              padding: EdgeInsets.zero,
-              onPressed: isSending ? null : onMicPressed,
-              icon: Icon(
-                isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                color: isListening ? scheme.primary : scheme.onSurfaceVariant,
-              ),
+            _MicButton(
+              isListening: isListening,
+              isSending: isSending,
+              onMicPressed: onMicPressed,
+              scheme: scheme,
             ),
             const SizedBox(width: 6),
             SizedBox(
@@ -93,6 +90,76 @@ class MessageComposer extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MicButton extends StatefulWidget {
+  const _MicButton({
+    required this.isListening,
+    required this.isSending,
+    required this.onMicPressed,
+    required this.scheme,
+  });
+
+  final bool isListening;
+  final bool isSending;
+  final VoidCallback onMicPressed;
+  final ColorScheme scheme;
+
+  @override
+  State<_MicButton> createState() => _MicButtonState();
+}
+
+class _MicButtonState extends State<_MicButton> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 1.0, end: 1.4).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        if (widget.isListening)
+          ScaleTransition(
+            scale: _animation,
+            child: Container(
+              width: 35,
+              height: 35,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: widget.scheme.primary.withValues(alpha: 0.2),
+              ),
+            ),
+          ),
+        IconButton(
+          constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+          padding: EdgeInsets.zero,
+          onPressed: widget.isSending ? null : widget.onMicPressed,
+          icon: Icon(
+            widget.isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
+            color: widget.isListening ? widget.scheme.primary : widget.scheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }

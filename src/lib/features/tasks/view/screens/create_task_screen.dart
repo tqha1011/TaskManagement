@@ -109,89 +109,104 @@ class CreateTaskProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Map Priority String to ID (1: Urgent, 2: High, 3: Medium, 4: Low)
-      int priorityId = 3; 
+      // 1. Map Priority String to ID
+      int priorityId = 3;
       final String priorityStr = priority.toString().toLowerCase();
       if (priorityStr.contains('urgent')) {
         priorityId = 1;
-      } else if (priorityStr.contains('high')) priorityId = 2;
-      else if (priorityStr.contains('medium')) priorityId = 3;
+      } else if (priorityStr.contains('high'))
+        priorityId = 2;
+      else if (priorityStr.contains('medium'))
+        priorityId = 3;
       else if (priorityStr.contains('low')) priorityId = 4;
 
-      // 2. Format Start and Due timestamps from Date + Time pickers
-      // FIX: Add .toUtc() before .toIso8601String() to prevent timezone shifts
+      // 2. Format Start and Due timestamps
       final startTimeDb = DateTime(
-        _selectedDate.year, _selectedDate.month, _selectedDate.day,
-        _startTime.hour, _startTime.minute,
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _startTime.hour,
+        _startTime.minute,
       ).toUtc().toIso8601String();
 
       final dueTimeDb = DateTime(
-        _selectedDate.year, _selectedDate.month, _selectedDate.day,
-        _endTime.hour, _endTime.minute,
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _endTime.hour,
+        _endTime.minute,
       ).toUtc().toIso8601String();
 
       final DateTime baseStart = DateTime(
-        _selectedDate.year, _selectedDate.month, _selectedDate.day,
-        _startTime.hour, _startTime.minute,
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _startTime.hour,
+        _startTime.minute,
       );
       final DateTime baseDue = DateTime(
-        _selectedDate.year, _selectedDate.month, _selectedDate.day,
-        _endTime.hour, _endTime.minute,
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _endTime.hour,
+        _endTime.minute,
       );
 
       int? createdTemplateID;
-      if(_isRepeating){
-          final templateResponse = await _supabase.from('task_template').insert({
+      if (_isRepeating) {
+        final templateResponse = await _supabase.from('task_template').insert({
           'title': taskName.trim(),
-          'repeat_type': _repeatType, // 'daily' hoặc 'weekly'
+          'repeat_type': _repeatType,
           'category_id': categoryId,
           'priority': priorityId,
           'profile_id': user.id,
           'start_time': startTimeDb,
           'is_active': true,
         }).select('id').single();
-        
+
         createdTemplateID = templateResponse['id'];
       }
-      int totalTasks = 1;
-      if(_isRepeating){
-        totalTasks = (_repeatType == 'daily') ? 30 : 4;
-      }
-      // 3. INSERT into 'task' table and retrieve the new ID
-      for (int i = 0; i < totalTasks; i++) {
-      Duration offset = Duration.zero;
-      if (_isRepeating) {
-        offset = (_repeatType == 'daily') 
-            ? Duration(days: i) 
-            : Duration(days: i * 7);
-      }
 
-      // 2. Cộng offset vào mốc thời gian gốc
-      final String currentStart = baseStart.add(offset).toUtc().toIso8601String();
-      final String currentDue = baseDue.add(offset).toUtc().toIso8601String();
-
-      // 3. Bắn dữ liệu vào bảng 'task' (Task con)
-      final taskResponse = await _supabase.from('task').insert({
+      // --- CRITICAL FIX: Await the first task insertion directly ---
+      final firstTaskResponse = await _supabase.from('task').insert({
         'title': taskName.trim(),
         'priority': priorityId,
         'profile_id': user.id,
         'category_id': categoryId,
-        'template_id': createdTemplateID, 
-        'start_time': currentStart,
-        'due_time': currentDue,
-        'status': 0, 
+        'template_id': createdTemplateID,
+        'start_time': startTimeDb,
+        'due_time': dueTimeDb,
+        'status': 0,
       }).select('id').single();
 
-
+      // Insert tags for the first task
       if (tags.isNotEmpty) {
-        final int newTaskId = taskResponse['id'];
-        final tagLinks = tags.map((tag) => {
-          'task_id': newTaskId,
-          'tag_id': tag.id, 
-        }).toList();
+        final int firstTaskId = firstTaskResponse['id'];
+        final tagLinks = tags
+            .map((tag) => {
+                  'task_id': firstTaskId,
+                  'tag_id': tag.id,
+                })
+            .toList();
         await _supabase.from('task_tags').insert(tagLinks);
       }
-    }
+
+      // --- Handle Remaining Tasks in Background ---
+      if (_isRepeating) {
+        int totalTasks = (_repeatType == 'daily') ? 30 : 4;
+        _createRemainingTasksInBackground(
+          totalTasks: totalTasks,
+          repeatType: _repeatType,
+          baseStart: baseStart,
+          baseDue: baseDue,
+          taskName: taskName,
+          priorityId: priorityId,
+          user: user,
+          categoryId: categoryId,
+          createdTemplateID: createdTemplateID,
+          tags: tags,
+        );
+      }
     } catch (e) {
       debugPrint("Execution Error: $e");
       if (context.mounted) {
@@ -204,6 +219,54 @@ class CreateTaskProvider extends ChangeNotifier {
     }
 
     return true;
+  }
+
+  Future<void> _createRemainingTasksInBackground({
+    required int totalTasks,
+    required String repeatType,
+    required DateTime baseStart,
+    required DateTime baseDue,
+    required String taskName,
+    required int priorityId,
+    required User user,
+    required int? categoryId,
+    required int? createdTemplateID,
+    required List<dynamic> tags,
+  }) async {
+    try {
+      // Start from i = 1 because i = 0 was handled in submitTask
+      for (int i = 1; i < totalTasks; i++) {
+        Duration offset = (repeatType == 'daily') ? Duration(days: i) : Duration(days: i * 7);
+
+        final String currentStart = baseStart.add(offset).toUtc().toIso8601String();
+        final String currentDue = baseDue.add(offset).toUtc().toIso8601String();
+
+        final taskResponse = await _supabase.from('task').insert({
+          'title': taskName.trim(),
+          'priority': priorityId,
+          'profile_id': user.id,
+          'category_id': categoryId,
+          'template_id': createdTemplateID,
+          'start_time': currentStart,
+          'due_time': currentDue,
+          'status': 0,
+        }).select('id').single();
+
+        if (tags.isNotEmpty) {
+          final int newTaskId = taskResponse['id'];
+          final tagLinks = tags
+              .map((tag) => {
+                    'task_id': newTaskId,
+                    'tag_id': tag.id,
+                  })
+              .toList();
+          await _supabase.from('task_tags').insert(tagLinks);
+        }
+      }
+      debugPrint("Background remaining tasks creation completed.");
+    } catch (e) {
+      debugPrint("Background Task Creation Error: $e");
+    }
   }
 
   void _showSnackBar(BuildContext context, String message) {

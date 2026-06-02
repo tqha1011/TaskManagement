@@ -165,25 +165,25 @@ class TaskViewModel extends ChangeNotifier {
   Future<void> fetchTasks() async {
     final supabase = Supabase.instance.client;
     final user = supabase.auth.currentUser;
-    
-    if (user == null) return; 
+
+    if (user == null) return;
 
     try {
-
       final data = await supabase
           .from('task')
-          .select('*, subtask(*)') 
-          .eq('profile_id', user.id) 
+          .select('*, subtask(*)')
+          .eq('profile_id', user.id)
           .order('create_at', ascending: true);
-      
-      _tasks.clear(); 
-      
+
+      final List<TaskModel> fetchedTasks = [];
+
       for (var item in data) {
         // Xử lý Priority
         Priority p = Priority.medium;
         if (item['priority'] == 1) {
           p = Priority.urgent;
-        } else if (item['priority'] == 2) p = Priority.high;
+        } else if (item['priority'] == 2)
+          p = Priority.high;
         else if (item['priority'] == 4) p = Priority.low;
 
         // Xử lý Giờ giấc thực tế từ DB
@@ -207,51 +207,62 @@ class TaskViewModel extends ChangeNotifier {
           completed = subtaskList.where((s) => s['status'] == 1).length;
         }
 
-        _tasks.add(TaskModel(
+        fetchedTasks.add(TaskModel(
           id: item['id'].toString(),
           title: item['title'] ?? 'Task mới',
           description: item['description'] ?? '',
           templateId: item['template_id'],
           category: CategoryModel(
-            id: item['category_id'] ?? 0, 
-            name: 'Category', 
-            colorCode: '#5A8DF3', 
-            profileId: item['profile_id'] ?? '', 
+            id: item['category_id'] ?? 0,
+            name: 'Category',
+            colorCode: '#5A8DF3',
+            profileId: item['profile_id'] ?? '',
           ),
-          startTime: TimeOfDay(hour: startTimeDt.hour, minute: startTimeDt.minute), 
+          startTime:
+              TimeOfDay(hour: startTimeDt.hour, minute: startTimeDt.minute),
           endTime: TimeOfDay(hour: dueTimeDt.hour, minute: dueTimeDt.minute),
-          date: startTimeDt, 
+          date: startTimeDt,
           priority: p,
           totalSubtasks: total,
           completedSubtasks: completed,
           isCompleted: isCompleted,
         ));
 
-        final int taskIdInt = item['id']; // ID từ Supabase thường là int
+        final int taskIdInt = item['id'];
         final String taskTitle = item['title'] ?? 'Task mới';
 
-        // 1. Hẹn giờ nhắc trước 1 ngày
-        await NotifService().scheduleTaskNotification(
-          taskId: taskIdInt * 2, // Nhân đôi để tránh trùng ID thông báo với cái 1 tiếng
-          taskTitle: taskTitle,
-          taskStartTime: startTimeDt,
-          remindBefore: const Duration(days: 1),
-          notificationMessage: 'Task "$taskTitle" sẽ bắt đầu sau 1 ngày',
-        );
+        // --- ISOLATE NOTIFICATION ERRORS ---
+        try {
+          // 1. Hẹn giờ nhắc trước 1 ngày
+          await NotifService().scheduleTaskNotification(
+            taskId: taskIdInt * 2,
+            taskTitle: taskTitle,
+            taskStartTime: startTimeDt,
+            remindBefore: const Duration(days: 1),
+            notificationMessage: 'Task "$taskTitle" sẽ bắt đầu sau 1 ngày',
+          );
 
-        // 2. Hẹn giờ nhắc trước 1 tiếng
-        await NotifService().scheduleTaskNotification(
-          taskId: taskIdInt * 2 + 1, // Tạo ID độc nhất
-          taskTitle: taskTitle,
-          taskStartTime: startTimeDt,
-          remindBefore: const Duration(hours: 1),
-          notificationMessage: 'Task "$taskTitle" sẽ bắt đầu sau 1 tiếng',
-        );
+          // 2. Hẹn giờ nhắc trước 1 tiếng
+          await NotifService().scheduleTaskNotification(
+            taskId: taskIdInt * 2 + 1,
+            taskTitle: taskTitle,
+            taskStartTime: startTimeDt,
+            remindBefore: const Duration(hours: 1),
+            notificationMessage: 'Task "$taskTitle" sẽ bắt đầu sau 1 tiếng',
+          );
+        } catch (notifError) {
+          debugPrint("Lỗi đặt thông báo cho task $taskIdInt: $notifError");
+          // Continue loop even if notification fails
+        }
       }
-      notifyListeners();
-      
+
+      _tasks.clear();
+      _tasks.addAll(fetchedTasks);
     } catch (e) {
       debugPrint("Lỗi lấy task: $e");
+    } finally {
+      // --- GUARANTEE UI UPDATE ---
+      notifyListeners();
     }
   }
 
@@ -286,12 +297,10 @@ class TaskViewModel extends ChangeNotifier {
     List<TaskModel> result = List.from(_tasks);
 
     // 1. Lọc theo ngày (Date)
-    // Tìm đoạn này trong _getFilteredAndSorted()
     result = result.where((t) {
-      // Đổi t.startTime thành t.date (hoặc tên biến đúng của ông)
-      return t.date.day == _selectedDate.day &&
-             t.date.month == _selectedDate.month &&
-             t.date.year == _selectedDate.year;
+      final taskDate = DateTime(t.date.year, t.date.month, t.date.day);
+      final selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+      return taskDate.isAtSameMomentAs(selectedDate);
     }).toList();
 
     // 2. Ẩn task đã hoàn thành khỏi danh sách chính
