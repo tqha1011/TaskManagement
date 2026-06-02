@@ -103,7 +103,15 @@ class _AnimatedTaskCardState extends State<AnimatedTaskCard> {
     setState(() => _isRemoving = true);
     // Let the exit animation finish before updating the data source.
     await Future.delayed(const Duration(milliseconds: 240));
-    await widget.onQuickComplete();
+    try {
+      await widget.onQuickComplete();
+    } catch (e) {
+      // If the backend call fails, restore the card visually.
+      if (mounted) {
+        setState(() => _isRemoving = false);
+      }
+      debugPrint("Quick Complete Failed: $e");
+    }
   }
 
   @override

@@ -61,7 +61,9 @@ class UserProfileView extends StatelessWidget {
                     )
                   : Builder(
                       builder: (innerContext) {
-                        vm.syncThemeWithProfile(innerContext);
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          vm.syncThemeWithProfile(innerContext);
+                        });
                         return _buildProfileContent(innerContext, vm);
                       },
                     ),
