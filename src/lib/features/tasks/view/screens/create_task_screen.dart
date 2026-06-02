@@ -14,6 +14,7 @@ import 'package:task_management_app/features/category/view/widgets/category_choi
 import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
 import 'package:task_management_app/features/tag/view/widgets/tag_selector.dart';
 import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
+import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
 
 // ============================================================================
 // 1. STATE MANAGEMENT (PROVIDER)
