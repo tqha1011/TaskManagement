@@ -403,6 +403,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 ...tasks.map(
                                   (task) => AnimatedTaskCard(
+                                    key: ValueKey(task.id),
                                     task: task,
                                     leading: Container(
                                       padding: const EdgeInsets.all(10),

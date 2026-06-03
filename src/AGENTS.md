@@ -23,15 +23,19 @@ You are a Senior Software Engineer specializing in Flutter and Supabase. Your ro
 * **`reminder`**: `id` (int8, PK), `content` (text), `reminder_at` (timestamptz), `is_sent` (bool), `task_id` (int8, FK -> task.id).
 * **`task_tags`**: Many-to-many junction table. `task_id` (int8, PK/FK), `tag_id` (int8, PK/FK), `created_at` (timestamptz).
 * **`task_template`**: `id` (int8, PK), `title` (text), `is_active` (bool), `repeat_type` (text), `priority` (int4), `start_time` (timestamptz), `category_id` (int8, FK), `profile_id` (uuid, FK), `created_at` (timestamptz).
+* **`chat_session`**: `id` (int8, PK), `title` (text), `profile_id` (uuid, FK -> profile.id), `created_at` (timestamptz).
+* **`chat_message`**: `id` (int8, PK), `session_id` (int8, FK -> chat_session.id), `role` (text - e.g., 'user', 'model'), `content` (text), `created_at` (timestamptz).
 
 ## 2. Supabase Strict Rules (DO NOT VIOLATE)
 1.  **Authentication & Password:** Passwords are NEVER stored in the `profile` table. To update a password, you MUST use `Supabase.instance.client.auth.updateUser(UserAttributes(password: newPassword))`.
 2.  **Storage:** Avatars must be uploaded to the `avatars` public bucket using `supabase.storage.from('avatars').upload()`. Retrieve the URL via `.getPublicUrl()` and save it to the `avatar` column in the `profile` table.
+3.  **AI Chat History:** When fetching chat messages, always order by `created_at` ascending. Ensure `session_id` is indexed for performance.
 
 ## 3. Flutter & Architecture Guidelines
 1.  **MVVM Clean Architecture:** Logic strictly belongs in `ViewModel` or `Service` classes. `View` (UI screens) must only handle UI building and states. Do NOT call Supabase directly from UI files.
 2.  **Background Processing:** Use `workmanager` for background tasks (e.g., auto-creating repeating tasks, background notifications). Do not use methods that block the main UI thread.
 3.  **State Updates:** After creating/updating entities (like a task or username), ensure the ViewModel fetches the latest data or updates its state so the UI reflects changes instantly without requiring a manual refresh.
+4.  **AI Integration:** Use a dedicated `AIService` to handle interactions with LLM providers (e.g., Gemini API). The `ChatViewModel` should manage the stream of messages and handle optimistic UI updates.
 
 ## 4. Debugging & Error Handling Guidelines
 When the user provides an error log from `flutter test` or the Terminal:
