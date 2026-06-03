@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:task_management_app/features/chatbot/view/widgets/chat_header.dart';
-import 'package:task_management_app/features/chatbot/view/widgets/day_separator.dart';
 import 'package:task_management_app/features/chatbot/view/widgets/message_composer.dart';
 import 'package:task_management_app/features/chatbot/view/widgets/message_tile.dart';
 import 'package:task_management_app/features/chatbot/view/widgets/typing_indicator.dart';
@@ -147,61 +145,111 @@ class _ChatBotViewBodyState extends State<_ChatBotViewBody> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final viewModel = context.watch<ChatBotViewModel>();
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
+      appBar: AppBar(
+        title: const Text('AI Assistant'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_comment_rounded),
+            onPressed: () => viewModel.createNewSession(),
+            tooltip: 'Cuộc trò chuyện mới',
+          ),
+        ],
+      ),
+      drawer: Drawer(
         child: Column(
           children: [
-            const ChatHeader(),
-            Divider(height: 1, color: scheme.outline.withValues(alpha: 0.4)),
-            Expanded(
-              child: Consumer<ChatBotViewModel>(
-                builder: (context, viewModel, _) {
-                  return ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
+            DrawerHeader(
+              decoration: BoxDecoration(color: scheme.primary),
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.smart_toy_rounded, color: Colors.white, size: 48),
+                    SizedBox(height: 10),
+                    Text(
+                      'Lịch sử trò chuyện',
+                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                     ),
-                    itemCount: viewModel.messages.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        return const Padding(
-                          padding: EdgeInsets.only(bottom: 16),
-                          child: DaySeparator(label: 'Today'),
-                        );
-                      }
-
-                      final message = viewModel.messages[index - 1];
-                      return MessageTile(
-                        message: message,
-                        userAvatarUrl: widget.userAvatarUrl,
-                      );
+                  ],
+                ),
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.add, color: scheme.primary),
+              title: const Text('Cuộc trò chuyện mới', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () {
+                viewModel.createNewSession();
+                Navigator.pop(context);
+              },
+            ),
+            const Divider(),
+            Expanded(
+              child: ListView.builder(
+                itemCount: viewModel.sessions.length,
+                itemBuilder: (context, index) {
+                  final session = viewModel.sessions[index];
+                  final isActive = session.id == viewModel.activeSessionId;
+                  return ListTile(
+                    leading: Icon(Icons.chat_bubble_outline_rounded, 
+                      color: isActive ? scheme.primary : scheme.onSurfaceVariant),
+                    title: Text(
+                      session.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                        color: isActive ? scheme.primary : scheme.onSurface,
+                      ),
+                    ),
+                    selected: isActive,
+                    selectedTileColor: scheme.primary.withOpacity(0.1),
+                    onTap: () {
+                      viewModel.loadSessionMessages(session.id);
+                      Navigator.pop(context);
                     },
                   );
                 },
               ),
             ),
-            Consumer<ChatBotViewModel>(
-              builder: (context, viewModel, _) {
-                if (!viewModel.isLoading) return const SizedBox.shrink();
-                return const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: TypingIndicator(),
-                );
-              },
+          ],
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                itemCount: viewModel.messages.length,
+                itemBuilder: (context, index) {
+                  final message = viewModel.messages[index];
+                  return MessageTile(
+                    message: message,
+                    userAvatarUrl: widget.userAvatarUrl,
+                  );
+                },
+              ),
             ),
-            Consumer<ChatBotViewModel>(
-              builder: (context, viewModel, _) {
-                return MessageComposer(
-                  controller: _controller,
-                  isSending: viewModel.isLoading,
-                  isListening: _isListening,
-                  onMicPressed: _toggleListening,
-                  onSend: () => _sendMessage(viewModel),
-                );
-              },
+            if (viewModel.isLoading)
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: TypingIndicator(),
+              ),
+            MessageComposer(
+              controller: _controller,
+              isSending: viewModel.isLoading,
+              isListening: _isListening,
+              onMicPressed: _toggleListening,
+              onSend: () => _sendMessage(viewModel),
             ),
           ],
         ),
