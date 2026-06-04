@@ -249,14 +249,17 @@ class ChatBotAssistantService {
         sessionId: activeSessionId,
       );
     } catch (e) {
-      debugPrint('ChatBot Error: $e');
-      final errorString = e.toString();
-      String userFriendlyError = 'Lỗi kết nối AI: $e';
+      debugPrint('ChatBot Critical Error: $e');
       
-      if (errorString.contains('503')) {
-        userFriendlyError = 'Hệ thống đang quá tải. Bạn đợi vài phút rồi thử lại nhé!';
-      } else if (errorString.contains('429')) {
-        userFriendlyError = 'Bạn chat nhanh quá! Vui lòng chờ một chút.';
+      final errorString = e.toString().toLowerCase();
+      String userFriendlyError = 'Rất tiếc, AI đang gặp một chút sự cố kỹ thuật. Bạn vui lòng thử lại sau nhé!';
+      
+      if (errorString.contains('503') || errorString.contains('service unavailable')) {
+        userFriendlyError = 'Hệ đồng đang quá tải. Bạn đợi vài phút rồi thử lại nhé!';
+      } else if (errorString.contains('429') || errorString.contains('quota exceeded')) {
+        userFriendlyError = 'Bạn chat nhanh quá hoặc AI đã hết lượt sử dụng hôm nay. Vui lòng quay lại sau nhé!';
+      } else if (errorString.contains('network') || errorString.contains('connection')) {
+        userFriendlyError = 'Kết nối mạng không ổn định. Bạn kiểm tra lại wifi/4G nhé!';
       }
 
       return ChatBotResponse(text: userFriendlyError);
