@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../model/chatmessage_model.dart';
 import 'bot_avatar.dart';
 import 'user_avatar.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class MessageTile extends StatelessWidget {
   const MessageTile({super.key, required this.message, this.userAvatarUrl});
@@ -39,14 +40,28 @@ class MessageTile extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Text(
-                  _breakLongTokens(message.content),
-                  softWrap: true,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    height: 1.45,
-                    color: isUser ? scheme.onPrimary : scheme.onSurface,
-                  ),
-                ),
+                child: isUser
+                    ? Text(
+                        _breakLongTokens(message.content),
+                        softWrap: true,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          height: 1.45,
+                          color: scheme.onPrimary,
+                        ),
+                      )
+                    : MarkdownBody(
+                        data: message.content,
+                        selectable: true,
+                        styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                          p: theme.textTheme.titleMedium?.copyWith(
+                            height: 1.45,
+                            color: scheme.onSurface,
+                          ),
+                          listBullet: theme.textTheme.titleMedium?.copyWith(
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                      ),
               ),
             );
           }

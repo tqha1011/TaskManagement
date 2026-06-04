@@ -131,10 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(
-                        Icons.menu_rounded,
-                        color: theme.colorScheme.onPrimary,
-                      ),
+                      const SizedBox.shrink(),
                       Row(
                         children: [
                           GestureDetector(
@@ -448,7 +445,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Icon(Icons.menu_rounded, color: Colors.black),
+          const SizedBox.shrink(),
           Row(
             children: [
               const Icon(Icons.notifications_none_rounded, color: Colors.black),

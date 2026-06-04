@@ -385,6 +385,28 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   Future<void> _toggleCompleted(bool value) async {
+    // Logic chặn task tương lai
+    if (value) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final taskDate = DateTime(_taskDate.year, _taskDate.month, _taskDate.day);
+
+      if (taskDate.isAfter(today)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Không thể hoàn thành công việc của ngày mai!'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          setState(() {
+            _isCompleted = false; // Trả về trạng thái cũ
+          });
+        }
+        return;
+      }
+    }
+
     final bool originalValue = !value;
     setState(() {
       _isCompleted = value;

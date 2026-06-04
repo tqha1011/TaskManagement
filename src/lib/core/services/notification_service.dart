@@ -4,6 +4,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 const String _dailyTaskName = 'daily_task_summary';
 const String _dailyTaskUniqueName = 'daily_task_summary_unique';
@@ -12,8 +13,22 @@ const String _dailyTaskUniqueName = 'daily_task_summary_unique';
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
+      // Initialize Supabase in background isolate if needed
+      // Note: We need to load dotenv to get keys
+      try {
+        final supabaseClient = Supabase.instance.client;
+      } catch (_) {
+        // Not initialized
+        await dotenv.load(fileName: ".env");
+        final url = dotenv.env['SUPABASE_URL'] ?? '';
+        final key = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+        if (url.isNotEmpty && key.isNotEmpty) {
+          await Supabase.initialize(url: url, anonKey: key);
+        }
+      }
+
       final service = NotificationService();
-      final counts = await service.fetchTodayTaskCounts();
+      final counts = await service.fetchTodayTaskCounts(userId: inputData?['userId']);
       await service.showImmediateNotification(
         lowCount: counts.low,
         mediumCount: counts.medium,
@@ -125,7 +140,7 @@ class NotificationService {
     );
   }
 
-  Future<void> registerDailyTask(TimeOfDay time) async {
+  Future<void> registerDailyTask(TimeOfDay time, String userId) async {
     final now = DateTime.now();
     var scheduled = DateTime(
       now.year,
@@ -146,6 +161,7 @@ class NotificationService {
       _dailyTaskName,
       frequency: const Duration(hours: 24),
       initialDelay: initialDelay,
+      inputData: {'userId': userId},
       existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
     );
   }
@@ -171,7 +187,16 @@ class NotificationService {
       }).eq('id', userId);
 
       await Workmanager().cancelByUniqueName(_dailyTaskUniqueName);
-      await registerDailyTask(resolvedTime);
+      await registerDailyTask(resolvedTime, userId);
+
+      // Trigger immediate notification for verification/feedback
+      final counts = await fetchTodayTaskCounts(userId: userId);
+      await showImmediateNotification(
+        lowCount: counts.low,
+        mediumCount: counts.medium,
+        highCount: counts.high,
+        urgentCount: counts.urgent,
+      );
     } else {
       await supabase.from('profile').update({
         'is_noti_enabled': false,
@@ -182,10 +207,10 @@ class NotificationService {
   }
 
   Future<({int low, int medium, int high, int urgent})>
-      fetchTodayTaskCounts() async {
+      fetchTodayTaskCounts({String? userId}) async {
     final supabase = Supabase.instance.client;
-    final userId = supabase.auth.currentUser?.id;
-    if (userId == null) {
+    final effectiveUserId = userId ?? supabase.auth.currentUser?.id;
+    if (effectiveUserId == null) {
       return (low: 0, medium: 0, high: 0, urgent: 0);
     }
 
@@ -196,7 +221,7 @@ class NotificationService {
     final data = await supabase
         .from('task')
         .select('priority, start_time')
-        .eq('profile_id', userId)
+        .eq('profile_id', effectiveUserId)
         .gte('start_time', startOfDay.toUtc().toIso8601String())
         .lt('start_time', endOfDay.toUtc().toIso8601String());
 
