@@ -61,3 +61,63 @@
       return 'Lỗi xác thực: ${e.message}';
     }
     ```
+
+## 5. Phân tích chuyên sâu (Deep-dive) Hàm Cốt Lõi
+
+### Hàm `login` trong `AuthHelper`
+Đây là hàm "xương sống" xử lý toàn bộ quá trình xác thực và đồng bộ dữ liệu người dùng khi bắt đầu phiên làm việc.
+
+**Trích xuất Code thực tế:**
+```dart
+Future<UserModel?> login(String email, String password) async {
+  try {
+    // 1. Xác thực với Supabase Auth
+    final response = await supabase.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
+
+    final user = response.user;
+    if (user != null) {
+      final userId = user.id;
+      final userMetadata = user.userMetadata ?? {};
+      final String? username = userMetadata['username']?.toString();
+      
+      // 2. Lấy múi giờ hệ thống
+      final timezoneObj = await FlutterTimezone.getLocalTimezone();
+      final String currentTimezone = timezoneObj.toString();
+
+      // 3. Đồng bộ (Upsert) vào bảng profile
+      final profileData = await supabase
+          .from('profile')
+          .upsert({
+            'id': userId,
+            if (username != null && username.isNotEmpty) 'username': username,
+            'timezone': currentTimezone,
+          })
+          .select()
+          .single();
+
+      return UserModel.fromJson(profileData, email);
+    }
+    return null;
+  } on AuthException catch (e) {
+    print('Supabase Auth Error: ${e.message}');
+    rethrow;
+  } catch (e) {
+    print('Unknown Error: $e');
+    rethrow;
+  }
+}
+```
+
+**Giải thích Step-by-Step:**
+
+1.  **Logic nghiệp vụ**: Hàm này không chỉ đơn thuần là kiểm tra email/password. Nó thực hiện "Hợp nhất danh tính": Xác thực xong -> Lấy Metadata (username) -> Lấy Timezone thực tế của thiết bị -> Ghi đè (Upsert) vào DB để đảm bảo thông tin profile luôn mới nhất.
+2.  **Input/Output**: 
+    - **Input**: `email`, `password` (String) từ Login Form.
+    - **Output**: Trả về một `UserModel` chứa đầy đủ thông tin từ bảng `profile` (đã map qua model) hoặc `null` nếu thất bại.
+3.  **Bắt lỗi (Try-catch)**: 
+    - `on AuthException catch (e)`: Bắt chính xác lỗi từ Supabase (sai pass, user không tồn tại) để có thể xử lý thông báo cụ thể.
+    - `catch (e)`: Bắt các lỗi ngoại vi (mất mạng, lỗi lấy timezone) tránh crash app. Việc sử dụng `rethrow` ở đây là để đẩy lỗi về phía ViewModel xử lý hiển thị UI (Hàm `handleError`).
+4.  **Trigger cập nhật UI**: Hàm này trả về `UserModel`. Trong ViewModel, sau khi nhận được User, lệnh `notifyListeners()` (hoặc chuyển hướng màn hình) sẽ được kích hoạt để cập nhật trạng thái "Đã đăng nhập" trên toàn ứng dụng.

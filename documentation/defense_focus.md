@@ -68,3 +68,51 @@
       FlutterRingtonePlayer().playAlarm();
     }
     ```
+
+## 5. Phân tích chuyên sâu (Deep-dive) Hàm Cốt Lõi
+
+### Hàm `toggleTimer` trong `FocusViewModel`
+Hàm này là trung tâm điều khiển luồng thời gian và các phản hồi vật lý (rung, âm thanh) của chế độ tập trung.
+
+**Trích xuất Code thực tế:**
+```dart
+void toggleTimer() {
+  if (isRunning) {
+    _timer?.cancel();
+    isRunning = false;
+    unawaited(_stopFocusAudio());
+  } else {
+    isRunning = true;
+    unawaited(_playFocusAudio());
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (timeRemaining > 0) {
+        timeRemaining--;
+      } else {
+        // Hết giờ
+        _timer?.cancel();
+        isRunning = false;
+        isRinging = true;
+        unawaited(_stopFocusAudio());
+
+        // Kích hoạt phản hồi phần cứng
+        if (isVibrationEnabled) HapticFeedback.heavyImpact();
+        if (ringtoneType == 1) FlutterRingtonePlayer().playAlarm();
+        // ... các loại chuông khác ...
+      }
+      notifyListeners();
+    });
+  }
+  notifyListeners();
+}
+```
+
+**Giải thích Step-by-Step:**
+
+1.  **Logic nghiệp vụ**: Hàm này quản lý máy trạng thái (State Machine) của Timer. Nó không chỉ đơn thuần là đếm số mà còn điều phối tài nguyên: `Timer` (CPU), `AudioPlayer` (Nhạc nền), `Vibrator` (Rung), và `Ringtone` (Chuông). Việc sử dụng `unawaited` cho âm thanh giúp UI phản hồi ngay lập tức mà không chờ file nhạc load xong.
+2.  **Input/Output**:
+    - **Input**: Trạng thái hiện tại của biến `isRunning` và `timeRemaining`.
+    - **Output**: Không trả về giá trị, nhưng thay đổi toàn bộ trạng thái của ViewModel.
+3.  **Bắt lỗi (Safety Logic)**: Mặc dù không sử dụng block `try-catch` hiển thị (vì logic đếm ngược khá thuần túy), nhưng hàm sử dụng toán tử an toàn `?.` cho `_timer`. Dòng `_timer?.cancel()` đảm bảo nếu có nhiều timer chạy chồng chéo, chúng sẽ được dọn dẹp sạch sẽ để tránh rò rỉ bộ nhớ hoặc đếm nhanh gấp đôi (Timer Leak).
+4.  **Trigger cập nhật UI**: Lệnh `notifyListeners()` được gọi ở hai vị trí chiến lược: 
+    - Ngay khi bấm nút (để đổi icon Start/Pause).
+    - Mỗi 1 giây bên trong `Timer.periodic` (để cập nhật đồng hồ chạy và vòng tròn tiến trình). Đây là dòng code "sống" duy trì sự mượt mà của màn hình Focus.

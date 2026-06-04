@@ -60,9 +60,45 @@
     } catch (e) {
       _errorMessage = e.toString();
       debugPrint("Error fetching statistics: $e");
+    ```dart
     } finally {
       _isLoading = false;
       notifyListeners();
     }
     ```
+
+## 5. Phân tích chuyên sâu (Deep-dive) Hàm Cốt Lõi
+
+### Getter `weeklyBarHeights` trong `StatisticsViewmodel`
+Đây là hàm xử lý logic chuyển đổi từ dữ liệu thô (Raw Data) sang dữ liệu hiển thị (UI Data), đóng vai trò then chốt cho tính trực quan của biểu đồ.
+
+**Trích xuất Code thực tế:**
+```dart
+List<double> get weeklyBarHeights {
+  // 1. Kiểm tra dữ liệu tồn tại
+  if (statisticsData == null) return List.filled(7, 0.1);
+
+  List<int> rawCounts = statisticsData!.dailyCounts;
+
+  // 2. Tìm giá trị lớn nhất để làm mốc tỷ lệ
+  int maxTasks = rawCounts.reduce((curr, next) => curr > next ? curr : next);
+  
+  // 3. Xử lý trường hợp chưa có task nào
+  if (maxTasks == 0) return List.filled(7, 0.1);
+
+  // 4. Chuẩn hóa về dải [0.0, 1.0]
+  return rawCounts.map((count) => count / maxTasks).toList();
+}
+```
+
+**Giải thích Step-by-Step:**
+
+1.  **Logic nghiệp vụ**: Biểu đồ cột không thể hiển thị số lượng tuyệt đối (ví dụ 100 task) vì sẽ vượt quá chiều cao màn hình. Hàm này thực hiện "Normalization" (Chuẩn hóa). Nó lấy số lượng task của ngày cao nhất làm 100% chiều cao cột, các ngày khác sẽ tính theo tỷ lệ tương ứng.
+2.  **Input/Output**:
+    - **Input**: `statisticsData!.dailyCounts` (List<int>) lấy từ Model đã fetch từ API.
+    - **Output**: `List<double>` gồm 7 phần tử có giá trị từ 0.0 đến 1.0.
+3.  **Bắt lỗi (Safety Check)**: 
+    - Dòng `if (statisticsData == null)`: Tránh lỗi `null pointer` khi dữ liệu chưa load xong.
+    - Dòng `if (maxTasks == 0)`: Tránh lỗi `Division by zero` (Chia cho 0) cực kỳ nguy hiểm trong toán học lập trình. Trả về `0.1` để biểu đồ vẫn hiện các cột mờ nhỏ thay vì biến mất hoàn toàn.
+4.  **Trigger cập nhật UI**: Vì đây là một `getter` trong ViewModel, khi `statisticsData` thay đổi (sau hàm `fetchStatistics`), UI đang lắng nghe (Consumer/watch) sẽ truy cập getter này và tự động vẽ lại các cột biểu đồ với độ cao mới.
      Riverside.

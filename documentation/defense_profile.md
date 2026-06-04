@@ -59,3 +59,56 @@
       context.read<ThemeProvider>().updateTheme(_user!.appearance);
     }
     ```
+
+## 5. Phân tích chuyên sâu (Deep-dive) Hàm Cốt Lõi
+
+### Hàm `uploadAndSaveAvatar` trong `ProfileUpdateService`
+Hàm này là trung tâm của việc xử lý dữ liệu nhị phân (ảnh) và kết nối giữa Storage và Database.
+
+**Trích xuất Code thực tế:**
+```dart
+Future<String?> uploadAndSaveAvatar() async {
+  try {
+    // 1. Chọn ảnh và nén
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+    if (pickedFile == null) return null;
+
+    final File file = File(pickedFile.path);
+    final user = _supabase.auth.currentUser;
+    if (user == null) throw Exception('User not authenticated');
+
+    // 2. Định danh đường dẫn lưu trữ
+    final String fileExt = pickedFile.path.split('.').last;
+    final String fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+    final String path = '${user.id}/$fileName';
+
+    // 3. Upload lên Storage
+    await _supabase.storage.from('avatars').upload(
+          path,
+          file,
+          fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+        );
+
+    // 4. Lấy URL Public và cập nhật Profile
+    final String publicUrl = _supabase.storage.from('avatars').getPublicUrl(path);
+    await _supabase.from('profile').update({'avatar': publicUrl}).eq('id', user.id);
+
+    return publicUrl;
+  } catch (e) {
+    print('Error in uploadAndSaveAvatar: $e');
+    return null;
+  }
+}
+```
+
+**Giải thích Step-by-Step:**
+
+1.  **Logic nghiệp vụ**: Đây là một chuỗi hành động nguyên tử (Atomic-like): Picker -> Compression (80%) -> Unique Path Generation (sử dụng timestamp để tránh trùng tên/cache) -> Storage Upload -> DB Sync.
+2.  **Input/Output**:
+    - **Input**: Không có input trực tiếp (lấy từ hành động người dùng chọn ảnh trên thiết bị).
+    - **Output**: Trả về `String?` là Public URL mới của ảnh để UI cập nhật ngay lập tức.
+3.  **Bắt lỗi (Try-catch)**: Bọc toàn bộ trong một block `try-catch` lớn. Điều này cực kỳ quan trọng vì mỗi bước (chọn ảnh, đọc file, upload, update DB) đều tiềm ẩn rủi ro (hết bộ nhớ, mất mạng, lỗi quyền bucket). Nếu lỗi, trả về `null` để ViewModel biết và báo "Cập nhật thất bại".
+4.  **Trigger cập nhật UI**: Hàm này được gọi từ `UserProfileViewModel`. Khi nhận được `publicUrl` khác null, ViewModel sẽ cập nhật biến nội bộ và gọi `notifyListeners()`. UI sử dụng `CircleAvatar` sẽ tự động load ảnh mới nhờ URL này.
