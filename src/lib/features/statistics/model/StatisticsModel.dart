@@ -9,11 +9,17 @@ class RecentTaskModel{
 
   RecentTaskModel({required this.id, required this.title, required this.updatedAt, required this.avatar});
 
+  static DateTime _toVietnamTime(DateTime value) {
+    final utcValue = value.isUtc ? value : value.toUtc();
+    return utcValue.add(const Duration(hours: 7));
+  }
+
   factory RecentTaskModel.fromJson(Map<String,dynamic> json){
+    final parsed = DateTime.parse(json['updated_at']);
     return RecentTaskModel(
         id: json['id'],
         title: json['title'] ?? '',
-        updatedAt: DateTime.parse(json['updated_at']),
+        updatedAt: _toVietnamTime(parsed),
         avatar: json['avatar'],
     );
   }

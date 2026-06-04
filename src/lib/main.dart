@@ -5,18 +5,22 @@ import 'package:task_management_app/features/auth/presentation/view/auth_gate.da
 import 'package:task_management_app/features/category/viewmodel/category_viewmodel.dart';
 import 'package:task_management_app/features/tag/viewmodel/tag_viewmodel.dart';
 import 'package:task_management_app/features/tasks/viewmodel/task_viewmodel.dart';
+import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
+import 'package:task_management_app/features/user/viewmodel/user_profile_viewmodel.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/notification_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:task_management_app/features/tasks/view/screens/create_task_screen.dart';
 import 'core/theme/theme_provider.dart';
+import 'package:task_management_app/features/tasks/service/notif_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: ".env");
 
+  await NotifService().initNotification();
   String supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
   String supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
 
@@ -59,6 +63,12 @@ Future<void> main() async {
           create: (_) => CategoryViewModel(),
         ),
         ChangeNotifierProvider<TagViewModel>(create: (_) => TagViewModel()),
+        ChangeNotifierProvider<StatisticsViewmodel>(
+          create: (_) => StatisticsViewmodel(),
+        ),
+        ChangeNotifierProvider<UserProfileViewModel>(
+          create: (_) => UserProfileViewModel(useMockData: false),
+        ),
       ],
       child: const TaskApp(),
     ),

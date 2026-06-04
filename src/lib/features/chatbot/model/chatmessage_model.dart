@@ -1,46 +1,37 @@
-import 'dart:convert';
-
 class ChatMessageModel {
-  final String text;
-  final bool isUser;
+  final String? id;
+  final String? sessionId;
+  final String role; // 'user' or 'model'
+  final String content;
   final DateTime timestamp;
 
   ChatMessageModel({
-    required this.text,
-    required this.isUser,
+    this.id,
+    this.sessionId,
+    required this.role,
+    required this.content,
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 
-  factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
-    final parsedTimestamp =
-        DateTime.tryParse(json['timestamp']?.toString() ?? '') ?? DateTime.now();
+  bool get isUser => role == 'user';
 
+  factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
     return ChatMessageModel(
-      text: json['text']?.toString() ?? '',
-      isUser: json['isUser'] as bool? ?? true,
-      timestamp: parsedTimestamp,
+      id: json['id']?.toString(),
+      sessionId: json['session_id']?.toString(),
+      role: json['role'] ?? 'user',
+      content: json['content'] ?? '',
+      timestamp: DateTime.parse(
+        json['created_at'] ?? DateTime.now().toIso8601String(),
+      ),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'text': text,
-      'isUser': isUser,
-      'timestamp': timestamp.toIso8601String(),
+      'role': role,
+      'content': content,
+      'created_at': timestamp.toIso8601String(),
     };
-  }
-
-  static String encodeList(List<ChatMessageModel> messages) {
-    return jsonEncode(messages.map((message) => message.toJson()).toList());
-  }
-
-  static List<ChatMessageModel> decodeList(String raw) {
-    final decoded = jsonDecode(raw);
-    if (decoded is! List) return [];
-
-    return decoded
-        .whereType<Map>()
-        .map((item) => ChatMessageModel.fromJson(Map<String, dynamic>.from(item)))
-        .toList();
   }
 }

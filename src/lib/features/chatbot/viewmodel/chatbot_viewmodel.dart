@@ -1,90 +1,142 @@
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../model/chatmessage_model.dart';
+import '../model/chat_session_model.dart';
 import '../services/chatbot_services.dart';
+import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
+import 'package:task_management_app/features/tasks/viewmodel/task_viewmodel.dart';
 
 class ChatBotViewModel extends ChangeNotifier {
-  static const String _historyKey = 'chatbot_history_v1';
-  static const int _maxHistoryMessages = 200;
-
   final _aiService = ChatBotAssistantService();
-  final List<ChatMessageModel> _messages = [];
+  final _supabase = Supabase.instance.client;
 
-  ChatBotViewModel() {
-    _loadHistory();
-  }
+  final TaskViewModel? _taskViewModel;
+  final StatisticsViewmodel? _statisticsViewmodel;
 
-  List<ChatMessageModel> _initialMessages() => [
-    ChatMessageModel(
-      text: 'Chào bạn! Tôi là trợ lý năng suất. Hôm nay bạn cần tôi giúp gì?',
-      isUser: false,
-    ),
-  ];
+  List<ChatSessionModel> _sessions = [];
+  List<ChatSessionModel> get sessions => _sessions;
 
+  String? _activeSessionId;
+  String? get activeSessionId => _activeSessionId;
+
+  List<ChatMessageModel> _messages = [];
   List<ChatMessageModel> get messages => _messages;
 
   bool _isLoading = false;
-
   bool get isLoading => _isLoading;
 
-  Future<void> _loadHistory() async {
+  ChatBotViewModel({
+    TaskViewModel? taskViewModel,
+    StatisticsViewmodel? statisticsViewmodel,
+  })  : _taskViewModel = taskViewModel,
+        _statisticsViewmodel = statisticsViewmodel {
+    fetchSessions();
+  }
+
+  /// 1. Fetch all sessions for current user
+  Future<void> fetchSessions() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return;
+
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_historyKey);
+      final data = await _supabase
+          .from('chat_session')
+          .select()
+          .eq('profile_id', userId)
+          .order('created_at', ascending: false);
 
-      if (raw == null || raw.trim().isEmpty) {
-        _messages
-          ..clear()
-          ..addAll(_initialMessages());
-        await _saveHistory();
-      } else {
-        final storedMessages = ChatMessageModel.decodeList(raw);
-        _messages
-          ..clear()
-          ..addAll(
-            storedMessages.isEmpty ? _initialMessages() : storedMessages,
-          );
-      }
+      _sessions = (data as List).map((s) => ChatSessionModel.fromJson(s)).toList();
+      notifyListeners();
     } catch (e) {
-      debugPrint('Error loading chatbot history: $e');
-      _messages
-        ..clear()
-        ..addAll(_initialMessages());
+      debugPrint('Error fetching sessions: $e');
     }
+  }
 
+  /// 2. Load messages for a specific session
+  Future<void> loadSessionMessages(String sessionId) async {
+    _activeSessionId = sessionId;
+    _isLoading = true;
+    _messages = [];
+    notifyListeners();
+
+    try {
+      final data = await _supabase
+          .from('chat_message')
+          .select()
+          .eq('session_id', int.parse(sessionId))
+          .order('created_at', ascending: true);
+
+      _messages = (data as List).map((m) => ChatMessageModel.fromJson(m)).toList();
+    } catch (e) {
+      debugPrint('Error loading messages: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// 3. Reset UI for a new empty session
+  void createNewSession() {
+    _activeSessionId = null;
+    _messages = [
+      ChatMessageModel(
+        role: 'model',
+        content: 'Chào bạn! Tôi là trợ lý năng suất. Hôm nay bạn cần tôi giúp gì?',
+      ),
+    ];
     notifyListeners();
   }
 
-  Future<void> _saveHistory() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      if (_messages.length > _maxHistoryMessages) {
-        _messages.removeRange(0, _messages.length - _maxHistoryMessages);
-      }
-      await prefs.setString(
-        _historyKey,
-        ChatMessageModel.encodeList(_messages),
-      );
-    } catch (e) {
-      debugPrint('Error saving chatbot history: $e');
+  Future<void> _refreshDataAfterMutation() async {
+    await _taskViewModel?.fetchTasks();
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId != null) {
+      await _statisticsViewmodel?.getStatisticsData(userId);
     }
   }
 
+  /// 4. Send Message with Session Logic
   Future<void> sendMessage(String text) async {
     final normalizedText = text.trim();
     if (normalizedText.isEmpty) return;
 
-    _messages.add(ChatMessageModel(text: normalizedText, isUser: true));
+    // 1. Capture history BEFORE adding the new message
+    // Gemini startChat history should only contain previous rounds.
+    final history = List<ChatMessageModel>.from(_messages);
+
+    // 2. Optimistic user message update
+    _messages.add(ChatMessageModel(role: 'user', content: normalizedText));
     _isLoading = true;
     notifyListeners();
-    await _saveHistory();
 
-    final response = await _aiService.sendMessage(normalizedText);
+    try {
+      // 3. Send to AI service with the captured history
+      final response = await _aiService.sendMessage(
+        normalizedText,
+        sessionId: _activeSessionId,
+        history: history,
+      );
 
-    _messages.add(ChatMessageModel(text: response, isUser: false));
-    _isLoading = false;
-    await _saveHistory();
-    notifyListeners();
+      if (response.sessionId != null && _activeSessionId == null) {
+        _activeSessionId = response.sessionId;
+        await fetchSessions(); // Refresh session list to include the new one
+      }
+
+      if (response.didMutateTasks) {
+        await _refreshDataAfterMutation();
+      }
+
+      _messages.add(ChatMessageModel(role: 'model', content: response.text));
+    } catch (e) {
+      debugPrint('Error sending message: $e');
+      _messages.add(ChatMessageModel(
+        role: 'model',
+        content: 'Đã xảy ra lỗi khi gửi tin nhắn. Vui lòng thử lại.',
+      ));
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }

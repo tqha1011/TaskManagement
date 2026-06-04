@@ -2,10 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodel/focus_viewmodel.dart';
 import '../view/focus_widget.dart';
+import 'package:task_management_app/features/chatbot/view/widgets/user_avatar.dart';
+import 'package:task_management_app/features/user/viewmodel/user_profile_viewmodel.dart';
 
-class FocusScreen extends StatelessWidget {
+class FocusScreen extends StatefulWidget {
   const FocusScreen({super.key});
 
+  @override
+  _FocusScreenState createState() => _FocusScreenState();
+}
+
+class _FocusScreenState extends State<FocusScreen> {
   // Shows the configuration dialog for timer and notification settings
   void _showSettingsDialog(BuildContext context) {
     final vm = context.read<FocusViewModel>();
@@ -188,8 +195,9 @@ class FocusScreen extends StatelessWidget {
                             ),
                           ],
                           onChanged: (val) {
-                            if (val != null)
+                            if (val != null) {
                               setStateDialog(() => currentSoundKey = val);
+                            }
                           },
                         ),
                       ),
@@ -269,8 +277,9 @@ class FocusScreen extends StatelessWidget {
                             ),
                           ],
                           onChanged: (val) {
-                            if (val != null)
+                            if (val != null) {
                               setStateDialog(() => currentRingtone = val);
+                            }
                           },
                         ),
                       ),
@@ -323,6 +332,7 @@ class FocusScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final profileVm = context.watch<UserProfileViewModel>();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -352,11 +362,9 @@ class FocusScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const CircleAvatar(
-                          radius: 22,
-                          backgroundImage: NetworkImage(
-                            'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-                          ),
+                        UserAvatar(
+                          size: 44,
+                          avatarUrl: profileVm.user?.avatarUrl,
                         ),
                         const SizedBox(width: 15),
                         Text(

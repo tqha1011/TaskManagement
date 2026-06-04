@@ -28,13 +28,13 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
         customHeaderIcon: Container(
           width: 120, height: 120,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1B2A46) : Theme.of(context).colorScheme.surface,
+            color: isDark
+                ? Theme.of(context).colorScheme.surfaceContainerHighest
+                : Theme.of(context).colorScheme.surface,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: isDark
-                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.22)
-                    : const Color(0xFFD1D9E6),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
                 blurRadius: 24,
               )
             ],
@@ -76,7 +76,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF111E37) : Theme.of(context).colorScheme.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(999),
               border: Border.all(color: Theme.of(context).colorScheme.outline),
             ),

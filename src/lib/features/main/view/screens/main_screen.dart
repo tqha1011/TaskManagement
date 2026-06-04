@@ -5,6 +5,8 @@ import 'package:task_management_app/features/chatbot/view/chatbot_view.dart';
 import 'package:task_management_app/features/statistics/viewmodel/statistics_viewmodel.dart';
 import 'package:task_management_app/features/tasks/view/screens/home_screen.dart';
 import 'package:task_management_app/features/user/viewmodel/user_profile_viewmodel.dart';
+import 'package:task_management_app/features/tasks/viewmodel/task_viewmodel.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../category/viewmodel/category_viewmodel.dart';
 import '../../../note/view/focus_screen.dart';
@@ -31,14 +33,8 @@ class _MainScreenState extends State<MainScreen> {
       create: (_) => FocusViewModel(),
       child: const FocusScreen(),
     ),
-    ChangeNotifierProvider(
-      create: (_) => StatisticsViewmodel(),
-      child: const StatisticsScreen(),
-    ),
-    ChangeNotifierProvider(
-      create: (_) => UserProfileViewModel(useMockData: true)..loadProfile(),
-      child: const UserProfileView(),
-    ),
+    const StatisticsScreen(),
+    const UserProfileView(),
     const SettingsScreen(),
   ];
 
@@ -49,12 +45,33 @@ class _MainScreenState extends State<MainScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CategoryViewModel>().loadCategories();
       context.read<TagViewModel>().loadTags();
+      context.read<TaskViewModel>().fetchTasks();
+      context.read<UserProfileViewModel>().loadProfile();
     });
+  }
+
+  void _handleNavTap(BuildContext context, int index) {
+    setState(() => _currentIndex = index);
+
+    if (index == 3) {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        context.read<StatisticsViewmodel>().getStatisticsData(userId);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // --- SYNC THEME WITH PROFILE ON LOAD ---
+    final userVm = context.watch<UserProfileViewModel>();
+    if (!userVm.isLoading && userVm.user != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        userVm.syncThemeWithProfile(context);
+      });
+    }
 
     return Scaffold(
       extendBody: true,
@@ -102,7 +119,7 @@ class _MainScreenState extends State<MainScreen> {
     bool isSelected = _currentIndex == index;
 
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () => _handleNavTap(context, index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,

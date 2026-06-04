@@ -2,11 +2,23 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../model/chatmessage_model.dart';
+
+class ChatBotResponse {
+  final String text;
+  final bool didMutateTasks;
+  final String? sessionId;
+
+  const ChatBotResponse({
+    required this.text,
+    this.didMutateTasks = false,
+    this.sessionId,
+  });
+}
 
 class ChatBotAssistantService {
   final String _apiKey = (dotenv.env['GEMINI_API_KEY'] ?? '').trim();
   GenerativeModel? _model;
-  ChatSession? _chatSession;
   final now = DateTime.now();
 
   ChatBotAssistantService() {
@@ -17,7 +29,7 @@ class ChatBotAssistantService {
 
     _model = GenerativeModel(
       apiKey: _apiKey,
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-flash', // Updated to a more recent stable tool-supporting model if possible, otherwise gemini-1.5-flash
       tools: [
         Tool(
           functionDeclarations: [
@@ -99,104 +111,155 @@ class ChatBotAssistantService {
         'Từ chối mọi câu hỏi không liên quan đến công việc hoặc quản lý thời gian.',
       ),
     );
-
-    _chatSession = _model!.startChat();
   }
 
-  Future<String> sendMessage(String userMessage) async {
-    if (_chatSession == null) {
-      return 'Chatbot chưa được cấu hình API key. Vui lòng kiểm tra file .env.';
+  List<Content> _mapHistoryToGemini(List<ChatMessageModel> history) {
+    return history.map((m) {
+      if (m.role == 'user') {
+        return Content.text(m.content);
+      } else {
+        return Content.model([TextPart(m.content)]);
+      }
+    }).toList();
+  }
+
+  Future<ChatBotResponse> sendMessage(
+    String userMessage, {
+    String? sessionId,
+    List<ChatMessageModel> history = const [],
+  }) async {
+    if (_model == null) {
+      return const ChatBotResponse(
+        text: 'Chatbot chưa được cấu hình API key. Vui lòng kiểm tra file .env.',
+      );
+    }
+
+    final supabase = Supabase.instance.client;
+    final userId = supabase.auth.currentUser?.id;
+
+    if (userId == null) {
+      return const ChatBotResponse(text: 'Vui lòng đăng nhập để sử dụng chatbot.');
     }
 
     try {
-      final response = await _chatSession!.sendMessage(
-        Content.text(userMessage),
-      );
+      String activeSessionId;
+      if (sessionId == null) {
+        // Create new session in Supabase
+        final sessionData = await supabase.from('chat_session').insert({
+          'title': userMessage.length > 40 ? '${userMessage.substring(0, 37)}...' : userMessage,
+          'profile_id': userId,
+        }).select('id').single();
+        activeSessionId = sessionData['id'].toString();
+      } else {
+        activeSessionId = sessionId;
+      }
 
+      // 1. Save user message to Supabase
+      await supabase.from('chat_message').insert({
+        'session_id': int.parse(activeSessionId),
+        'role': 'user',
+        'content': userMessage,
+      });
+
+      // 2. Initialize Gemini Chat Session with history
+      final geminiChat = _model!.startChat(history: _mapHistoryToGemini(history));
+
+      // 3. Send message to Gemini
+      var response = await geminiChat.sendMessage(Content.text(userMessage));
+      bool didMutate = false;
+
+      // 4. Handle Function Calls (Preserving existing logic)
       if (response.functionCalls.isNotEmpty) {
         final functionCall = response.functionCalls.first;
         if (functionCall.name == 'create_task_full') {
           final args = functionCall.args;
-          final title = args['title'] as String;
-          final priority = (args['priority'] as num?)?.toInt() ?? 1;
-          final rawTags = args['tags'] as List<dynamic>? ?? [];
-          final tags = rawTags.map((e) => e.toString()).toList();
-          final startTime = args['start_time'] as String?;
-          final dueTime = args['due_time'] as String?;
+          final title = (args['title'] as String?)?.trim();
+          final startTime = (args['start_time'] as String?)?.trim();
+          final dueTime = (args['due_time'] as String?)?.trim();
 
-          final userId = Supabase.instance.client.auth.currentUser?.id;
-          if (userId == null) {
-            return 'Vui lòng đăng nhập để tạo công việc.';
+          if (title == null || title.isEmpty || startTime == null || startTime.isEmpty) {
+            // If essential args are missing, Gemini usually asks back, 
+            // but we'll return a helpful text if the model directly failed to provide them.
+            // However, normally we just pass the function response back.
           }
+
           final categoryName = args['category_name'] as String? ?? 'Cá nhân';
-          final dbResponse = await Supabase.instance.client.rpc(
+          final dbResponse = await supabase.rpc(
             'create_task_full',
             params: {
-              'p_title': args['title'],
+              'p_title': title ?? 'Task mới',
               'p_priority': (args['priority'] as num?)?.toInt() ?? 1,
               'p_profile_id': userId,
-              'p_tag_names':
-                  (args['tags'] as List?)?.map((e) => e.toString()).toList() ??
-                  [],
+              'p_tag_names': (args['tags'] as List?)?.map((e) => e.toString()).toList() ?? [],
               'p_category_name': categoryName,
-              'p_start_time': args['start_time'],
-              'p_due_time': args['due_time'],
+              'p_start_time': startTime ?? DateTime.now().toIso8601String(),
+              'p_due_time': (dueTime == null || dueTime.isEmpty) ? null : dueTime,
             },
           );
 
           final isSuccess = dbResponse['success'] == true;
-          if (!isSuccess) {
-            debugPrint("Lỗi từ Supabase: ${dbResponse['error']}");
-          }
-          final functionResponse = await _chatSession!.sendMessage(
+          didMutate = isSuccess;
+          
+          response = await geminiChat.sendMessage(
             Content.functionResponse('create_task_full', {
               'status': isSuccess ? 'Thành công' : 'Thất bại',
-
               'reason': isSuccess ? '' : dbResponse['error'].toString(),
             }),
           );
-          return functionResponse.text ?? 'Đã xử lý xong yêu cầu của bạn!';
-        }
-        else if (functionCall.name == 'update_task_time') {
+        } else if (functionCall.name == 'update_task_time') {
           final args = functionCall.args;
-          final keyword = args['task_keyword'] as String;
-          final newStartTime = args['new_start_time'] as String;
-          final newDueTime = args['new_due_time'] as String?;
+          final keyword = (args['task_keyword'] as String?)?.trim();
+          final newStartTime = (args['new_start_time'] as String?)?.trim();
+          final newDueTime = (args['new_due_time'] as String?)?.trim();
 
-          final userId = Supabase.instance.client.auth.currentUser?.id;
-          if (userId == null) return 'Vui lòng đăng nhập để thao tác.';
-
-          final dbResponse = await Supabase.instance.client.rpc(
+          final dbResponse = await supabase.rpc(
             'update_task_time_bot',
             params: {
               'p_profile_id': userId,
-              'p_keyword': keyword,
-              'p_new_start_time': newStartTime,
-              'p_new_due_time': newDueTime,
+              'p_keyword': keyword ?? '',
+              'p_new_start_time': newStartTime ?? '',
+              'p_new_due_time': (newDueTime == null || newDueTime.isEmpty) ? null : newDueTime,
             },
           );
+          
           final isSuccess = dbResponse['success'] == true;
-          if (!isSuccess) {
-            debugPrint("Lỗi từ Supabase khi update_task_time: ${dbResponse['error']}");
-          }
-          final functionResponse = await _chatSession!.sendMessage(
+          didMutate = isSuccess;
+
+          response = await geminiChat.sendMessage(
             Content.functionResponse('update_task_time', {
               'status': isSuccess ? 'Thành công' : 'Thất bại',
               'reason': isSuccess ? '' : dbResponse['error'].toString(),
             }),
           );
-          return functionResponse.text ?? 'Đã dời lịch theo yêu cầu của bạn!';
         }
       }
-      return response.text ?? 'Xin lỗi, trợ lý đang bận xíu. Thử lại sau nhé!';
+
+      final botText = response.text ?? 'Xin lỗi, tôi không thể trả lời lúc này.';
+
+      // 5. Save model response to Supabase
+      await supabase.from('chat_message').insert({
+        'session_id': int.parse(activeSessionId),
+        'role': 'model',
+        'content': botText,
+      });
+
+      return ChatBotResponse(
+        text: botText,
+        didMutateTasks: didMutate,
+        sessionId: activeSessionId,
+      );
     } catch (e) {
+      debugPrint('ChatBot Error: $e');
       final errorString = e.toString();
+      String userFriendlyError = 'Lỗi kết nối AI: $e';
+      
       if (errorString.contains('503')) {
-        return 'Bạn đợi vài phút rồi chat lại nhé!';
+        userFriendlyError = 'Hệ thống đang quá tải. Bạn đợi vài phút rồi thử lại nhé!';
       } else if (errorString.contains('429')) {
-        return 'Bạn chat nhanh quá! Vui lòng chờ chút';
+        userFriendlyError = 'Bạn chat nhanh quá! Vui lòng chờ một chút.';
       }
-      return 'Lỗi kết nối AI: $e';
+
+      return ChatBotResponse(text: userFriendlyError);
     }
   }
 }

@@ -26,7 +26,7 @@ class _NewPasswordViewState extends State<NewPasswordView> {
         isLoading: _vm.isLoading,
         customHeaderIcon: CircleAvatar(
           radius: 40,
-          backgroundColor: isDark ? const Color(0xFF213A63) : const Color(0xFFEBF2FF),
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
           child: Icon(
             Icons.lock_reset,
             size: 40,
@@ -74,13 +74,11 @@ class _NewPasswordViewState extends State<NewPasswordView> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF223A63)
-                    : const Color(0xFFEBF2FF),
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
-                border: isDark
-                    ? Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25))
-                    : null,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                ),
               ),
               child: Row(
                 children: [

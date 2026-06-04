@@ -40,7 +40,7 @@ class MessageTile extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  _breakLongTokens(message.text),
+                  _breakLongTokens(message.content),
                   softWrap: true,
                   style: theme.textTheme.titleMedium?.copyWith(
                     height: 1.45,
