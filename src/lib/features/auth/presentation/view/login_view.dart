@@ -12,7 +12,7 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
-  final _vm = LoginViewModel();
+    final _vm = LoginViewModel();
 
   @override
   Widget build(BuildContext context) {

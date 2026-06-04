@@ -11,7 +11,7 @@ class AppTheme {
 
     colorScheme: const ColorScheme.light(
       // Brand Colors
-      primary: Color(0xFF5A8DF3),          // Legacy: AppColors.primary
+      primary: Color(0xFF5A8DF3),          // Legacy  : AppColors.primary
       secondary: Color(0xFF4A90E2),        // Legacy: AppColors.primaryBlue
 
       // Background & Surface Colors
