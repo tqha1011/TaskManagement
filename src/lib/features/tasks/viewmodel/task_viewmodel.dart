@@ -285,6 +285,21 @@ class TaskViewModel extends ChangeNotifier {
   }
 
   Future<void> updateTask(dynamic taskId, Map<String, dynamic> data) async {
+    // Chặn nếu cập nhật status thành 'đã hoàn thành' cho task tương lai
+    if (data['status'] == 1) {
+      final task = getTaskById(taskId.toString());
+      if (task != null) {
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final taskDate = DateTime(task.date.year, task.date.month, task.date.day);
+
+        if (taskDate.isAfter(today)) {
+          debugPrint("Chặn hoàn thành task tương lai ở ViewModel");
+          return;
+        }
+      }
+    }
+
     final supabase = Supabase.instance.client;
     try {
       await supabase

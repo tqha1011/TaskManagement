@@ -166,6 +166,11 @@ class TaskCard extends StatelessWidget {
     final timeString = '$hour:$minute $period';
     final isCompleted = task.isCompleted;
 
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final taskDate = DateTime(task.date.year, task.date.month, task.date.day);
+    final isFuture = taskDate.isAfter(today);
+
     return Hero(
       tag: 'task_card_${task.id}', // Tag nối thẻ từ màn Home sang màn Detail
       child: Material(
@@ -281,10 +286,12 @@ class TaskCard extends StatelessWidget {
                           if (!isCompleted && onQuickComplete != null) ...[
                             IconButton(
                               visualDensity: VisualDensity.compact,
-                              icon: const Icon(Icons.circle_outlined),
-                              color: Theme.of(context).colorScheme.primary,
-                              tooltip: 'Mark completed',
-                              onPressed: onQuickComplete,
+                              icon: Icon(isFuture ? Icons.lock_clock_outlined : Icons.circle_outlined),
+                              color: isFuture
+                                  ? Theme.of(context).colorScheme.outline
+                                  : Theme.of(context).colorScheme.primary,
+                              tooltip: isFuture ? 'Task tương lai' : 'Mark completed',
+                              onPressed: isFuture ? null : onQuickComplete,
                             ),
                             const SizedBox(height: 2),
                           ],
