@@ -31,16 +31,6 @@ class UserProfileView extends StatelessWidget {
             fontSize: 20,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.settings,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            onPressed: () {},
-            splashRadius: 24,
-          ),
-        ],
       ),
       body: SafeArea(
         child: Consumer<UserProfileViewModel>(
@@ -165,7 +155,7 @@ class UserProfileView extends StatelessWidget {
                     context,
                   ).colorScheme.onSurfaceVariant,
                   inactiveTrackColor: Theme.of(context).colorScheme.outline,
-                  onChanged: (val) => vm.toggleNotification(val),
+                  onChanged: (val) => vm.updateNotificationSettings(isEnabled: val),
                 ),
               ),
               Divider(

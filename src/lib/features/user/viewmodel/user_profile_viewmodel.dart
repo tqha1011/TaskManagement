@@ -17,6 +17,8 @@ class UserProfileViewModel extends ChangeNotifier {
   final bool useMockData;
   final NotificationService _notificationService = NotificationService();
   String? _lastAppliedAppearance;
+  TimeOfDay? _notificationTime;
+  TimeOfDay? get notificationTime => _notificationTime;
 
   UserProfileViewModel({this.useMockData = false});
 
@@ -42,6 +44,7 @@ class UserProfileViewModel extends ChangeNotifier {
       if (_user != null) {
         final isEnabled = await _notificationService.getNotificationEnabled();
         _user!.isNotificationEnabled = isEnabled;
+        _notificationTime = await _notificationService.getSavedTime();
       }
       
       _lastAppliedAppearance = null;
@@ -83,12 +86,22 @@ class UserProfileViewModel extends ChangeNotifier {
     );
   }
 
-  /// Toggle notification preference
-  Future<void> toggleNotification(bool value) async {
+  /// Centralized notification settings update
+  Future<void> updateNotificationSettings({bool? isEnabled, TimeOfDay? time}) async {
     if (_user == null) return;
-    _user!.isNotificationEnabled = value;
+
+    final bool newEnabled = isEnabled ?? _user!.isNotificationEnabled;
+    final TimeOfDay newTime =
+        time ?? _notificationTime ?? const TimeOfDay(hour: 8, minute: 0);
+
+    _user!.isNotificationEnabled = newEnabled;
+    _notificationTime = newTime;
     notifyListeners();
-    await _notificationService.updateNotificationSettings(isEnabled: value);
+
+    await _notificationService.updateNotificationSettings(
+      isEnabled: newEnabled,
+      time: newTime,
+    );
   }
 
   Future<void> updateAvatar(BuildContext context) async {

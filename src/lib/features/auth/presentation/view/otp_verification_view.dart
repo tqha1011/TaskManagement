@@ -41,10 +41,14 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
       body: Container(
         decoration: BoxDecoration(
           gradient: isDark
-              ? const LinearGradient(
+              ? LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFF08142D), Color(0xFF0B1A38), Color(0xFF0A1834)],
+                  colors: [
+                    Theme.of(context).scaffoldBackgroundColor,
+                    Theme.of(context).colorScheme.surfaceContainerHighest,
+                    Theme.of(context).scaffoldBackgroundColor,
+                  ],
                 )
               : null,
         ),
@@ -179,16 +183,13 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
 
   Widget _buildOtpBox(int index, BuildContext context) {
     return Container(
-      width: 35, height: 48, // Thu nhỏ kích thước ô lại để nhét vừa 8 ô trên 1 dòng
+      width: 35,
+      height: 48, // Thu nhỏ kích thước ô lại để nhét vừa 8 ô trên 1 dòng
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF344765)
-            : Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF4A5F80)
-              : Theme.of(context).colorScheme.outline,
+          color: Theme.of(context).colorScheme.outline,
         ),
       ),
       child: TextField(

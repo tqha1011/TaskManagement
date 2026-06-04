@@ -51,7 +51,7 @@ class AuthLayoutTemplate extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: isDark
-                        ? const Color(0xFF172744)
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest
                         : Theme.of(context).colorScheme.surface,
                   ),
                   child: Icon(
@@ -70,10 +70,14 @@ class AuthLayoutTemplate extends StatelessWidget {
           return Container(
             decoration: BoxDecoration(
               gradient: isDark
-                  ? const LinearGradient(
+                  ? LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xFF08142D), Color(0xFF0B1A38), Color(0xFF0A1834)],
+                      colors: [
+                        Theme.of(context).scaffoldBackgroundColor,
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                        Theme.of(context).scaffoldBackgroundColor,
+                      ],
                     )
                   : null,
             ),
@@ -112,7 +116,9 @@ class AuthLayoutTemplate extends StatelessWidget {
               width: isCompact ? 64 : 80,
               height: isCompact ? 64 : 80,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E2B47) : Theme.of(context).colorScheme.surface,
+                color: isDark
+                    ? Theme.of(context).colorScheme.surfaceContainerHighest
+                    : Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
@@ -160,9 +166,12 @@ class AuthLayoutTemplate extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(isCompact ? 20 : 32),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(32),
-        border: isDark ? Border.all(color: const Color(0xFF2A3E62), width: 1) : null,
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline,
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
@@ -262,8 +271,7 @@ class AuthLayoutTemplate extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.onSurface,
                     side: BorderSide(color: Theme.of(context).colorScheme.outline),
-                    backgroundColor:
-                        isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -284,8 +292,7 @@ class AuthLayoutTemplate extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.onSurface,
                     side: BorderSide(color: Theme.of(context).colorScheme.outline),
-                    backgroundColor:
-                        isDark ? const Color(0xFF1A2945) : Theme.of(context).colorScheme.surface,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
