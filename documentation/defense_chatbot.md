@@ -47,7 +47,12 @@ Future<ChatBotResponse> sendMessage(String userMessage, {String? sessionId, List
       'content': botText,
     });
 
-    return ChatBotResponse(text: botText, didMutateTasks: didMutate, sessionId: activeSessionId);
+  try {
+    final response = await _aiService.sendMessage(text, sessionId: _activeSessionId, history: history);
+    if (response.didMutateTasks) {
+      await _refreshDataAfterMutation(); // Đồng bộ Task mới
+    }
+    _messages.add(ChatMessageModel(role: 'model', content: response.text));
   } catch (e) {
     debugPrint('ChatBot Critical Error: $e');
     // Error Handling: Trả về thông báo tiếng Việt thân thiện theo loại lỗi (503, 429, Network)
