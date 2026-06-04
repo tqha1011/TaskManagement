@@ -100,19 +100,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             ),
                           ],
                         ),
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF172744)
-                              : Theme.of(context).colorScheme.surface,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.notifications_none_rounded,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      )
                       ],
                     ),
                     const SizedBox(height: 30),

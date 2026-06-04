@@ -171,7 +171,7 @@ class TaskViewModel extends ChangeNotifier {
     try {
       final data = await supabase
           .from('task')
-          .select('*, subtask(*)')
+          .select('*, subtask(*), category(*), task_tags(tag(*))')
           .eq('profile_id', user.id)
           .order('create_at', ascending: true);
 
@@ -207,17 +207,35 @@ class TaskViewModel extends ChangeNotifier {
           completed = subtaskList.where((s) => s['status'] == 1).length;
         }
 
+        // Xử lý Category thực tế
+        CategoryModel cat = CategoryModel(
+          id: item['category_id'] ?? 0,
+          name: 'Category',
+          colorCode: '#5A8DF3',
+          profileId: item['profile_id'] ?? '',
+        );
+        if (item['category'] != null) {
+          cat = CategoryModel.fromJson(item['category']);
+        }
+
+        // Xử lý Tags thực tế
+        List<TagModel> tags = [];
+        if (item['task_tags'] != null) {
+          final List<dynamic> tagJoins = item['task_tags'];
+          for (var join in tagJoins) {
+            if (join['tag'] != null) {
+              tags.add(TagModel.fromJson(join['tag']));
+            }
+          }
+        }
+
         fetchedTasks.add(TaskModel(
           id: item['id'].toString(),
           title: item['title'] ?? 'Task mới',
           description: item['description'] ?? '',
           templateId: item['template_id'],
-          category: CategoryModel(
-            id: item['category_id'] ?? 0,
-            name: 'Category',
-            colorCode: '#5A8DF3',
-            profileId: item['profile_id'] ?? '',
-          ),
+          category: cat,
+          tags: tags,
           startTime:
               TimeOfDay(hour: startTimeDt.hour, minute: startTimeDt.minute),
           endTime: TimeOfDay(hour: dueTimeDt.hour, minute: dueTimeDt.minute),

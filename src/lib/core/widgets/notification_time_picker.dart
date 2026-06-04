@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/notification_service.dart';
 import '../../features/tasks/viewmodel/task_viewmodel.dart';
 import '../../features/tasks/model/task_model.dart';
+import '../../features/user/viewmodel/user_profile_viewmodel.dart';
 
 class NotificationTimePicker extends StatefulWidget {
   const NotificationTimePicker({super.key});
@@ -12,56 +13,33 @@ class NotificationTimePicker extends StatefulWidget {
 }
 
 class _NotificationTimePickerState extends State<NotificationTimePicker> {
-  TimeOfDay _selectedTime = const TimeOfDay(hour: 8, minute: 0);
-  bool _isEnabled = false;
-  final _service = NotificationService();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSavedTime();
-  }
-
-  Future<void> _loadSavedTime() async {
-    final saved = await _service.getSavedTime();
-    final enabled = await _service.getNotificationEnabled();
-    if (!mounted) return;
-    setState(() {
-      _selectedTime = saved;
-      _isEnabled = enabled;
-    });
-    if (enabled) {
-      await _service.registerDailyTask(saved);
-    }
-  }
-
-  Future<void> _pickTime() async {
+  Future<void> _pickTime(UserProfileViewModel vm) async {
     final picked = await showTimePicker(
       context: context,
-      initialTime: _selectedTime,
+      initialTime: vm.notificationTime ?? const TimeOfDay(hour: 8, minute: 0),
     );
     if (picked != null) {
-      setState(() => _selectedTime = picked);
-      if (_isEnabled) {
-        await _service.updateNotificationSettings(
-          isEnabled: true,
-          time: _selectedTime,
-        );
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Đã đặt thông báo lúc ${_selectedTime.format(context)} mỗi ngày',
-            ),
-            backgroundColor: Colors.green,
+      await vm.updateNotificationSettings(time: picked);
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Đã đặt thông báo lúc ${picked.format(context)} mỗi ngày',
           ),
-        );
-      }
+          backgroundColor: Colors.green,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final vm = context.watch<UserProfileViewModel>();
+    final isEnabled = vm.user?.isNotificationEnabled ?? false;
+    final selectedTime =
+        vm.notificationTime ?? const TimeOfDay(hour: 8, minute: 0);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -108,19 +86,15 @@ class _NotificationTimePickerState extends State<NotificationTimePicker> {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
               ),
               Switch(
-                value: _isEnabled,
+                value: isEnabled,
                 onChanged: (val) async {
-                  setState(() => _isEnabled = val);
-                  await _service.updateNotificationSettings(
-                    isEnabled: val,
-                    time: _selectedTime,
-                  );
+                  await vm.updateNotificationSettings(isEnabled: val);
                   if (!context.mounted) return;
                   if (val) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          'Đã đặt thông báo lúc ${_selectedTime.format(context)} mỗi ngày',
+                          'Đã đặt thông báo lúc ${selectedTime.format(context)} mỗi ngày',
                         ),
                         backgroundColor: Colors.green,
                       ),
@@ -153,11 +127,11 @@ class _NotificationTimePickerState extends State<NotificationTimePicker> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _selectedTime.format(context),
+                    selectedTime.format(context),
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: _isEnabled
+                      color: isEnabled
                           ? Theme.of(context).colorScheme.primary
                           : Colors.grey,
                     ),
@@ -165,7 +139,7 @@ class _NotificationTimePickerState extends State<NotificationTimePicker> {
                 ],
               ),
               ElevatedButton.icon(
-                onPressed: _isEnabled ? _pickTime : null,
+                onPressed: isEnabled ? () => _pickTime(vm) : null,
                 icon: const Icon(Icons.access_time),
                 label: const Text('Đổi giờ'),
                 style: ElevatedButton.styleFrom(
@@ -179,7 +153,7 @@ class _NotificationTimePickerState extends State<NotificationTimePicker> {
           const SizedBox(height: 20),
 
           // Preview thông báo
-          if (_isEnabled) ...[
+          if (isEnabled) ...[
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
