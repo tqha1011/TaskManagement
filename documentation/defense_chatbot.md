@@ -69,3 +69,70 @@
     ```dart
     'Nhiệm vụ của bạn là đưa ra lời khuyên ngắn gọn... Từ chối mọi câu hỏi không liên quan đến công việc hoặc quản lý thời gian.'
     ```
+
+## 5. Phân tích chuyên sâu (Deep-dive) Hàm Cốt Lõi
+
+### Hàm `sendMessage` trong `ChatBotAssistantService`
+Đây là hàm phức tạp nhất hệ thống, đóng vai trò điều phối giữa AI (Gemini) và Database (Supabase) thông qua Function Calling.
+
+**Trích xuất Code thực tế:**
+```dart
+Future<ChatBotResponse> sendMessage(
+  String userMessage, {
+  String? sessionId,
+  List<ChatMessageModel> history = const [],
+}) async {
+  // ... (Check config & Auth) ...
+  try {
+    // 1. Lưu tin nhắn User vào DB
+    await supabase.from('chat_message').insert({
+      'session_id': int.parse(activeSessionId),
+      'role': 'user',
+      'content': userMessage,
+    });
+
+    // 2. Gọi Gemini AI
+    final geminiChat = _model!.startChat(history: _mapHistoryToGemini(history));
+    var response = await geminiChat.sendMessage(Content.text(userMessage));
+    bool didMutate = false;
+
+    // 3. Xử lý Function Calling (Logic then chốt)
+    if (response.functionCalls.isNotEmpty) {
+      final functionCall = response.functionCalls.first;
+      if (functionCall.name == 'create_task_full') {
+        // ... thực thi RPC create_task_full ...
+        final isSuccess = dbResponse['success'] == true;
+        didMutate = isSuccess;
+        // Gửi kết quả DB ngược lại cho AI để tạo câu trả lời tự nhiên
+        response = await geminiChat.sendMessage(
+          Content.functionResponse('create_task_full', {
+            'status': isSuccess ? 'Thành công' : 'Thất bại',
+          }),
+        );
+      }
+    }
+
+    final botText = response.text ?? '...';
+    // 4. Lưu phản hồi của AI vào DB
+    await supabase.from('chat_message').insert({
+      'session_id': int.parse(activeSessionId),
+      'role': 'model',
+      'content': botText,
+    });
+
+    return ChatBotResponse(text: botText, didMutateTasks: didMutate, sessionId: activeSessionId);
+  } catch (e) {
+    // ... Xử lý lỗi thân thiện ...
+    return ChatBotResponse(text: userFriendlyError);
+  }
+}
+```
+
+**Giải thích Step-by-Step:**
+
+1.  **Logic nghiệp vụ**: Hàm này thực hiện luồng "AI-in-the-loop". Nó không chỉ gửi/nhận text mà còn đóng vai trò một Bridge (Cầu nối). Khi AI muốn tạo Task, nó sẽ trả về `functionCall`. Hàm này tạm dừng luồng hội thoại, thực thi SQL trong DB, lấy kết quả truyền ngược lại cho AI để AI có thể nói: "Vâng, tôi đã tạo xong task [Tên Task] cho bạn rồi".
+2.  **Input/Output**:
+    - **Input**: `userMessage` (text), `sessionId`, và `history` (ngữ cảnh cũ).
+    - **Output**: `ChatBotResponse` object chứa text trả lời và flag `didMutateTasks` để báo hiệu cho UI cần refresh danh sách Task.
+3.  **Bắt lỗi (Try-catch)**: Bọc toàn bộ trong block `try-catch`. Đặc biệt quan trọng ở bước `functionResponse`. Nếu Database lỗi (RPC thất bại), lỗi được bắt và chuyển hóa thành thông báo tiếng Việt thân thiện (ví dụ: "AI đang bận, thử lại sau") thay vì hiện lỗi SQL thô.
+4.  **Trigger cập nhật UI**: Biến `didMutate` được trả về. Trong `ChatBotViewModel`, nếu `didMutate == true`, hàm `_refreshDataAfterMutation()` sẽ được gọi, từ đó kích hoạt `TaskViewModel.fetchTasks()`, cập nhật danh sách công việc trên màn hình chính ngay lập tức.
