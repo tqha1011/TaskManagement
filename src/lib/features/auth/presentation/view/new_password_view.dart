@@ -41,17 +41,17 @@ class _NewPasswordViewState extends State<NewPasswordView> {
           if (!context.mounted) return;
 
           if (errorMessage == null) {
-            // Null -> Thành công -> Báo xanh mướt
+            // Null -> Thành công
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: const Text('Đổi mật khẩu thành công!'),
                 backgroundColor: Theme.of(context).colorScheme.tertiary,
               ),
             );
-            // Cú đá chót: Xóa hết lịch sử trang, đá thẳng mặt về trang Login (isFirst)
+            //Xóa hết lịch sử trang,trả về trang Login (isFirst)
             Navigator.popUntil(context, (route) => route.isFirst);
           } else {
-            // Nếu lỗi do User nhập lệch pass -> Chửi
+            // Nếu lỗi do User nhập lệch pass -> Báo lỗi
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(errorMessage),
@@ -70,7 +70,7 @@ class _NewPasswordViewState extends State<NewPasswordView> {
               label: 'Xác nhận mật khẩu mới', hint: '••••••••', icon: Icons.lock, controller: _vm.confirmPassCtrl,
               isPassword: true, obscureText: _vm.obscurePass, onToggleVisibility: _vm.togglePass,
             ),
-            // Cục Info hướng dẫn
+            // Info hướng dẫn
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(

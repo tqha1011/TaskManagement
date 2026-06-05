@@ -7,8 +7,8 @@ import '../../../core/theme/theme_provider.dart';
 import '../../auth/presentation/view/auth_gate.dart';
 import '../model/user_profile_model.dart';
 import '../service/user_service.dart';
-
 import '../service/profile_update_service.dart';
+import '../../../core/utils/validation_utils.dart';
 
 class UserProfileViewModel extends ChangeNotifier {
   final UserService _userService = UserService();
@@ -141,13 +141,23 @@ class UserProfileViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> updatePassword(String oldPassword, String newPassword) async {
+  Future<String?> updatePassword(String oldPassword, String newPassword) async {
+    if (!ValidationUtils.isValidPassword(newPassword)) {
+      return 'Mật khẩu phải từ 8 ký tự, gồm ít nhất 1 chữ hoa và 1 ký tự đặc biệt!';
+    }
     try {
       // Supabase handle password update via updateUser
       await _supabase.auth.updateUser(UserAttributes(password: newPassword));
+      return null;
+    } on AuthException catch (e) {
+      debugPrint("Supabase Auth Error updating password: ${e.message}");
+      if (e.message.toLowerCase().contains('weak')) {
+        return 'Mật khẩu quá yếu! Vui lòng sử dụng mật khẩu khó đoán hơn.';
+      }
+      return 'Lỗi: ${e.message}';
     } catch (e) {
       debugPrint("Error updating password: $e");
-      rethrow;
+      return 'Đã xảy ra lỗi không xác định khi cập nhật mật khẩu.';
     }
   }
 
