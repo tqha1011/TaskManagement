@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodel/user_profile_viewmodel.dart';
+import '../../../../core/utils/validation_utils.dart';
 
 class UpdatePasswordScreen extends StatefulWidget {
   const UpdatePasswordScreen({super.key});
@@ -29,15 +30,21 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await context.read<UserProfileViewModel>().updatePassword(
+      final error = await context.read<UserProfileViewModel>().updatePassword(
             _oldPasswordController.text,
             _newPasswordController.text,
           );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đổi mật khẩu thành công!')),
-        );
-        Navigator.pop(context);
+        if (error == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đổi mật khẩu thành công!')),
+          );
+          Navigator.pop(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error), backgroundColor: Theme.of(context).colorScheme.error),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -84,8 +91,12 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Vui lòng nhập mật khẩu mới';
-                  if (value.length < 6) return 'Mật khẩu phải ít nhất 6 ký tự';
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập mật khẩu mới';
+                  }
+                  if (!ValidationUtils.isValidPassword(value)) {
+                    return 'Mật khẩu phải từ 8 ký tự, gồm ít nhất 1 chữ hoa và 1 ký tự đặc biệt';
+                  }
                   return null;
                 },
               ),
