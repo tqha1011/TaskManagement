@@ -49,7 +49,7 @@ dependencies:
   timezone: ^0.9.4
   permission_handler: ^11.3.1
   speech_to_text: ^7.0.0
-  workmanager: ^0.9.0+3
+  workmanager: ^0.10.9
   flutter_markdown: ^0.7.7+1
 
 dev_dependencies:
